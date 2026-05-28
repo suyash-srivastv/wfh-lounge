@@ -73,13 +73,6 @@ function AuthScreen(){
 
   function field(k,v){setForm(p=>({...p,[k]:v}));setErr("");}
 
-  useEffect(()=>{
-    getRedirectResult(auth).catch(e=>{
-      if(e?.code)setErr(firebaseErrMsg(e.code));
-      setLoading(false);
-    });
-  },[]);
-
   async function googleSignIn(){
     setErr("");setLoading(true);
     const provider=new GoogleAuthProvider();
@@ -319,12 +312,12 @@ function App(){
   },[]);
 
   useEffect(()=>{
-    const unsub=onAuthStateChanged(auth, async fbUser=>{
+    let unsub;
+    const handleUser=async fbUser=>{
       if(fbUser){
         try{
           const snap=await getDoc(doc(db,"users",fbUser.uid));
           if(!snap.exists()){
-            // new Google/social sign-in — create profile automatically
             const initials=(fbUser.displayName||fbUser.email||"??").split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
             const profile={name:fbUser.displayName||fbUser.email||"",city:"",role:"",initials};
             await setDoc(doc(db,"users",fbUser.uid),profile);
@@ -341,8 +334,14 @@ function App(){
         setUser(null);
       }
       setAuthLoading(false);
+    };
+    // Process any pending redirect result first, then start listening.
+    // Without this, onAuthStateChanged fires with null before the redirect
+    // is resolved, keeping the user on the login screen.
+    getRedirectResult(auth).finally(()=>{
+      unsub=onAuthStateChanged(auth,handleUser);
     });
-    return unsub;
+    return ()=>unsub?.();
   },[]);
 
   function rsvp(id){setEvents(p=>p.map(e=>e.id===id?{...e,going:!e.going,attendees:e.going?e.attendees-1:e.attendees+1}:e))}
