@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { auth, db } from './firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { CITIES, INIT_EVENTS, INIT_MEMBERS, INIT_IDEAS, INIT_THREADS } from './mockData';
 
@@ -75,18 +75,10 @@ function AuthScreen(){
 
   async function googleSignIn(){
     setErr("");setLoading(true);
-    const provider=new GoogleAuthProvider();
-    const isMobile=/Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent);
     try{
-      if(isMobile){
-        await signInWithRedirect(auth,provider);
-      } else {
-        await signInWithPopup(auth,provider);
-      }
+      await signInWithPopup(auth,new GoogleAuthProvider());
     }catch(e){
-      if(e.code!=="auth/popup-closed-by-user"){
-        setErr(firebaseErrMsg(e.code));
-      }
+      if(e.code!=="auth/popup-closed-by-user")setErr(firebaseErrMsg(e.code));
       setLoading(false);
     }
   }
@@ -312,8 +304,7 @@ function App(){
   },[]);
 
   useEffect(()=>{
-    let unsub;
-    const handleUser=async fbUser=>{
+    const unsub=onAuthStateChanged(auth, async fbUser=>{
       if(fbUser){
         try{
           const snap=await getDoc(doc(db,"users",fbUser.uid));
@@ -322,7 +313,7 @@ function App(){
             const profile={name:fbUser.displayName||fbUser.email||"",city:"",role:"",initials};
             await setDoc(doc(db,"users",fbUser.uid),profile);
             setUser({...profile,uid:fbUser.uid});
-          } else {
+          }else{
             const profile=snap.data()||{};
             setUser({...profile,uid:fbUser.uid});
             if(profile.city)setCity(profile.city);
@@ -334,14 +325,8 @@ function App(){
         setUser(null);
       }
       setAuthLoading(false);
-    };
-    // Process any pending redirect result first, then start listening.
-    // Without this, onAuthStateChanged fires with null before the redirect
-    // is resolved, keeping the user on the login screen.
-    getRedirectResult(auth).finally(()=>{
-      unsub=onAuthStateChanged(auth,handleUser);
     });
-    return ()=>unsub?.();
+    return unsub;
   },[]);
 
   function rsvp(id){setEvents(p=>p.map(e=>e.id===id?{...e,going:!e.going,attendees:e.going?e.attendees-1:e.attendees+1}:e))}
