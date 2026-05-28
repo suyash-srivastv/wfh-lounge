@@ -1,10 +1,26 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { auth, db } from './firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { CITIES, INIT_EVENTS, INIT_MEMBERS, INIT_IDEAS, INIT_THREADS, CHAT_DATA } from './mockData';
+import { doc, getDoc, setDoc, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { CITIES, INIT_EVENTS, INIT_MEMBERS, INIT_IDEAS, INIT_THREADS } from './mockData';
 
 const ROLES=["Designer","Developer","Freelancer","Founder","Product Manager","Marketer","Writer","Other"];
+const CHANNELS=[
+  {id:"general",  label:"General",  icon:"ti-messages",    desc:"Open discussion"},
+  {id:"tech",     label:"Tech",     icon:"ti-code",        desc:"Dev, design, tools"},
+  {id:"non-tech", label:"Non-tech", icon:"ti-books",       desc:"Business, ideas, life"},
+  {id:"casual",   label:"Casual",   icon:"ti-mood-smile",  desc:"Chill & off-topic"},
+];
+
+const AVATAR_PALETTE=[
+  {bg:"#EEEDFE",tc:"#3C3489"},{bg:"#E1F5EE",tc:"#085041"},
+  {bg:"#FAEEDA",tc:"#633806"},{bg:"#EAF3DE",tc:"#27500A"},
+  {bg:"#FBEAF0",tc:"#72243E"},{bg:"#FAECE7",tc:"#712B13"},
+];
+function avatarColors(uid=""){
+  const i=uid.split("").reduce((s,c)=>s+c.charCodeAt(0),0)%AVATAR_PALETTE.length;
+  return AVATAR_PALETTE[i];
+}
 
 function firebaseErrMsg(code){
   const map={
@@ -40,11 +56,11 @@ function AuthScreen(){
     if(!q||form.city){setCityR([]);return;}
     const t=setTimeout(async()=>{
       try{
-        const res=await fetch(`https://api.teleport.org/api/cities/?search=${encodeURIComponent(q)}&limit=6`);
+        const res=await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&layer=city&lang=en`);
         const data=await res.json();
-        setCityR((data._embedded?.["city:search-results"]||[]).map(r=>({
-          name:r._embedded?.["city:item"]?.name||r.matching_full_name.split(",")[0].trim(),
-          full:r.matching_full_name
+        setCityR((data.features||[]).filter(f=>f.properties?.name).map(f=>({
+          name:f.properties.name,
+          full:[f.properties.name,f.properties.state,f.properties.country].filter(Boolean).join(", ")
         })));
       }catch{setCityR([]);}
     },300);
@@ -195,14 +211,16 @@ function App(){
   const [replyText,setReplyText]=useState("");
   const [newPostOpen,setNewPostOpen]=useState(false);
   const [newPost,setNewPost]=useState({title:"",body:""});
-  const [chatRoom,setChatRoom]=useState("Jaipur");
-  const [allChatMsgs,setAllChatMsgs]=useState(CHAT_DATA);
+  const [chatRoom,setChatRoom]=useState("Jaipur__general");
+  const [allChatMsgs,setAllChatMsgs]=useState({});
   const [chatInput,setChatInput]=useState("");
+  const [chatLoading,setChatLoading]=useState(false);
   const [cityPickerOpen,setCityPickerOpen]=useState(false);
   const [citySearch,setCitySearch]=useState("");
   const [cityResults,setCityResults]=useState([]);
   const [cityLoading,setCityLoading]=useState(false);
   const [profileOpen,setProfileOpen]=useState(false);
+  const [showProfile,setShowProfile]=useState(false);
   const [editOpen,setEditOpen]=useState(false);
   const [editForm,setEditForm]=useState({name:"",city:"",role:""});
   const [editCityQ,setEditCityQ]=useState("");
@@ -235,11 +253,11 @@ function App(){
     if(!q||editForm.city){setEditCityR([]);return;}
     const t=setTimeout(async()=>{
       try{
-        const res=await fetch(`https://api.teleport.org/api/cities/?search=${encodeURIComponent(q)}&limit=6`);
+        const res=await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&layer=city&lang=en`);
         const data=await res.json();
-        setEditCityR((data._embedded?.["city:search-results"]||[]).map(r=>({
-          name:r._embedded?.["city:item"]?.name||r.matching_full_name.split(",")[0].trim(),
-          full:r.matching_full_name
+        setEditCityR((data.features||[]).filter(f=>f.properties?.name).map(f=>({
+          name:f.properties.name,
+          full:[f.properties.name,f.properties.state,f.properties.country].filter(Boolean).join(", ")
         })));
       }catch{setEditCityR([]);}
     },300);
@@ -256,11 +274,11 @@ function App(){
     setCityLoading(true);
     const t=setTimeout(async()=>{
       try{
-        const res=await fetch(`https://api.teleport.org/api/cities/?search=${encodeURIComponent(q)}&limit=8`);
+        const res=await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=8&layer=city&lang=en`);
         const data=await res.json();
-        const items=(data._embedded?.["city:search-results"]||[]).map(r=>({
-          name:r._embedded?.["city:item"]?.name||r.matching_full_name.split(",")[0].trim(),
-          full:r.matching_full_name
+        const items=(data.features||[]).filter(f=>f.properties?.name).map(f=>({
+          name:f.properties.name,
+          full:[f.properties.name,f.properties.state,f.properties.country].filter(Boolean).join(", ")
         }));
         setCityResults(items);
       }catch{setCityResults([]);}
@@ -315,7 +333,7 @@ function App(){
   function likeThread(id,e){e.stopPropagation();setThreads(p=>p.map(t=>t.id===id?{...t,liked:!t.liked,likes:t.liked?t.likes-1:t.likes+1}:t))}
   function toggleThread(id){setOpenThread(p=>{if(p===id)return null;setReplyText("");return id;})}
   function submitReply(){if(!replyText.trim())return;setThreads(p=>p.map(t=>t.id===openThread?{...t,replies:t.replies+1}:t));setReplyText("")}
-  function submitPost(){if(!newPost.title.trim())return;setThreads(p=>[{id:Date.now(),city:city==="All cities"?"All":city,title:newPost.title,body:newPost.body,author:"You",time:"just now",replies:0,likes:0,liked:false,tags:["general"]},...p]);setNewPost({title:"",body:""});setNewPostOpen(false)}
+  function submitPost(){if(!newPost.title.trim())return;setThreads(p=>[{id:Date.now(),city:city==="All cities"?"All":city,title:newPost.title,body:newPost.body,author:user.name,time:"just now",replies:0,likes:0,liked:false,tags:["general"]},...p]);setNewPost({title:"",body:""});setNewPostOpen(false)}
   function handleLogout(){signOut(auth);setCity("All cities");}
   function openEdit(){
     setEditForm({name:user.name||"",city:user.city||"",role:user.role||""});
@@ -329,18 +347,46 @@ function App(){
     if(updated.city)setCity(updated.city);
     setEditOpen(false);
   }
-  function switchRoom(r){setChatRoom(r)}
-  function sendChat(){
+  useEffect(()=>{
+    if(tab!=="chat")return;
+    setChatLoading(true);
+    const q=query(
+      collection(db,"chats",chatRoom,"messages"),
+      orderBy("timestamp"),
+      limit(100)
+    );
+    const unsub=onSnapshot(q,snap=>{
+      const msgs=snap.docs.map(d=>{
+        const data=d.data();
+        const {bg,tc}=avatarColors(data.userId||data.user||"");
+        return {
+          id:d.id,
+          user:data.user,
+          text:data.text,
+          time:data.timestamp?.toDate().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})||"",
+          bg,tc,
+        };
+      });
+      setAllChatMsgs(p=>({...p,[chatRoom]:msgs}));
+      setChatLoading(false);
+    });
+    return unsub;
+  },[tab,chatRoom]);
+
+  useEffect(()=>{
+    setChatRoom(`${city}__general`);
+  },[city]);
+
+  async function sendChat(){
     if(!chatInput.trim())return;
-    const msg={
-      user:"You",
-      text:chatInput,
-      time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
-      bg:"#EEEDFE",
-      tc:"#3C3489"
-    };
-    setAllChatMsgs(p=>({...p,[chatRoom]:[...(p[chatRoom]||[]),msg]}));
+    const text=chatInput.trim();
     setChatInput("");
+    await addDoc(collection(db,"chats",chatRoom,"messages"),{
+      text,
+      user:user.name,
+      userId:user.uid,
+      timestamp:serverTimestamp(),
+    });
   }
 
   const NAV=[
@@ -351,6 +397,7 @@ function App(){
     {id:"chat",icon:"ti-message-circle",label:"Chat"},
   ];
 
+  const userPosts=user?threads.filter(t=>t.author===user.name||t.author==="You"):[];
   const filt=arr=>city==="All cities"?arr:arr.filter(x=>x.city===city);
   const fEvents=filt(events);
   const fMembers=filt(members);
@@ -370,7 +417,7 @@ function App(){
         </div>
         <div className="nav-tabs">
           {NAV.map(n=>(
-            <button key={n.id} className={"nav-tab"+(tab===n.id?" active":"")} onClick={()=>setTab(n.id)}>
+            <button key={n.id} className={"nav-tab"+(tab===n.id?" active":"")} onClick={()=>{setTab(n.id);setShowProfile(false);}}>
               <i className={"ti "+n.icon}/>{n.label}
             </button>
           ))}
@@ -426,6 +473,7 @@ function App(){
                   </div>
                 </div>
                 <div className="profile-divider"/>
+                <button className="profile-item" onClick={()=>{setShowProfile(true);setProfileOpen(false);}}><i className="ti ti-user"/>View profile</button>
                 <button className="profile-item" onClick={openEdit}><i className="ti ti-user-edit"/>Edit profile</button>
                 <button className="profile-item profile-item-danger" onClick={handleLogout}><i className="ti ti-logout"/>Log out</button>
               </div>
@@ -435,6 +483,47 @@ function App(){
       </div>
 
       <div className="content">
+        {showProfile ? (
+        <div className="inner fade">
+          <div className="profile-page">
+            <button className="profile-back" onClick={()=>setShowProfile(false)}><i className="ti ti-arrow-left"/>Back</button>
+            <div className="profile-page-header">
+              <div className="profile-page-avatar">{user.initials}</div>
+              <div style={{flex:1}}>
+                <div className="profile-page-name">{user.name}</div>
+                {user.role&&<div className="profile-page-sub">{user.role}</div>}
+                {user.city&&<div className="profile-page-sub"><i className="ti ti-map-pin" style={{fontSize:12}}/>{user.city}</div>}
+              </div>
+              <button className="btn-primary" onClick={openEdit}><i className="ti ti-edit"/>Edit profile</button>
+            </div>
+            <div className="profile-stats">
+              <div className="profile-stat"><div className="profile-stat-val">{userPosts.length}</div><div className="profile-stat-label">Posts</div></div>
+              <div className="profile-stat"><div className="profile-stat-val">{threads.filter(t=>t.liked).length}</div><div className="profile-stat-label">Liked</div></div>
+              <div className="profile-stat"><div className="profile-stat-val">{events.filter(e=>e.going).length}</div><div className="profile-stat-label">RSVPs</div></div>
+              <div className="profile-stat"><div className="profile-stat-val">{members.filter(m=>m.connected).length}</div><div className="profile-stat-label">Connected</div></div>
+            </div>
+            <div className="page-title" style={{marginBottom:14}}>Posts</div>
+            {userPosts.length===0 ? (
+              <div className="empty">No posts yet — start a thread in the Forums tab!</div>
+            ) : (
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {userPosts.map(t=>(
+                  <div key={t.id} className="thread-card">
+                    <div style={{fontWeight:600,fontSize:14,lineHeight:1.4,marginBottom:6}}>{t.title}</div>
+                    {t.body&&<div style={{fontSize:13,color:"#555550",lineHeight:1.6,marginBottom:8}}>{t.body}</div>}
+                    <div style={{display:"flex",alignItems:"center",gap:14,fontSize:12,color:"#888780"}}>
+                      <span>{t.time}</span>
+                      <span><i className="ti ti-message" style={{fontSize:12,verticalAlign:-1}}/> {t.replies}</span>
+                      <span><i className="ti ti-heart" style={{fontSize:12,verticalAlign:-1}}/> {t.likes}</span>
+                      {t.city!=="All"&&<span className="tag">{t.city}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        ) : (
         <div className="inner fade">
 
           {tab==="events"&&(
@@ -579,22 +668,34 @@ function App(){
               </div>
               <div className="chat-wrap">
                 <div className="chat-rooms">
-                  <div className="chat-rooms-header">Rooms</div>
-                  {["Jaipur","Indore","Lucknow","All cities"].map(r=>(
-                    <button key={r} className={"room-btn"+(chatRoom===r?" active":"")} onClick={()=>switchRoom(r)}>
-                      <span className="room-hash">#</span>{r}
-                    </button>
-                  ))}
+                  <div className="chat-rooms-header">{city==="All cities"?"Global":city}</div>
+                  {CHANNELS.map(ch=>{
+                    const roomId=`${city}__${ch.id}`;
+                    return (
+                      <button key={roomId} className={"room-btn"+(chatRoom===roomId?" active":"")} onClick={()=>setChatRoom(roomId)} title={ch.desc}>
+                        <i className={"ti "+ch.icon+" room-ch-icon"}/>
+                        <span>{ch.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
                 <div className="chat-main">
-                  <div className="chat-header">
-                    <span style={{color:"#888780",fontSize:16}}>#</span>{chatRoom}
-                    <span style={{fontSize:12,color:"#888780",fontWeight:400,marginLeft:4}}>· {chatMsgs.length} messages</span>
-                  </div>
+                  {(()=>{
+                    const activeCh=CHANNELS.find(c=>chatRoom.endsWith(`__${c.id}`))||CHANNELS[0];
+                    return (
+                      <div className="chat-header">
+                        <i className={"ti "+activeCh.icon} style={{fontSize:15,color:"#888780"}}/>
+                        <span>{activeCh.label}</span>
+                        <span style={{fontSize:12,color:"#B4B2A9",fontWeight:400,marginLeft:"auto"}}>{chatMsgs.length} messages</span>
+                      </div>
+                    );
+                  })()}
                   <div className="chat-msgs">
-                    {chatMsgs.map((msg,i)=>(
-                      <div key={i} className="msg">
-                        <div className="msg-avatar" style={{background:msg.bg,color:msg.tc}}>{msg.user.slice(0,2).toUpperCase()}</div>
+                    {chatLoading&&<div className="chat-loading"><i className="ti ti-loader-2" style={{animation:"spin 1s linear infinite"}}/>Loading messages…</div>}
+                    {!chatLoading&&chatMsgs.length===0&&<div className="chat-empty">No messages yet — say hi! 👋</div>}
+                    {chatMsgs.map(msg=>(
+                      <div key={msg.id||msg.text} className="msg">
+                        <div className="msg-avatar" style={{background:msg.bg,color:msg.tc}}>{(msg.user||"?").slice(0,2).toUpperCase()}</div>
                         <div>
                           <div className="msg-name">{msg.user}<span className="msg-time">{msg.time}</span></div>
                           <div className="msg-text">{msg.text}</div>
@@ -613,6 +714,7 @@ function App(){
           )}
 
         </div>
+        )}
       </div>
 
       {editOpen&&(
