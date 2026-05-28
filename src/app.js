@@ -4,6 +4,8 @@ function App(){
   // state
   const [tab,setTab]=useState("events");
   const [city,setCity]=useState("All cities");
+  const [detectedCity,setDetectedCity]=useState(null);
+  const [locStatus,setLocStatus]=useState("idle"); // idle | detecting | detected | failed
   const [events,setEvents]=useState(INIT_EVENTS);
   const [members,setMembers]=useState(INIT_MEMBERS);
   const [ideas,setIdeas]=useState(INIT_IDEAS);
@@ -15,9 +17,68 @@ function App(){
   const [chatRoom,setChatRoom]=useState("Jaipur");
   const [allChatMsgs,setAllChatMsgs]=useState(CHAT_DATA);
   const [chatInput,setChatInput]=useState("");
+  const [cityPickerOpen,setCityPickerOpen]=useState(false);
+  const [citySearch,setCitySearch]=useState("");
+  const [cityResults,setCityResults]=useState([]);
+  const [cityLoading,setCityLoading]=useState(false);
   const chatEnd=useRef(null);
+  const cityPickerRef=useRef(null);
+  const citySearchRef=useRef(null);
+
+  useEffect(()=>{
+    function handleOutside(e){
+      if(cityPickerRef.current&&!cityPickerRef.current.contains(e.target)){
+        setCityPickerOpen(false);setCitySearch("");setCityResults([]);
+      }
+    }
+    document.addEventListener("mousedown",handleOutside);
+    return()=>document.removeEventListener("mousedown",handleOutside);
+  },[]);
+
+  useEffect(()=>{
+    if(cityPickerOpen)setTimeout(()=>citySearchRef.current?.focus(),50);
+  },[cityPickerOpen]);
+
+  useEffect(()=>{
+    const q=citySearch.trim();
+    if(!q){setCityResults([]);setCityLoading(false);return;}
+    setCityLoading(true);
+    const t=setTimeout(async()=>{
+      try{
+        const res=await fetch(`https://api.teleport.org/api/cities/?search=${encodeURIComponent(q)}&limit=8`);
+        const data=await res.json();
+        const items=(data._embedded?.["city:search-results"]||[]).map(r=>({
+          name:r._embedded?.["city:item"]?.name||r.matching_full_name.split(",")[0].trim(),
+          full:r.matching_full_name
+        }));
+        setCityResults(items);
+      }catch{setCityResults([]);}
+      finally{setCityLoading(false);}
+    },300);
+    return()=>clearTimeout(t);
+  },[citySearch]);
 
   useEffect(()=>{chatEnd.current?.scrollIntoView({behavior:"smooth"})},[allChatMsgs, chatRoom]);
+
+  useEffect(()=>{
+    if(!navigator.geolocation){setLocStatus("failed");return;}
+    setLocStatus("detecting");
+    navigator.geolocation.getCurrentPosition(
+      async pos=>{
+        try{
+          const {latitude,longitude}=pos.coords;
+          const res=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+          const data=await res.json();
+          const name=data.city||data.locality||data.principalSubdivision||null;
+          setDetectedCity(name);
+          if(name)setCity(name);
+          setLocStatus("detected");
+        }catch{setLocStatus("failed");}
+      },
+      ()=>setLocStatus("failed"),
+      {timeout:8000}
+    );
+  },[]);
 
   // actions
   function rsvp(id){setEvents(p=>p.map(e=>e.id===id?{...e,going:!e.going,attendees:e.going?e.attendees-1:e.attendees+1}:e))}
@@ -61,7 +122,7 @@ function App(){
       <div className="nav">
         <div className="nav-logo">
           <div className="logo-icon"><i className="ti ti-coffee"/></div>
-          WFH Together
+          WFH Lounge
         </div>
         <div className="nav-tabs">
           {NAV.map(n=>(
@@ -71,14 +132,51 @@ function App(){
           ))}
         </div>
         <div className="nav-right">
+          <div className="city-picker-wrap" ref={cityPickerRef}>
+            <button className="city-pill" onClick={()=>setCityPickerOpen(p=>!p)}>
+              <i className={"ti "+(locStatus==="detecting"?"ti-loader-2":"ti-map-pin")} style={locStatus==="detecting"?{animation:"spin 1s linear infinite"}:{}}/>
+              <span>{locStatus==="detecting"?"Detecting…":city}</span>
+              <i className="ti ti-chevron-down" style={{fontSize:10,color:"#B4B2A9"}}/>
+            </button>
+            {cityPickerOpen&&(
+              <div className="city-dropdown">
+                <div className="city-search-wrap">
+                  <i className="ti ti-search city-search-icon"/>
+                  <input
+                    ref={citySearchRef}
+                    className="city-search-input"
+                    placeholder="Search any city…"
+                    value={citySearch}
+                    onChange={e=>setCitySearch(e.target.value)}
+                  />
+                  {cityLoading&&<i className="ti ti-loader-2 city-search-spin"/>}
+                </div>
+                {!citySearch&&(
+                  <button className={"city-drop-item"+(city==="All cities"?" active":"")} onClick={()=>{setCity("All cities");setCityPickerOpen(false);setCitySearch("");}}>
+                    <span>All cities</span>
+                    {city==="All cities"&&<i className="ti ti-check" style={{fontSize:13,color:"#7F77DD"}}/>}
+                  </button>
+                )}
+                {!citySearch&&detectedCity&&(
+                  <button className={"city-drop-item"+(city===detectedCity?" active":"")} onClick={()=>{setCity(detectedCity);setCityPickerOpen(false);setCitySearch("");}}>
+                    <span>{detectedCity}</span>
+                    <span className="city-auto-tag"><i className="ti ti-navigation"/>auto</span>
+                  </button>
+                )}
+                {cityResults.map(r=>(
+                  <button key={r.full} className={"city-drop-item"+(city===r.name?" active":"")} onClick={()=>{setCity(r.name);setCityPickerOpen(false);setCitySearch("");}}>
+                    <span>{r.name}</span>
+                    <span className="city-drop-sub">{r.full.split(",").slice(1).join(",").trim()}</span>
+                  </button>
+                ))}
+                {citySearch&&!cityLoading&&cityResults.length===0&&(
+                  <div className="city-drop-empty">No results for "{citySearch}"</div>
+                )}
+              </div>
+            )}
+          </div>
           <div className="avatar">YO</div>
         </div>
-      </div>
-
-      <div className="city-bar">
-        {["All cities",...CITIES].map(c=>(
-          <button key={c} className={"city-btn"+(city===c?" active":"")} onClick={()=>setCity(c)}>{c}</button>
-        ))}
       </div>
 
       <div className="content">
