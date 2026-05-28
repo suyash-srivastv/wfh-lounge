@@ -5,56 +5,9 @@
   <title>WFH Lounge</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
-  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <div id="root">Loading…</div>
-
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- app code -->
-  <script type="text/javascript" src="src/mockData.js"></script>
-  <!-- diagnostics: show runtime errors on the page so blank pages surface the cause -->
-  <script>
-    (function(){
-      function show(msg){
-        var el=document.getElementById('app-status');
-        if(!el){el=document.createElement('div');el.id='app-status';el.style.cssText='position:fixed;left:12px;right:12px;bottom:12px;padding:10px 12px;background:#fee;border:1px solid #c66;border-radius:8px;color:#600;font-family:system-ui,sans-serif;z-index:9999;';document.body.appendChild(el);} 
-        el.textContent=msg;
-      }
-      window.addEventListener('error', function(e){
-        console.error('window.error', e.error || e.message || e);
-        show('Error: ' + (e.error && e.error.message ? e.error.message : (e.message || String(e))));
-      });
-      window.addEventListener('unhandledrejection', function(e){
-        console.error('unhandledrejection', e.reason);
-        show('Unhandled promise rejection: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)));
-      });
-      // quick status log
-      window.addEventListener('load', function(){
-        try{console.log('diagnostics', 'Babel', typeof Babel !== 'undefined', 'React', typeof React !== 'undefined', 'ReactDOM', typeof ReactDOM !== 'undefined');}catch(err){}
-      });
-    })();
-  </script>
-  <script>
-    // quick pre-check: if React/ReactDOM/Babel missing, show a clear message
-    (function(){
-      function show(msg){
-        var el=document.getElementById('app-status');
-        if(!el){el=document.createElement('div');el.id='app-status';el.style.cssText='position:fixed;left:12px;right:12px;bottom:12px;padding:10px 12px;background:#fee;border:1px solid #c66;border-radius:8px;color:#600;font-family:system-ui,sans-serif;z-index:9999;';document.body.appendChild(el);} 
-        el.textContent=msg;
-      }
-      var missing=[];
-      if(typeof React==='undefined') missing.push('React');
-      if(typeof ReactDOM==='undefined') missing.push('ReactDOM');
-      if(typeof Babel==='undefined') missing.push('Babel');
-      if(missing.length){
-        show('Missing libraries: ' + missing.join(', ') + '. Check network or CDN loading (open DevTools console for details).');
-      }
-    })();
-  </script>
-  <script type="text/babel" src="src/app.js"></script>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
