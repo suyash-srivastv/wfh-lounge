@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { auth, db } from './firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { CITIES, INIT_EVENTS, INIT_MEMBERS, INIT_IDEAS, INIT_THREADS } from './mockData';
 
@@ -31,8 +31,12 @@ function firebaseErrMsg(code){
     "auth/weak-password":"Password must be at least 6 characters.",
     "auth/invalid-email":"Invalid email address.",
     "auth/too-many-requests":"Too many attempts. Try again later.",
+    "auth/unauthorized-domain":"This domain isn't authorized. Add it in Firebase Console → Authentication → Authorized domains.",
+    "auth/operation-not-supported-in-this-environment":"Google sign-in isn't supported in this browser.",
+    "auth/web-storage-unsupported":"Your browser blocks storage needed for sign-in. Try disabling private/incognito mode.",
+    "auth/network-request-failed":"Network error. Check your connection and try again.",
   };
-  return map[code]||"Something went wrong. Try again.";
+  return map[code]||(code?`Sign-in failed (${code}).`:"Something went wrong. Try again.");
 }
 
 function AuthScreen(){
@@ -69,20 +73,27 @@ function AuthScreen(){
 
   function field(k,v){setForm(p=>({...p,[k]:v}));setErr("");}
 
+  useEffect(()=>{
+    getRedirectResult(auth).catch(e=>{
+      if(e?.code)setErr(firebaseErrMsg(e.code));
+      setLoading(false);
+    });
+  },[]);
+
   async function googleSignIn(){
     setErr("");setLoading(true);
     const provider=new GoogleAuthProvider();
-    const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isMobile=/Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent);
     try{
       if(isMobile){
         await signInWithRedirect(auth,provider);
-        // page redirects — onAuthStateChanged handles profile creation on return
       } else {
         await signInWithPopup(auth,provider);
-        // onAuthStateChanged handles profile creation
       }
     }catch(e){
-      setErr(firebaseErrMsg(e.code));
+      if(e.code!=="auth/popup-closed-by-user"){
+        setErr(firebaseErrMsg(e.code));
+      }
       setLoading(false);
     }
   }
