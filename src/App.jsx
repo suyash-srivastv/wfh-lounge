@@ -2,7 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { auth, db } from './firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { CITIES, INIT_EVENTS, INIT_MEMBERS, INIT_IDEAS, INIT_THREADS } from './mockData';
+import { CITIES, INIT_EVENTS, INIT_IDEAS, INIT_THREADS } from './mockData';
+import WarRoom from './components/WarRoom';
+import OnboardingScreen from './components/OnboardingScreen';
 
 const ROLES=["Designer","Developer","Freelancer","Founder","Product Manager","Marketer","Writer","Other"];
 const CHANNELS=[
@@ -199,13 +201,18 @@ function App(){
   const [detectedCity,setDetectedCity]=useState(null);
   const [locStatus,setLocStatus]=useState("idle");
   const [events,setEvents]=useState(INIT_EVENTS);
-  const [members,setMembers]=useState(INIT_MEMBERS);
+  const [members,setMembers]=useState([]);
   const [ideas,setIdeas]=useState(INIT_IDEAS);
   const [threads,setThreads]=useState(INIT_THREADS);
   const [openThread,setOpenThread]=useState(null);
   const [replyText,setReplyText]=useState("");
   const [newPostOpen,setNewPostOpen]=useState(false);
   const [newPost,setNewPost]=useState({title:"",body:""});
+  const [hostEventOpen,setHostEventOpen]=useState(false);
+  const [newEvent,setNewEvent]=useState({title:"",type:"IRL",location:"",date:"",time:"",tags:""});
+  const [postIdeaOpen,setPostIdeaOpen]=useState(false);
+  const [newIdea,setNewIdea]=useState({title:"",desc:"",stage:"Idea",tags:"",looking:[]});
+  const [inviteOpen,setInviteOpen]=useState(false);
   const [chatRoom,setChatRoom]=useState("Jaipur__general");
   const [mobileChatView,setMobileChatView]=useState("rooms"); // "rooms" | "messages"
   const [allChatMsgs,setAllChatMsgs]=useState({});
@@ -330,6 +337,36 @@ function App(){
     return unsub;
   },[]);
 
+  // Live members from the real users collection
+  useEffect(()=>{
+    if(!user) return;
+    const q=query(collection(db,"users"),limit(100));
+    const unsub=onSnapshot(q,snap=>{
+      const connected=user.connections||{};
+      setMembers(snap.docs.map(d=>{
+        const data=d.data();
+        const {bg,tc}=avatarColors(d.id);
+        return {
+          id:d.id,
+          name:data.name||"",
+          username:data.username||"",
+          role:data.role||"",
+          city:data.city||"",
+          initials:data.initials||"??",
+          ini:data.initials||"??",
+          skills:data.skills||[],
+          bio:data.bio||"",
+          bg,tc,
+          online:false,
+          conn:Object.keys(data.connections||{}).length,
+          events:0,
+          connected:!!connected[d.id],
+        };
+      }));
+    });
+    return unsub;
+  },[user?.uid]);
+
   function rsvp(id){setEvents(p=>p.map(e=>e.id===id?{...e,going:!e.going,attendees:e.going?e.attendees-1:e.attendees+1}:e))}
   function connect(id){setMembers(p=>p.map(m=>m.id===id?{...m,connected:!m.connected}:m))}
   function upvote(id){setIdeas(p=>p.map(i=>i.id===id?{...i,upvoted:!i.upvoted,votes:i.upvoted?i.votes-1:i.votes+1}:i))}
@@ -350,6 +387,45 @@ function App(){
     if(updated.city)setCity(updated.city);
     setEditOpen(false);
   }
+  function submitEvent(){
+    if(!newEvent.title.trim()||!newEvent.location.trim())return;
+    const tags=newEvent.tags.split(",").map(t=>t.trim()).filter(Boolean);
+    setEvents(p=>[{
+      id:Date.now(),
+      title:newEvent.title.trim(),
+      type:newEvent.type,
+      city:city==="All cities"?"All":city,
+      location:newEvent.location.trim(),
+      date:newEvent.date||"TBD",
+      time:newEvent.time||"TBD",
+      tags,
+      host:user.name,
+      attendees:1,
+      going:true,
+    },...p]);
+    setNewEvent({title:"",type:"IRL",location:"",date:"",time:"",tags:""});
+    setHostEventOpen(false);
+  }
+
+  function submitIdea(){
+    if(!newIdea.title.trim())return;
+    const tags=newIdea.tags.split(",").map(t=>t.trim()).filter(Boolean);
+    setIdeas(p=>[{
+      id:Date.now(),
+      title:newIdea.title.trim(),
+      desc:newIdea.desc.trim(),
+      author:user.name,
+      city:city==="All cities"?"All":city,
+      votes:0,
+      stage:newIdea.stage,
+      tags,
+      looking:newIdea.looking,
+      upvoted:false,
+    },...p]);
+    setNewIdea({title:"",desc:"",stage:"Idea",tags:"",looking:[]});
+    setPostIdeaOpen(false);
+  }
+
   useEffect(()=>{
     if(tab!=="chat")return;
     setChatLoading(true);
@@ -379,6 +455,10 @@ function App(){
   useEffect(()=>{
     setChatRoom(`${city}__general`);
   },[city]);
+
+  function deleteEvent(id){setEvents(p=>p.filter(e=>e.id!==id));}
+  function deleteIdea(id){setIdeas(p=>p.filter(i=>i.id!==id));}
+  function deleteThread(id){setThreads(p=>p.filter(t=>t.id!==id));if(openThread===id)setOpenThread(null);}
 
   async function sendChat(){
     if(!chatInput.trim())return;
@@ -410,6 +490,7 @@ function App(){
 
   if(authLoading) return <div className="auth-wrap"><div className="auth-loading"><i className="ti ti-loader-2" style={{animation:"spin 1s linear infinite"}}/>Loading…</div></div>;
   if(!user) return <AuthScreen/>;
+  if(!user.username) return <OnboardingScreen user={user} setUser={setUser}/>;
 
   return (
     <div className="app">
@@ -512,7 +593,10 @@ function App(){
               <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 {userPosts.map(t=>(
                   <div key={t.id} className="thread-card">
-                    <div style={{fontWeight:600,fontSize:14,lineHeight:1.4,marginBottom:6}}>{t.title}</div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                      <div style={{fontWeight:600,fontSize:14,lineHeight:1.4,flex:1}}>{t.title}</div>
+                      <button className="delete-btn" title="Delete post" onClick={()=>deleteThread(t.id)}><i className="ti ti-trash"/></button>
+                    </div>
                     {t.body&&<div style={{fontSize:13,color:"#555550",lineHeight:1.6,marginBottom:8}}>{t.body}</div>}
                     <div style={{display:"flex",alignItems:"center",gap:14,fontSize:12,color:"#888780"}}>
                       <span>{t.time}</span>
@@ -533,14 +617,18 @@ function App(){
             <div>
               <div className="page-header">
                 <div><div className="page-title">Upcoming meetups</div><div className="page-sub">{fEvents.length} events · {city}</div></div>
-                <button className="btn-primary"><i className="ti ti-plus"/>Host event</button>
+                <button className="btn-primary" onClick={()=>setHostEventOpen(true)}><i className="ti ti-plus"/>Host event</button>
               </div>
-              <div className="grid3">
+              <WarRoom city={city}/>
+              <div className="grid3" style={{marginTop:16}}>
                 {fEvents.map(ev=>(
                   <div key={ev.id} className="card">
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                       <span className={"badge "+(ev.type==="IRL"?"badge-irl":"badge-virtual")}>{ev.type==="IRL"?"📍 IRL":"🌐 Virtual"}</span>
-                      <span style={{fontSize:11,color:"#888780"}}>{ev.city}</span>
+                      <div style={{display:"flex",alignItems:"center",gap:6}}>
+                        <span style={{fontSize:11,color:"#888780"}}>{ev.city}</span>
+                        {ev.host===user.name&&<button className="delete-btn" title="Delete event" onClick={e=>{e.stopPropagation();deleteEvent(ev.id);}}><i className="ti ti-trash"/></button>}
+                      </div>
                     </div>
                     <div style={{fontWeight:600,fontSize:14,lineHeight:1.3,marginBottom:6}}>{ev.title}</div>
                     <div style={{fontSize:12,color:"#888780",display:"flex",alignItems:"center",gap:4,marginBottom:8}}>
@@ -567,13 +655,13 @@ function App(){
             <div>
               <div className="page-header">
                 <div><div className="page-title">Member network</div><div className="page-sub">{fMembers.length} members · {city}</div></div>
-                <button className="btn-primary"><i className="ti ti-user-plus"/>Invite someone</button>
+                <button className="btn-primary" onClick={()=>setInviteOpen(true)}><i className="ti ti-user-plus"/>Invite someone</button>
               </div>
               <div className="grid2">
                 {fMembers.map(m=>(
                   <div key={m.id} className="card">
                     <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:11}}>
-                      <div style={{width:42,height:42,borderRadius:"50%",background:m.bg,color:m.tc,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,flexShrink:0}}>{m.ini}</div>
+                      <div style={{width:42,height:42,borderRadius:"50%",background:m.bg,color:m.tc,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,flexShrink:0}}>{m.initials||m.ini}</div>
                       <div style={{flex:1}}>
                         <div style={{fontWeight:600,fontSize:14}}>{m.name}</div>
                         <div style={{fontSize:12,color:"#888780"}}>{m.role}</div>
@@ -600,7 +688,7 @@ function App(){
             <div>
               <div className="page-header">
                 <div><div className="page-title">Startup ideas</div><div className="page-sub">Post ideas · find co-founders · validate fast</div></div>
-                <button className="btn-primary"><i className="ti ti-plus"/>Post idea</button>
+                <button className="btn-primary" onClick={()=>setPostIdeaOpen(true)}><i className="ti ti-plus"/>Post idea</button>
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
                 {fIdeas.map(idea=>(
@@ -618,7 +706,10 @@ function App(){
                       <div style={{fontSize:13,color:"#555550",lineHeight:1.6,marginBottom:10}}>{idea.desc}</div>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
                         <div>{idea.tags.map(t=><span key={t} className="tag">{t}</span>)} <span style={{fontSize:11,color:"#888780",marginLeft:4}}>{idea.author} · {idea.city}</span></div>
-                        <div style={{fontSize:12,color:"#7F77DD",fontWeight:500}}>Looking for: {idea.looking.join(", ")}</div>
+                        <div style={{display:"flex",alignItems:"center",gap:10}}>
+                          {idea.looking.length>0&&<div style={{fontSize:12,color:"#7F77DD",fontWeight:500}}>Looking for: {idea.looking.join(", ")}</div>}
+                          {idea.author===user.name&&<button className="delete-btn" title="Delete idea" onClick={()=>deleteIdea(idea.id)}><i className="ti ti-trash"/></button>}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -656,6 +747,7 @@ function App(){
                       <button className={"like-btn"+(t.liked?" liked":"")} onClick={e=>likeThread(t.id,e)}>
                         <i className={"ti "+(t.liked?"ti-heart-filled":"ti-heart")} style={{fontSize:13}}/>{t.likes}
                       </button>
+                      {t.author===user.name&&<button className="delete-btn" style={{marginLeft:"auto"}} title="Delete post" onClick={e=>{e.stopPropagation();deleteThread(t.id);}}><i className="ti ti-trash"/></button>}
                     </div>
                   </div>
                 ))}
@@ -775,6 +867,86 @@ function App(){
             <div className="modal-actions">
               <button className="btn-cancel" onClick={()=>setNewPostOpen(false)}>Cancel</button>
               <button className="btn-primary" onClick={submitPost}>Post</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {hostEventOpen&&(
+        <div className="overlay" onClick={()=>setHostEventOpen(false)}>
+          <div className="modal" style={{maxWidth:520}} onClick={e=>e.stopPropagation()}>
+            <div className="modal-title">Host an event</div>
+            <div className="modal-type-toggle">
+              <button className={"modal-type-btn"+(newEvent.type==="IRL"?" active":"")} onClick={()=>setNewEvent(p=>({...p,type:"IRL"}))}>📍 IRL</button>
+              <button className={"modal-type-btn"+(newEvent.type==="Virtual"?" active":"")} onClick={()=>setNewEvent(p=>({...p,type:"Virtual"}))}>🌐 Virtual</button>
+            </div>
+            <input className="modal-input" placeholder="Event title…" value={newEvent.title} onChange={e=>setNewEvent(p=>({...p,title:e.target.value}))}/>
+            <input className="modal-input" placeholder={newEvent.type==="IRL"?"Venue / café / coworking space…":"Zoom, Google Meet link…"} value={newEvent.location} onChange={e=>setNewEvent(p=>({...p,location:e.target.value}))}/>
+            <div style={{display:"flex",gap:8}}>
+              <input className="modal-input" type="date" style={{flex:1}} value={newEvent.date} onChange={e=>setNewEvent(p=>({...p,date:e.target.value}))}/>
+              <input className="modal-input" type="time" style={{flex:1}} value={newEvent.time} onChange={e=>setNewEvent(p=>({...p,time:e.target.value}))}/>
+            </div>
+            <input className="modal-input" placeholder="Tags — cowork, casual, startup… (comma separated)" value={newEvent.tags} onChange={e=>setNewEvent(p=>({...p,tags:e.target.value}))}/>
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={()=>setHostEventOpen(false)}>Cancel</button>
+              <button className="btn-primary" onClick={submitEvent} disabled={!newEvent.title.trim()||!newEvent.location.trim()}>Create event</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {postIdeaOpen&&(
+        <div className="overlay" onClick={()=>setPostIdeaOpen(false)}>
+          <div className="modal" style={{maxWidth:520}} onClick={e=>e.stopPropagation()}>
+            <div className="modal-title">Post a startup idea</div>
+            <input className="modal-input" placeholder="Idea title…" value={newIdea.title} onChange={e=>setNewIdea(p=>({...p,title:e.target.value}))}/>
+            <textarea className="modal-input" placeholder="Describe the problem and your solution…" rows={3} style={{resize:"vertical"}} value={newIdea.desc} onChange={e=>setNewIdea(p=>({...p,desc:e.target.value}))}/>
+            <div className="modal-label">Stage</div>
+            <div className="modal-type-toggle">
+              {["Idea","Validating","Building"].map(s=>(
+                <button key={s} className={"modal-type-btn"+(newIdea.stage===s?" active":"")} onClick={()=>setNewIdea(p=>({...p,stage:s}))}>{s}</button>
+              ))}
+            </div>
+            <div className="modal-label">Looking for <span style={{fontWeight:400,color:"#B4B2A9"}}>(optional)</span></div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
+              {ROLES.map(r=>(
+                <button key={r} type="button"
+                  className={"modal-chip"+(newIdea.looking.includes(r)?" active":"")}
+                  onClick={()=>setNewIdea(p=>({...p,looking:p.looking.includes(r)?p.looking.filter(x=>x!==r):[...p.looking,r]}))}>
+                  {r}
+                </button>
+              ))}
+            </div>
+            <input className="modal-input" placeholder="Tags — SaaS, fintech, wellness… (comma separated)" value={newIdea.tags} onChange={e=>setNewIdea(p=>({...p,tags:e.target.value}))}/>
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={()=>setPostIdeaOpen(false)}>Cancel</button>
+              <button className="btn-primary" onClick={submitIdea} disabled={!newIdea.title.trim()}>Post idea</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {inviteOpen&&(
+        <div className="overlay" onClick={()=>setInviteOpen(false)}>
+          <div className="modal" style={{maxWidth:440}} onClick={e=>e.stopPropagation()}>
+            <div className="modal-title">Invite someone</div>
+            <p style={{fontSize:13,color:"#555550",marginBottom:16,lineHeight:1.6}}>Share WFH Lounge with your network. Anyone with the link can sign up and join the community.</p>
+            <div className="invite-link-row">
+              <span className="invite-link-text">{typeof window!=="undefined"?window.location.origin:"https://wfhlounge.app"}</span>
+              <button className="invite-copy-btn" onClick={()=>{
+                navigator.clipboard.writeText(typeof window!=="undefined"?window.location.origin:"");
+                setInviteOpen(false);
+              }}>
+                <i className="ti ti-copy"/>Copy link
+              </button>
+            </div>
+            <div style={{marginTop:16,display:"flex",gap:8,justifyContent:"center"}}>
+              <a href={`https://wa.me/?text=Join%20me%20on%20WFH%20Lounge%20${encodeURIComponent(typeof window!=="undefined"?window.location.origin:"")}`} target="_blank" rel="noopener noreferrer" className="invite-share-btn" style={{background:"#25D366"}}>
+                <i className="ti ti-brand-whatsapp"/>WhatsApp
+              </a>
+              <a href={`https://twitter.com/intent/tweet?text=Join%20me%20on%20WFH%20Lounge%20—%20the%20community%20for%20remote%20workers%20in%20Indian%20cities.%20${encodeURIComponent(typeof window!=="undefined"?window.location.origin:"")}`} target="_blank" rel="noopener noreferrer" className="invite-share-btn" style={{background:"#1DA1F2"}}>
+                <i className="ti ti-brand-twitter"/>Twitter
+              </a>
             </div>
           </div>
         </div>
