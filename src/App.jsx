@@ -207,6 +207,7 @@ function App(){
   const [newPostOpen,setNewPostOpen]=useState(false);
   const [newPost,setNewPost]=useState({title:"",body:""});
   const [chatRoom,setChatRoom]=useState("Jaipur__general");
+  const [mobileChatView,setMobileChatView]=useState("rooms"); // "rooms" | "messages"
   const [allChatMsgs,setAllChatMsgs]=useState({});
   const [chatInput,setChatInput]=useState("");
   const [chatLoading,setChatLoading]=useState(false);
@@ -669,23 +670,25 @@ function App(){
                 <div><div className="page-title">City chat</div><div className="page-sub">Real-time rooms · your people</div></div>
               </div>
               <div className="chat-wrap">
-                <div className="chat-rooms">
+                <div className={"chat-rooms"+(mobileChatView==="messages"?" mobile-hide":"")}>
                   <div className="chat-rooms-header">{city==="All cities"?"Global":city}</div>
                   {CHANNELS.map(ch=>{
                     const roomId=`${city}__${ch.id}`;
                     return (
-                      <button key={roomId} className={"room-btn"+(chatRoom===roomId?" active":"")} onClick={()=>setChatRoom(roomId)} title={ch.desc}>
+                      <button key={roomId} className={"room-btn"+(chatRoom===roomId?" active":"")}
+                        onClick={()=>{setChatRoom(roomId);setMobileChatView("messages");}} title={ch.desc}>
                         <i className={"ti "+ch.icon+" room-ch-icon"}/>
                         <span>{ch.label}</span>
                       </button>
                     );
                   })}
                 </div>
-                <div className="chat-main">
+                <div className={"chat-main"+(mobileChatView==="rooms"?" mobile-hide":"")}>
                   {(()=>{
                     const activeCh=CHANNELS.find(c=>chatRoom.endsWith(`__${c.id}`))||CHANNELS[0];
                     return (
                       <div className="chat-header">
+                        <button className="mobile-back-btn" onClick={()=>setMobileChatView("rooms")}><i className="ti ti-arrow-left"/></button>
                         <i className={"ti "+activeCh.icon} style={{fontSize:15,color:"#888780"}}/>
                         <span>{activeCh.label}</span>
                         <span style={{fontSize:12,color:"#B4B2A9",fontWeight:400,marginLeft:"auto"}}>{chatMsgs.length} messages</span>
@@ -776,6 +779,15 @@ function App(){
           </div>
         </div>
       )}
+
+      <nav className="mobile-nav">
+        {NAV.map(n=>(
+          <button key={n.id} className={"mobile-nav-btn"+(tab===n.id&&!showProfile?" active":"")} onClick={()=>{setTab(n.id);setShowProfile(false);}}>
+            <i className={"ti "+n.icon}/>
+            <span>{n.label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }

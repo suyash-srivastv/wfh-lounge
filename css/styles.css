@@ -169,3 +169,44 @@ input,textarea{font-family:inherit}
 .profile-stat{flex:1;background:#fff;border:1px solid #E8E6DF;border-radius:12px;padding:14px 16px;text-align:center}
 .profile-stat-val{font-size:22px;font-weight:700;font-family:'DM Serif Display',serif;color:#1a1a18}
 .profile-stat-label{font-size:11px;color:#888780;margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
+
+/* ── Mobile nav ── */
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #E8E6DF;z-index:100;padding:0 4px;padding-bottom:env(safe-area-inset-bottom,0px)}
+.mobile-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:transparent;font-size:10px;font-weight:500;color:#888780;padding:8px 4px;font-family:inherit;cursor:pointer;min-height:52px}
+.mobile-nav-btn i{font-size:22px}
+.mobile-nav-btn.active{color:#1a1a18}
+.mobile-nav-btn.active i{color:#1a1a18}
+.mobile-back-btn{display:none;border:none;background:transparent;padding:4px 8px 4px 0;color:#888780;font-size:18px;cursor:pointer;flex-shrink:0}
+
+/* ── Mobile responsive ── */
+@media(max-width:768px){
+  .nav{padding:0 12px;height:50px}
+  .nav-logo{font-size:15px;margin-right:auto}
+  .nav-tabs{display:none}
+  .city-pill span{display:none}
+  .city-pill{padding:0 9px;height:30px;font-size:12px}
+  .city-dropdown{width:calc(100vw - 24px);right:-10px}
+  .profile-dropdown{width:200px}
+  .content{padding:14px 12px 70px}
+  .inner{max-width:100%}
+  .page-title{font-size:19px}
+  .page-header{margin-bottom:14px}
+  .grid3{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+  .chat-wrap{grid-template-columns:1fr;height:calc(100dvh - 160px)}
+  .mobile-hide{display:none!important}
+  .mobile-back-btn{display:flex;align-items:center}
+  .chat-header{gap:8px}
+  .mobile-nav{display:flex}
+  .auth-card{padding:28px 20px;margin:0 4px}
+  .auth-wrap{padding:16px}
+  .profile-page-header{padding:16px;gap:12px;flex-wrap:wrap}
+  .profile-page-avatar{width:52px;height:52px;font-size:18px}
+  .profile-page-name{font-size:18px}
+  .profile-stats{flex-wrap:wrap}
+  .profile-stat{flex:none;width:calc(50% - 5px)}
+  .overlay{padding:12px}
+  .modal{padding:20px 16px}
+  .chat-rooms{padding-bottom:4px}
+  .room-btn{border-radius:9px;margin:0 4px}
+}
