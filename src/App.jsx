@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { auth, db } from './firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { CITIES, INIT_EVENTS, INIT_MEMBERS, INIT_IDEAS, INIT_THREADS } from './mockData';
 
@@ -71,16 +71,15 @@ function AuthScreen(){
 
   async function googleSignIn(){
     setErr("");setLoading(true);
+    const provider=new GoogleAuthProvider();
+    const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     try{
-      const result=await signInWithPopup(auth, new GoogleAuthProvider());
-      const u=result.user;
-      const snap=await getDoc(doc(db,"users",u.uid));
-      if(!snap.exists()){
-        const initials=(u.displayName||u.email||"??").split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
-        await setDoc(doc(db,"users",u.uid),{
-          name:u.displayName||u.email,
-          city:"",role:"",initials,
-        });
+      if(isMobile){
+        await signInWithRedirect(auth,provider);
+        // page redirects — onAuthStateChanged handles profile creation on return
+      } else {
+        await signInWithPopup(auth,provider);
+        // onAuthStateChanged handles profile creation
       }
     }catch(e){
       setErr(firebaseErrMsg(e.code));
@@ -312,12 +311,20 @@ function App(){
     const unsub=onAuthStateChanged(auth, async fbUser=>{
       if(fbUser){
         try{
-          const snap=await getDoc(doc(db, "users", fbUser.uid));
-          const profile=snap.data()||{};
-          setUser({...profile,uid:fbUser.uid});
-          if(profile.city)setCity(profile.city);
+          const snap=await getDoc(doc(db,"users",fbUser.uid));
+          if(!snap.exists()){
+            // new Google/social sign-in — create profile automatically
+            const initials=(fbUser.displayName||fbUser.email||"??").split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
+            const profile={name:fbUser.displayName||fbUser.email||"",city:"",role:"",initials};
+            await setDoc(doc(db,"users",fbUser.uid),profile);
+            setUser({...profile,uid:fbUser.uid});
+          } else {
+            const profile=snap.data()||{};
+            setUser({...profile,uid:fbUser.uid});
+            if(profile.city)setCity(profile.city);
+          }
         }catch{
-          setUser({uid:fbUser.uid,name:fbUser.email,initials:"??"});
+          setUser({uid:fbUser.uid,name:fbUser.email||"",initials:"??"});
         }
       }else{
         setUser(null);
