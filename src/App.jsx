@@ -736,10 +736,10 @@ function App(){
                     {openThread===t.id&&(
                       <div className="thread-expand" onClick={e=>e.stopPropagation()}>
                         <div style={{fontSize:13,color:"#555550",lineHeight:1.7,marginBottom:12}}>{t.body}</div>
-                        <div style={{display:"flex",gap:8}}>
-                          <input className="chat-input" value={replyText} onChange={e=>setReplyText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submitReply()} placeholder="Write a reply…"/>
-                          <button className="send-btn" onClick={submitReply}>Reply</button>
-                        </div>
+                        <form style={{display:"flex",gap:8}} onSubmit={e=>{e.preventDefault();submitReply();}}>
+                          <input className="chat-input" value={replyText} onChange={e=>setReplyText(e.target.value)} placeholder="Write a reply…" enterKeyHint="send" autoComplete="off"/>
+                          <button type="submit" className="send-btn">Reply</button>
+                        </form>
                       </div>
                     )}
                     <div style={{display:"flex",alignItems:"center",gap:14,fontSize:12,color:"#888780",marginTop:8}}>
@@ -758,7 +758,7 @@ function App(){
           )}
 
           {tab==="chat"&&(
-            <div>
+            <div className={mobileChatView==="messages"?"chat-messages-active":""}>
               <div className="page-header">
                 <div><div className="page-title">City chat</div><div className="page-sub">Real-time rooms · your people</div></div>
               </div>
@@ -802,10 +802,10 @@ function App(){
                     ))}
                     <div ref={chatEnd}/>
                   </div>
-                  <div className="chat-input-row">
-                    <input className="chat-input" value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendChat()} placeholder={"Message #"+chatRoom+"…"}/>
-                    <button className="send-btn" onClick={sendChat}><i className="ti ti-send" style={{fontSize:15}}/></button>
-                  </div>
+                  <form className="chat-input-row" onSubmit={e=>{e.preventDefault();sendChat();}}>
+                    <input className="chat-input" value={chatInput} onChange={e=>setChatInput(e.target.value)} placeholder={"Message #"+chatRoom+"…"} enterKeyHint="send" autoComplete="off"/>
+                    <button type="submit" className="send-btn"><i className="ti ti-send" style={{fontSize:15}}/></button>
+                  </form>
                 </div>
               </div>
             </div>

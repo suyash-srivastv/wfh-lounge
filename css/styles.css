@@ -250,7 +250,10 @@ input,textarea{font-family:inherit}
   .page-header{margin-bottom:14px}
   .grid3{grid-template-columns:1fr}
   .grid2{grid-template-columns:1fr}
-  .chat-wrap{grid-template-columns:1fr;height:calc(100dvh - 160px)}
+  .chat-wrap{grid-template-columns:1fr;height:calc(100dvh - 210px)}
+  .chat-messages-active .page-header{display:none}
+  .chat-messages-active .chat-wrap{height:calc(100dvh - 140px)}
+  .chat-input-row{padding-bottom:max(10px,env(safe-area-inset-bottom))}
   .mobile-hide{display:none!important}
   .mobile-back-btn{display:flex;align-items:center}
   .chat-header{gap:8px}
