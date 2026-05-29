@@ -218,6 +218,7 @@ function App(){
   const [allChatMsgs,setAllChatMsgs]=useState({});
   const [chatInput,setChatInput]=useState("");
   const [chatLoading,setChatLoading]=useState(false);
+  const [selectedMember,setSelectedMember]=useState(null);
   const [cityPickerOpen,setCityPickerOpen]=useState(false);
   const [citySearch,setCitySearch]=useState("");
   const [cityResults,setCityResults]=useState([]);
@@ -659,7 +660,7 @@ function App(){
               </div>
               <div className="grid2">
                 {fMembers.map(m=>(
-                  <div key={m.id} className="card">
+                  <div key={m.id} className="card" style={{cursor:"pointer"}} onClick={()=>setSelectedMember(m)}>
                     <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:11}}>
                       <div style={{width:42,height:42,borderRadius:"50%",background:m.bg,color:m.tc,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,flexShrink:0}}>{m.initials||m.ini}</div>
                       <div style={{flex:1}}>
@@ -675,7 +676,7 @@ function App(){
                     <hr className="divider"/>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                       <div style={{fontSize:11,color:"#888780"}}>{m.conn} connections · {m.events} events</div>
-                      <button className={"connect-btn"+(m.connected?" connected":"")} onClick={()=>connect(m.id)}>{m.connected?"✓ Connected":"Connect"}</button>
+                      <button className={"connect-btn"+(m.connected?" connected":"")} onClick={e=>{e.stopPropagation();connect(m.id);}}>{m.connected?"✓ Connected":"Connect"}</button>
                     </div>
                   </div>
                 ))}
@@ -948,6 +949,45 @@ function App(){
                 <i className="ti ti-brand-twitter"/>Twitter
               </a>
             </div>
+          </div>
+        </div>
+      )}
+
+      {selectedMember&&(
+        <div className="overlay" onClick={()=>setSelectedMember(null)}>
+          <div className="modal member-modal" onClick={e=>e.stopPropagation()}>
+            <button className="member-modal-close" onClick={()=>setSelectedMember(null)}><i className="ti ti-x"/></button>
+            <div className="member-modal-header">
+              <div className="member-modal-avatar" style={{background:selectedMember.bg,color:selectedMember.tc}}>
+                {selectedMember.initials||selectedMember.ini||"??"}
+              </div>
+              <div>
+                <div className="member-modal-name">{selectedMember.name}</div>
+                {selectedMember.username&&<div className="member-modal-handle">@{selectedMember.username}</div>}
+                <div className="member-modal-meta">
+                  {selectedMember.role&&<span>{selectedMember.role}</span>}
+                  {selectedMember.role&&selectedMember.city&&<span style={{color:"#D3D1C7"}}>·</span>}
+                  {selectedMember.city&&<span><i className="ti ti-map-pin" style={{fontSize:11,verticalAlign:-1,marginRight:2}}/>{selectedMember.city}</span>}
+                </div>
+              </div>
+            </div>
+            {selectedMember.bio&&<p className="member-modal-bio">{selectedMember.bio}</p>}
+            {selectedMember.skills?.length>0&&(
+              <div className="member-modal-section">
+                <div className="member-modal-label">Skills</div>
+                <div>{selectedMember.skills.map(s=><span key={s} className="tag">{s}</span>)}</div>
+              </div>
+            )}
+            <div className="member-modal-stats">
+              <div className="member-modal-stat"><span>{selectedMember.conn||0}</span>connections</div>
+              <div className="member-modal-stat-divider"/>
+              <div className="member-modal-stat"><span>{selectedMember.events||0}</span>events</div>
+            </div>
+            <button
+              className={"connect-btn"+(selectedMember.connected?" connected":"")+" member-modal-connect"}
+              onClick={()=>{connect(selectedMember.id);setSelectedMember(m=>m?{...m,connected:!m.connected}:m);}}>
+              {selectedMember.connected?"✓ Connected":"Connect"}
+            </button>
           </div>
         </div>
       )}
