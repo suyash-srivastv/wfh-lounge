@@ -1,6 +1,8 @@
-import { CHANNELS } from '../../constants';
+import { CHANNELS } from '../constants';
 
-function ChatTab({ city, chatRoom, setChatRoom, mobileChatView, setMobileChatView, chatMsgs, chatLoading, chatInput, setChatInput, sendChat, chatEnd }){
+function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChatView, chatMsgs, chatLoading, chatInput, setChatInput, sendChat, chatEnd }){
+  const activeCh = CHANNELS.find(c=>chatRoom.endsWith(`__${c.id}`)) || CHANNELS[0];
+
   return (
     <div className={mobileChatView==="messages"?"chat-messages-active":""}>
       <div className="page-header">
@@ -21,17 +23,12 @@ function ChatTab({ city, chatRoom, setChatRoom, mobileChatView, setMobileChatVie
           })}
         </div>
         <div className={"chat-main"+(mobileChatView==="rooms"?" mobile-hide":"")}>
-          {(()=>{
-            const activeCh=CHANNELS.find(c=>chatRoom.endsWith(`__${c.id}`))||CHANNELS[0];
-            return (
-              <div className="chat-header">
-                <button className="mobile-back-btn" onClick={()=>setMobileChatView("rooms")}><i className="ti ti-arrow-left"/></button>
-                <i className={"ti "+activeCh.icon} style={{fontSize:15,color:"#888780"}}/>
-                <span>{activeCh.label}</span>
-                <span style={{fontSize:12,color:"#B4B2A9",fontWeight:400,marginLeft:"auto"}}>{chatMsgs.length} messages</span>
-              </div>
-            );
-          })()}
+          <div className="chat-header">
+            <button className="mobile-back-btn" onClick={()=>setMobileChatView("rooms")}><i className="ti ti-arrow-left"/></button>
+            <i className={"ti "+activeCh.icon} style={{fontSize:15,color:"#888780"}}/>
+            <span>{activeCh.label}</span>
+            <span style={{fontSize:12,color:"#B4B2A9",fontWeight:400,marginLeft:"auto"}}>{chatMsgs.length} messages</span>
+          </div>
           <div className="chat-msgs">
             {chatLoading&&<div className="chat-loading"><i className="ti ti-loader-2" style={{animation:"spin 1s linear infinite"}}/>Loading messages…</div>}
             {!chatLoading&&chatMsgs.length===0&&<div className="chat-empty">No messages yet — say hi! 👋</div>}
@@ -56,4 +53,4 @@ function ChatTab({ city, chatRoom, setChatRoom, mobileChatView, setMobileChatVie
   );
 }
 
-export default ChatTab;
+export default ChatScreen;

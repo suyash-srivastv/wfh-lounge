@@ -1,4 +1,5 @@
 export const ROLES=["Designer","Developer","Freelancer","Founder","Product Manager","Marketer","Writer","Other"];
+export const STATUSES=["Open to work","Building something","Available for freelance","Looking for co-founder","Not available"];
 export const CHANNELS=[
   {id:"general",  label:"General",  icon:"ti-messages",    desc:"Open discussion"},
   {id:"tech",     label:"Tech",     icon:"ti-code",        desc:"Dev, design, tools"},
@@ -31,4 +32,13 @@ export function firebaseErrMsg(code){
     "auth/network-request-failed":"Network error. Check your connection and try again.",
   };
   return map[code]||(code?`Sign-in failed (${code}).`:"Something went wrong. Try again.");
+}
+
+export function timeAgo(date){
+  if(!date)return "";
+  const s=Math.floor((Date.now()-date.getTime())/1000);
+  if(s<60)return "just now";
+  if(s<3600)return `${Math.floor(s/60)}m ago`;
+  if(s<86400)return `${Math.floor(s/3600)}h ago`;
+  return `${Math.floor(s/86400)}d ago`;
 }

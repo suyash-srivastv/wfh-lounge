@@ -1,7 +1,6 @@
-import React from 'react';
-import { timeAgo } from '../../constants';
+import { timeAgo } from '../constants';
 
-function ThreadsTab({ threads, city, userId, openThread, toggleThread, replyText, setReplyText, submitReply, likeThread, deleteThread, onNewPost }){
+function ThreadsScreen({ threads, city, userId, openThread, toggleThread, replyText, setReplyText, submitReply, likeThread, deleteThread, onNewPost }){
   return (
     <div>
       <div className="page-header">
@@ -40,4 +39,4 @@ function ThreadsTab({ threads, city, userId, openThread, toggleThread, replyText
   );
 }
 
-export default ThreadsTab;
+export default ThreadsScreen;

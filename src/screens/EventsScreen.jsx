@@ -1,11 +1,10 @@
-import React from 'react';
-import WarRoom from '../WarRoom';
+import WarRoom from '../components/WarRoom';
 
-function EventsTab({ events, city, userId, rsvp, deleteEvent, onHostEvent }){
+function EventsScreen({ events, city, userId, rsvp, deleteEvent, onHostEvent }){
   return (
     <div>
       <div className="page-header">
-        <div><div className="page-title">Upcoming meetups</div><div className="page-sub">{events.length} events · {city}</div></div>
+        <div><div className="page-title">Upcoming events</div><div className="page-sub">{events.length} events · {city}</div></div>
         <button className="btn-primary" onClick={onHostEvent}><i className="ti ti-plus"/>Host event</button>
       </div>
       <WarRoom city={city}/>
@@ -31,7 +30,9 @@ function EventsTab({ events, city, userId, rsvp, deleteEvent, onHostEvent }){
             <hr className="divider"/>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div style={{fontSize:11,color:"#888780"}}><i className="ti ti-users" style={{fontSize:12,verticalAlign:-1}}/> {ev.attendeeCount||0} going</div>
-              <button className={"rsvp-btn"+(!!(ev.rsvps?.[userId])?" going":"")} onClick={()=>rsvp(ev.id)}>{!!(ev.rsvps?.[userId])?"✓ Going":"RSVP"}</button>
+              <button className={"rsvp-btn"+(!!(ev.rsvps?.[userId])?" going":"")} onClick={()=>rsvp(ev.id)}>
+                {!!(ev.rsvps?.[userId])?"✓ Going":"RSVP"}
+              </button>
             </div>
           </div>
         ))}
@@ -41,4 +42,4 @@ function EventsTab({ events, city, userId, rsvp, deleteEvent, onHostEvent }){
   );
 }
 
-export default EventsTab;
+export default EventsScreen;
