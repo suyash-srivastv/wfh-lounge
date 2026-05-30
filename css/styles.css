@@ -160,6 +160,10 @@ input,textarea,select{font-family:inherit;color:var(--text-1)}
 .dm-panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:400;display:flex;justify-content:flex-end}
 [data-theme="dark"] .dm-panel-overlay{background:rgba(0,0,0,.6)}
 .dm-panel{width:340px;max-width:100vw;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;height:100%;animation:slideInRight .2s ease}
+@media(max-width:768px){
+  .dm-panel-overlay{background:transparent}
+  .dm-panel{width:100%;border-left:none;height:100dvh}
+}
 @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
 .dm-panel-header{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--border-sub);flex-shrink:0}
 .dm-panel-title{flex:1;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;min-width:0}
