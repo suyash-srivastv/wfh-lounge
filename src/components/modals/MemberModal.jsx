@@ -1,6 +1,6 @@
 import Avatar from '../Avatar';
 
-function MemberModal({ member, onClose, onConnect, currentUserId }) {
+function MemberModal({ member, onClose, onConnect, onMessage, currentUserId }) {
   if (!member) return null;
   return (
     <div className="overlay" onClick={onClose}>
@@ -19,9 +19,10 @@ function MemberModal({ member, onClose, onConnect, currentUserId }) {
           </div>
         </div>
 
+        {member.vibe && <div style={{marginBottom:10}}><span className="vibe-chip">{member.vibe}</span></div>}
         {member.status && (
           <div style={{marginBottom:12}}>
-            <span style={{fontSize:12,fontWeight:500,padding:'3px 10px',borderRadius:20,background:'#EEEDFE',color:'#3C3489'}}>
+            <span style={{fontSize:12,fontWeight:500,padding:'3px 10px',borderRadius:20,background:'var(--accent-bg)',color:'var(--accent-tc)'}}>
               {member.status}
             </span>
           </div>
@@ -43,9 +44,22 @@ function MemberModal({ member, onClose, onConnect, currentUserId }) {
         </div>
 
         {member.id !== currentUserId && (
-          <button className={"connect-btn" + (member.connected ? " connected" : "") + " member-modal-connect"} onClick={onConnect}>
-            {member.connected ? "✓ Connected" : "Connect"}
-          </button>
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            <div style={{display:'flex',gap:8}}>
+              <button className={"connect-btn" + (member.connected ? " connected" : "") + " member-modal-connect"} onClick={onConnect}>
+                {member.connected ? "✓ Connected" : "Connect"}
+              </button>
+              <button className="dm-btn" disabled={!member.connected} onClick={() => onMessage(member)}
+                title={!member.connected ? 'Connect first to send a message' : undefined}>
+                <i className="ti ti-message"/>Message
+              </button>
+            </div>
+            {!member.connected && (
+              <p style={{fontSize:11,color:'var(--text-3)',textAlign:'center',margin:0}}>
+                Connect with {member.name.split(' ')[0]} to unlock messaging
+              </p>
+            )}
+          </div>
         )}
       </div>
     </div>

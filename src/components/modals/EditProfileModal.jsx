@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { storage } from '../../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { ROLES, STATUSES } from '../../constants';
+import { ROLES, STATUSES, VIBES } from '../../constants';
 
 function EditProfileModal({ open, user, onClose, onSave }) {
-  const [form,       setForm]       = useState({ name: '', city: '', role: '', bio: '', yearsExp: '', status: '' });
+  const [form,       setForm]       = useState({ name: '', city: '', role: '', bio: '', yearsExp: '', status: '', vibe: '' });
   const [cityQ,      setCityQ]      = useState('');
   const [cityR,      setCityR]      = useState([]);
   const [cityOpen,   setCityOpen]   = useState(false);
@@ -22,6 +22,7 @@ function EditProfileModal({ open, user, onClose, onSave }) {
         bio:      user.bio      || '',
         yearsExp: user.yearsExp != null ? String(user.yearsExp) : '',
         status:   user.status   || '',
+        vibe:     user.vibe     || '',
       });
       setCityQ(user.city || '');
       setPreview(user.photoURL || null);
@@ -122,9 +123,25 @@ function EditProfileModal({ open, user, onClose, onSave }) {
           </select>
         </div>
 
+        <div className="auth-field" style={{ marginBottom: 10 }}>
+          <label className="auth-label">Current vibe</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
+            {VIBES.map(v => {
+              const val = `${v.emoji} ${v.label}`;
+              return (
+                <button type="button" key={v.label}
+                  className={'modal-chip' + (form.vibe === val ? ' active' : '')}
+                  onClick={() => setForm(p => ({ ...p, vibe: p.vibe === val ? '' : val }))}>
+                  {v.emoji} {v.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="auth-field" style={{ marginBottom: 16, position: 'relative' }} ref={cityRef}>
           <label className="auth-label">City</label>
-          <div className="auth-input-icon" style={{ background: '#F7F6F2', borderRadius: 9, border: '1px solid #E8E6DF' }}>
+          <div className="auth-input-icon">
             <i className="ti ti-map-pin" style={{ fontSize: 14, color: '#B4B2A9' }}/>
             <input className="auth-input-inner" placeholder="Search your city…"
               value={form.city || cityQ}

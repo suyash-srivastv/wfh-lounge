@@ -1,5 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 
+function useDarkMode() {
+  const [dark, setDark] = useState(() => localStorage.getItem('wfh-theme') === 'dark');
+  useEffect(() => {
+    document.documentElement.dataset.theme = dark ? 'dark' : '';
+    localStorage.setItem('wfh-theme', dark ? 'dark' : 'light');
+  }, [dark]);
+  return [dark, setDark];
+}
+
 const NAV = [
   { id: 'events',  icon: 'ti-calendar-event', label: 'Events'  },
   { id: 'chat',    icon: 'ti-message-circle', label: 'Chat'    },
@@ -8,7 +17,8 @@ const NAV = [
   { id: 'threads', icon: 'ti-messages',       label: 'Forums'  },
 ];
 
-function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, user, showProfile, setShowProfile, openEdit, onLogout }) {
+function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, user, showProfile, setShowProfile, openEdit, onLogout, crown, dmUnread, onDmToggle }) {
+  const [dark, setDark] = useDarkMode();
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
   const [citySearch,     setCitySearch]     = useState('');
   const [cityResults,    setCityResults]    = useState([]);
@@ -57,7 +67,7 @@ function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, user, s
     <>
       <div className="nav">
         <div className="nav-logo">
-          <div className="logo-icon"><i className="ti ti-coffee"/></div>
+          <div className={'logo-icon' + (crown ? ' logo-crown' : '')}><i className="ti ti-coffee"/></div>
           WFH Lounge
         </div>
         <div className="nav-tabs">
@@ -69,6 +79,13 @@ function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, user, s
           ))}
         </div>
         <div className="nav-right">
+          <button className="dm-trigger" onClick={onDmToggle} title="Messages">
+            <i className="ti ti-message-circle"/>
+            {dmUnread > 0 && <span className="dm-trigger-badge">{dmUnread > 99 ? '99+' : dmUnread}</span>}
+          </button>
+          <button className="theme-toggle" onClick={() => setDark(d => !d)} title={dark ? 'Light mode' : 'Dark mode'}>
+            <i className={'ti ' + (dark ? 'ti-sun' : 'ti-moon')}/>
+          </button>
           <div className="city-picker-wrap" ref={cityPickerRef}>
             <button className="city-pill" onClick={() => setCityPickerOpen(p => !p)}>
               <i className={'ti ' + (locStatus === 'detecting' ? 'ti-loader-2' : 'ti-map-pin')}

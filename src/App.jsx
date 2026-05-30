@@ -3,9 +3,12 @@ import { auth, db } from './firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, addDoc, query, limit, serverTimestamp, updateDoc, deleteField, increment, getDocs, writeBatch, deleteDoc } from 'firebase/firestore';
 import { INIT_EVENTS, INIT_IDEAS, INIT_THREADS } from './mockData';
-import { ROLES } from './constants';
+import { ROLES, REACTIONS } from './constants';
 import { useFirestoreListeners } from './hooks/useFirestoreListeners';
 import { useChat } from './hooks/useChat';
+import { useDM }   from './hooks/useDM';
+import Confetti          from './components/Confetti';
+import DmPanel           from './components/DmPanel';
 import AuthScreen        from './components/AuthScreen';
 import OnboardingScreen  from './components/OnboardingScreen';
 import Nav               from './components/Nav';
@@ -41,12 +44,34 @@ function App(){
   const [postIdeaOpen,  setPostIdeaOpen]  = useState(false);
   const [newIdea,       setNewIdea]       = useState({ title: '', desc: '', stage: 'Idea', tags: '', looking: [] });
   const [inviteOpen,    setInviteOpen]    = useState(false);
+  const [crown,         setCrown]         = useState(false);
+  const [confetti,      setConfetti]      = useState(false);
+  const [dmPanelOpen,   setDmPanelOpen]   = useState(false);
 
   const { events, members, ideas, threads } = useFirestoreListeners(user);
+  const dm = useDM(user);
+
+  useEffect(() => {
+    const SEQ = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+    let idx = 0;
+    function onKey(e) {
+      if (e.key === SEQ[idx]) { idx++; } else { idx = e.key === SEQ[0] ? 1 : 0; }
+      if (idx === SEQ.length) {
+        idx = 0;
+        setCrown(true); setConfetti(true);
+        setTimeout(() => setCrown(false), 3000);
+        setTimeout(() => setConfetti(false), 3500);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   const chat = useChat(user, tab, city);
 
-  // Geolocation — detect city once on mount
+  // Geolocation — only run if no saved city preference exists
   useEffect(() => {
+    const saved = localStorage.getItem('wfh-city');
+    if (saved) { setCity(saved); setLocStatus('detected'); return; }
     if (!navigator.geolocation) { setLocStatus('failed'); return; }
     setLocStatus('detecting');
     navigator.geolocation.getCurrentPosition(
@@ -78,7 +103,8 @@ function App(){
           } else {
             const profile = snap.data() || {};
             setUser({ ...profile, uid: fbUser.uid });
-            if (profile.city) setCity(profile.city);
+            const savedCity = profile.selectedCity || profile.city;
+            if (savedCity) { setCity(savedCity); localStorage.setItem('wfh-city', savedCity); }
           }
         } catch {
           setUser({ uid: fbUser.uid, name: fbUser.email || '', initials: '??' });
@@ -100,6 +126,14 @@ function App(){
     INIT_IDEAS.forEach(idea  => batch.set(doc(collection(db,'ideas')),   {title:idea.title,desc:idea.desc,author:idea.author,authorId:'seed',city:idea.city,votes:idea.votes,stage:idea.stage,tags:idea.tags,looking:idea.looking,upvotes:{},createdAt:serverTimestamp()}));
     INIT_THREADS.forEach(t   => batch.set(doc(collection(db,'threads')), {title:t.title,body:t.body,author:t.author,authorId:'seed',city:t.city,tags:t.tags,replyCount:t.replies,likeCount:t.likes,likes:{},createdAt:serverTimestamp()}));
     await batch.commit();
+  }
+
+  async function changeCity(c) {
+    setCity(c);
+    localStorage.setItem('wfh-city', c);
+    if (user?.uid) {
+      await updateDoc(doc(db, 'users', user.uid), { selectedCity: c }).catch(() => {});
+    }
   }
 
   // --- Action functions ---
@@ -148,6 +182,17 @@ function App(){
     await addDoc(collection(db,'ideas'), { title:newIdea.title.trim(), desc:newIdea.desc.trim(), author:user.name, authorId:user.uid, city:city==='All cities'?'All':city, votes:0, stage:newIdea.stage, tags, looking:newIdea.looking, upvotes:{}, createdAt:serverTimestamp() });
     setNewIdea({ title:'', desc:'', stage:'Idea', tags:'', looking:[] }); setPostIdeaOpen(false);
   }
+  async function reactIdea(ideaId, emoji) {
+    const idea = ideas.find(i => i.id === ideaId);
+    const has  = !!(idea?.reactions?.[emoji]?.[user.uid]);
+    await updateDoc(doc(db,'ideas',ideaId), { [`reactions.${emoji}.${user.uid}`]: has ? deleteField() : true });
+  }
+  async function reactThread(threadId, emoji) {
+    const thread = threads.find(t => t.id === threadId);
+    const has    = !!(thread?.reactions?.[emoji]?.[user.uid]);
+    await updateDoc(doc(db,'threads',threadId), { [`reactions.${emoji}.${user.uid}`]: has ? deleteField() : true });
+  }
+
   async function deleteEvent(id)  { await deleteDoc(doc(db,'events',id)); }
   async function deleteIdea(id)   { await deleteDoc(doc(db,'ideas',id)); }
   async function deleteThread(id) { await deleteDoc(doc(db,'threads',id)); if (openThread === id) setOpenThread(null); }
@@ -155,11 +200,12 @@ function App(){
   async function saveProfile(form) {
     const initials = form.name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
     const updated  = { ...user, ...form, initials, yearsExp: form.yearsExp !== '' ? Number(form.yearsExp) : null };
-    const fields   = { name: updated.name, city: updated.city, role: updated.role, bio: updated.bio || '', status: updated.status || '', yearsExp: updated.yearsExp, initials };
+    const fields   = { name: updated.name, city: updated.city, role: updated.role, bio: updated.bio || '', status: updated.status || '', vibe: updated.vibe || '', yearsExp: updated.yearsExp, initials };
     if (form.photoURL) fields.photoURL = form.photoURL;
+    if (updated.city) { fields.selectedCity = updated.city; }
     await setDoc(doc(db,'users',user.uid), fields, { merge: true });
     setUser(updated);
-    if (updated.city) setCity(updated.city);
+    if (updated.city) changeCity(updated.city);
     setEditOpen(false);
   }
 
@@ -176,8 +222,8 @@ function App(){
     switch (tab) {
       case 'events':  return <EventsScreen  events={fEvents}   city={city} userId={user.uid} rsvp={rsvp}   deleteEvent={deleteEvent} onHostEvent={() => setHostEventOpen(true)}/>;
       case 'members': return <MembersScreen members={fMembers} city={city} userId={user.uid} userConnections={user.connections||{}} connect={connect} onSelect={setSelectedMember} onInvite={() => setInviteOpen(true)}/>;
-      case 'ideas':   return <IdeasScreen   ideas={fIdeas}     city={city} userId={user.uid} upvote={upvote} deleteIdea={deleteIdea} onPostIdea={() => setPostIdeaOpen(true)}/>;
-      case 'threads': return <ThreadsScreen threads={fThreads} city={city} userId={user.uid} openThread={openThread} toggleThread={toggleThread} replyText={replyText} setReplyText={setReplyText} submitReply={submitReply} likeThread={likeThread} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)}/>;
+      case 'ideas':   return <IdeasScreen   ideas={fIdeas}     city={city} userId={user.uid} upvote={upvote} deleteIdea={deleteIdea} onPostIdea={() => setPostIdeaOpen(true)} reactIdea={reactIdea} reactions={REACTIONS}/>;
+      case 'threads': return <ThreadsScreen threads={fThreads} city={city} userId={user.uid} openThread={openThread} toggleThread={toggleThread} replyText={replyText} setReplyText={setReplyText} submitReply={submitReply} likeThread={likeThread} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} reactThread={reactThread} reactions={REACTIONS}/>;
       case 'chat':    return <ChatScreen    {...chat} city={city}/>;
       default:        return null;
     }
@@ -189,13 +235,18 @@ function App(){
 
   return (
     <div className="app">
+      {confetti && <Confetti/>}
+      {dmPanelOpen && <DmPanel dm={dm} userConnections={user.connections||{}} onClose={() => setDmPanelOpen(false)}/>}
       <Nav
         tab={tab}             onTabChange={t => { setTab(t); setShowProfile(false); }}
-        city={city}           setCity={setCity}
+        city={city}           setCity={changeCity}
         locStatus={locStatus} detectedCity={detectedCity}
         user={user}           showProfile={showProfile} setShowProfile={setShowProfile}
         openEdit={() => setEditOpen(true)}
-        onLogout={() => { signOut(auth); setCity('All cities'); }}
+        onLogout={() => { signOut(auth); setCity('All cities'); localStorage.removeItem('wfh-city'); }}
+        crown={crown}
+        dmUnread={dm.totalUnread}
+        onDmToggle={() => setDmPanelOpen(p => !p)}
       />
 
       <div className="content">
@@ -208,7 +259,8 @@ function App(){
       <PostIdeaModal    open={postIdeaOpen}   newIdea={newIdea}     onClose={() => setPostIdeaOpen(false)}  setNewIdea={setNewIdea}   submitIdea={submitIdea} ROLES={ROLES}/>
       <InviteModal      open={inviteOpen}                           onClose={() => setInviteOpen(false)}/>
       <MemberModal      member={selectedMember} onClose={() => setSelectedMember(null)} currentUserId={user?.uid}
-        onConnect={() => { connect(selectedMember.id); setSelectedMember(m => m ? { ...m, connected: !m.connected } : m); }}/>
+        onConnect={() => { connect(selectedMember.id); setSelectedMember(m => m ? { ...m, connected: !m.connected } : m); }}
+        onMessage={m => { dm.openDm(m.id, m.name, m.photoURL); setDmPanelOpen(true); setSelectedMember(null); }}/>
     </div>
   );
 }

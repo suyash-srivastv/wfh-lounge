@@ -25,6 +25,7 @@ function MembersScreen({ members, city, userId, userConnections, connect, onSele
                 <div style={{fontSize:12,color:"#888780"}}>{m.role}{m.yearsExp ? ` · ${m.yearsExp}y exp` : ''}</div>
               </div>
             </div>
+            {m.vibe && <div style={{marginBottom:6}}><span className="vibe-chip">{m.vibe}</span></div>}
             {m.status && (
               <div style={{marginBottom:8}}>
                 <span style={{fontSize:11,fontWeight:500,padding:'2px 8px',borderRadius:20,...(STATUS_COLORS[m.status]||{bg:'#F1EFE8',tc:'#888780'})}}>

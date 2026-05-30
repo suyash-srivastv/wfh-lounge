@@ -1,4 +1,15 @@
 export const ROLES=["Designer","Developer","Freelancer","Founder","Product Manager","Marketer","Writer","Other"];
+export const VIBES=[
+  {emoji:'🧠',label:'deep work mode'},
+  {emoji:'☕',label:'barely alive'},
+  {emoji:'📞',label:'on a call (send help)'},
+  {emoji:'🛋️',label:'couch CEO'},
+  {emoji:'🚀',label:'on a roll'},
+  {emoji:'🎧',label:'in the zone'},
+  {emoji:'🌀',label:'context switching'},
+  {emoji:'💀',label:'deadline szn'},
+];
+export const REACTIONS=['🔥','💀','🫡','💯','✨'];
 export const STATUSES=["Open to work","Building something","Available for freelance","Looking for co-founder","Not available"];
 export const CHANNELS=[
   {id:"general",  label:"General",  icon:"ti-messages",    desc:"Open discussion"},

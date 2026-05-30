@@ -6,7 +6,7 @@ import { ROLES, firebaseErrMsg } from '../constants';
 
 function AuthScreen(){
   const [mode,setMode]=useState("login");
-  const [form,setForm]=useState({name:"",email:"",password:"",city:"",role:""});
+  const [form,setForm]=useState({name:"",email:"",password:"",city:"",role:"",yearsExp:""});
   const [cityInput,setCityInput]=useState("");
   const [cityR,setCityR]=useState([]);
   const [cityOpen,setCityOpen]=useState(false);
@@ -63,6 +63,7 @@ function AuthScreen(){
           name:form.name.trim(),
           city:form.city||cityInput.trim(),
           role:form.role,
+          yearsExp:form.yearsExp!==''?Number(form.yearsExp):null,
           initials,
         });
       }
@@ -129,12 +130,19 @@ function AuthScreen(){
                 </div>
               )}
             </div>
-            <div className="auth-field">
-              <label className="auth-label">Role <span className="auth-opt">(optional)</span></label>
-              <select className="auth-input auth-select" value={form.role} onChange={e=>field("role",e.target.value)}>
-                <option value="">Select your role…</option>
-                {ROLES.map(r=><option key={r} value={r}>{r}</option>)}
-              </select>
+            <div style={{display:"flex",gap:8}}>
+              <div className="auth-field" style={{flex:1}}>
+                <label className="auth-label">Role <span className="auth-opt">(optional)</span></label>
+                <select className="auth-input auth-select" value={form.role} onChange={e=>field("role",e.target.value)}>
+                  <option value="">Select role…</option>
+                  {ROLES.map(r=><option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div className="auth-field" style={{width:90}}>
+                <label className="auth-label">Years exp.</label>
+                <input className="auth-input" type="number" min={0} max={60} placeholder="0"
+                  value={form.yearsExp} onChange={e=>field("yearsExp",e.target.value)}/>
+              </div>
             </div>
           </>)}
           {err&&<div className="auth-error"><i className="ti ti-alert-circle"/>{err}</div>}

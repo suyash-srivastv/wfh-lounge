@@ -66,6 +66,7 @@ function OnboardingScreen({ user, setUser }) {
   const [username, setUsername]     = useState('');
   const [bio, setBio]               = useState('');
   const [role, setRole]             = useState(user.role || '');
+  const [yearsExp, setYearsExp]     = useState('');
   const [city, setCity]             = useState(user.city || '');
   const [unameStatus, setUnameStatus] = useState('idle'); // idle | checking | available | taken | invalid
   const [loading, setLoading]       = useState(false);
@@ -142,10 +143,11 @@ function OnboardingScreen({ user, setUser }) {
           bio: bio.trim(),
           role,
           city,
+          yearsExp: yearsExp !== '' ? Number(yearsExp) : null,
           initials,
         }, { merge: true });
       });
-      setUser(u => ({ ...u, name: displayName.trim(), username: uname, bio: bio.trim(), role, city, initials: displayName.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() }));
+      setUser(u => ({ ...u, name: displayName.trim(), username: uname, bio: bio.trim(), role, city, yearsExp: yearsExp !== '' ? Number(yearsExp) : null, initials: displayName.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() }));
     } catch (e) {
       setErr(e.message || 'Something went wrong. Try again.');
       setLoading(false);
@@ -213,12 +215,19 @@ function OnboardingScreen({ user, setUser }) {
                 <span style={{ fontSize: 11, color: '#B4B2A9', marginTop: 3, textAlign: 'right' }}>{bio.length}/160</span>
               </div>
 
-              <div className="auth-field">
-                <label className="auth-label">Role <span className="auth-opt">(optional)</span></label>
-                <select className="auth-input auth-select" value={role} onChange={e => setRole(e.target.value)}>
-                  <option value="">Select your role…</option>
-                  {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
+              <div style={{display:'flex',gap:8}}>
+                <div className="auth-field" style={{flex:1}}>
+                  <label className="auth-label">Role <span className="auth-opt">(optional)</span></label>
+                  <select className="auth-input auth-select" value={role} onChange={e => setRole(e.target.value)}>
+                    <option value="">Select role…</option>
+                    {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+                <div className="auth-field" style={{width:90}}>
+                  <label className="auth-label">Years exp.</label>
+                  <input className="auth-input" type="number" min={0} max={60} placeholder="0"
+                    value={yearsExp} onChange={e => setYearsExp(e.target.value)}/>
+                </div>
               </div>
 
               <div className="auth-field">

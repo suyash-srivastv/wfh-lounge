@@ -1,6 +1,6 @@
 import { timeAgo } from '../constants';
 
-function ThreadsScreen({ threads, city, userId, openThread, toggleThread, replyText, setReplyText, submitReply, likeThread, deleteThread, onNewPost }){
+function ThreadsScreen({ threads, city, userId, openThread, toggleThread, replyText, setReplyText, submitReply, likeThread, deleteThread, onNewPost, reactThread, reactions }){
   return (
     <div>
       <div className="page-header">
@@ -23,7 +23,21 @@ function ThreadsScreen({ threads, city, userId, openThread, toggleThread, replyT
                 </form>
               </div>
             )}
-            <div style={{display:"flex",alignItems:"center",gap:14,fontSize:12,color:"#888780",marginTop:8}}>
+            {reactions && (
+              <div className="reactions" onClick={e=>e.stopPropagation()}>
+                {reactions.map(emoji => {
+                  const count   = Object.keys(t.reactions?.[emoji] || {}).length;
+                  const reacted = !!(t.reactions?.[emoji]?.[userId]);
+                  return (
+                    <button key={emoji} className={'reaction-btn'+(reacted?' reacted':'')}
+                      onClick={e=>{e.stopPropagation();reactThread(t.id,emoji);}}>
+                      {emoji}{count>0&&<span>{count}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <div style={{display:"flex",alignItems:"center",gap:14,fontSize:12,color:"var(--text-2)",marginTop:8}}>
               <span>{t.author} · {timeAgo(t.createdAt?.toDate())}</span>
               <span><i className="ti ti-message" style={{fontSize:12,verticalAlign:-1}}/> {t.replyCount||0}</span>
               <button className={"like-btn"+(!!(t.likes?.[userId])?" liked":"")} onClick={e=>likeThread(t.id,e)}>
