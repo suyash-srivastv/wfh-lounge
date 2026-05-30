@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import Avatar from './Avatar';
 
-function DmPanel({ dm, userConnections, onClose }) {
+function DmPanel({ dm, userConnections, receivedRequests, onAcceptRequest, onDeclineRequest, onClose }) {
   const { inbox, activeDm, openDm, closeDm, dmMsgs, dmLoading, dmInput, setDmInput, sendDm, dmEnd } = dm;
   const isFriend = activeDm ? !!(userConnections[activeDm.uid]) : false;
 
@@ -29,6 +29,30 @@ function DmPanel({ dm, userConnections, onClose }) {
           </div>
           <button className="dm-panel-close" onClick={onClose}><i className="ti ti-x"/></button>
         </div>
+
+        {/* Friend requests */}
+        {!activeDm && Object.keys(receivedRequests).length > 0 && (
+          <div className="dm-requests-section">
+            <div className="dm-requests-header">
+              <i className="ti ti-user-plus" style={{fontSize:12}}/>
+              Friend Requests
+              <span className="dm-unread-badge" style={{marginLeft:'auto'}}>{Object.keys(receivedRequests).length}</span>
+            </div>
+            {Object.entries(receivedRequests).map(([uid, req]) => (
+              <div key={uid} className="dm-request-item">
+                <Avatar user={{id:uid, name:req.name, photoURL:req.photoURL, initials:(req.name||'??').slice(0,2).toUpperCase()}} size={34}/>
+                <div className="dm-request-text">
+                  <div className="dm-request-name">{req.name}</div>
+                  <div className="dm-request-sub">wants to connect</div>
+                </div>
+                <div className="dm-request-actions">
+                  <button className="dm-req-accept" onClick={() => onAcceptRequest(uid)}>✓</button>
+                  <button className="dm-req-decline" onClick={() => onDeclineRequest(uid)}>✗</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Inbox */}
         {!activeDm && (

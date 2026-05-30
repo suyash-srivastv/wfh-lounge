@@ -1,7 +1,63 @@
 import Avatar from '../Avatar';
 
-function MemberModal({ member, onClose, onConnect, onMessage, currentUserId }) {
+function MemberModal({ member, onClose, currentUserId, userConnections, sentRequests, receivedRequests, onSendRequest, onCancelRequest, onAcceptRequest, onDeclineRequest, onMessage }) {
   if (!member) return null;
+
+  const connected = !!(userConnections[member.id]);
+  const sent      = !!(sentRequests[member.id]);
+  const received  = !!(receivedRequests[member.id]);
+
+  function renderActions() {
+    if (member.id === currentUserId) return null;
+
+    if (received) return (
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>
+        <div style={{fontSize:12,color:'var(--text-2)',textAlign:'center',marginBottom:2}}>
+          <strong>{member.name.split(' ')[0]}</strong> wants to connect with you
+        </div>
+        <div style={{display:'flex',gap:8}}>
+          <button className="connect-btn connect-btn-accept member-modal-connect" style={{flex:1}} onClick={() => onAcceptRequest(member.id)}>
+            ✓ Accept
+          </button>
+          <button className="connect-btn connect-btn-decline member-modal-connect" style={{flex:1}} onClick={() => onDeclineRequest(member.id)}>
+            ✗ Decline
+          </button>
+        </div>
+      </div>
+    );
+
+    if (connected) return (
+      <div style={{display:'flex',gap:8}}>
+        <button className="connect-btn connected member-modal-connect" style={{flex:1}} disabled>✓ Connected</button>
+        <button className="dm-btn" style={{flex:1}} onClick={() => onMessage(member)}>
+          <i className="ti ti-message"/>Message
+        </button>
+      </div>
+    );
+
+    if (sent) return (
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>
+        <button className="connect-btn connect-btn-pending member-modal-connect" onClick={() => onCancelRequest(member.id)}>
+          Request sent · Cancel
+        </button>
+        <p style={{fontSize:11,color:'var(--text-3)',textAlign:'center',margin:0}}>
+          Waiting for {member.name.split(' ')[0]} to accept
+        </p>
+      </div>
+    );
+
+    return (
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>
+        <button className="connect-btn member-modal-connect" onClick={() => onSendRequest(member.id)}>
+          Connect
+        </button>
+        <p style={{fontSize:11,color:'var(--text-3)',textAlign:'center',margin:0}}>
+          Connect to unlock messaging
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal member-modal" onClick={e => e.stopPropagation()}>
@@ -13,8 +69,8 @@ function MemberModal({ member, onClose, onConnect, onMessage, currentUserId }) {
             {member.username && <div className="member-modal-handle">@{member.username}</div>}
             <div className="member-modal-meta">
               {member.role && <span>{member.role}</span>}
-              {member.yearsExp != null && member.yearsExp !== '' && <><span style={{color:'#D3D1C7'}}>·</span><span>{member.yearsExp} yrs</span></>}
-              {member.city && <><span style={{color:'#D3D1C7'}}>·</span><span><i className="ti ti-map-pin" style={{fontSize:11,verticalAlign:-1,marginRight:2}}/>{member.city}</span></>}
+              {member.yearsExp != null && member.yearsExp !== '' && <><span style={{color:'var(--scrollbar)'}}>·</span><span>{member.yearsExp} yrs</span></>}
+              {member.city && <><span style={{color:'var(--scrollbar)'}}>·</span><span><i className="ti ti-map-pin" style={{fontSize:11,verticalAlign:-1,marginRight:2}}/>{member.city}</span></>}
             </div>
           </div>
         </div>
@@ -43,24 +99,7 @@ function MemberModal({ member, onClose, onConnect, onMessage, currentUserId }) {
           <div className="member-modal-stat"><span>{member.yearsExp || '—'}</span>yrs exp</div>
         </div>
 
-        {member.id !== currentUserId && (
-          <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            <div style={{display:'flex',gap:8}}>
-              <button className={"connect-btn" + (member.connected ? " connected" : "") + " member-modal-connect"} onClick={onConnect}>
-                {member.connected ? "✓ Connected" : "Connect"}
-              </button>
-              <button className="dm-btn" disabled={!member.connected} onClick={() => onMessage(member)}
-                title={!member.connected ? 'Connect first to send a message' : undefined}>
-                <i className="ti ti-message"/>Message
-              </button>
-            </div>
-            {!member.connected && (
-              <p style={{fontSize:11,color:'var(--text-3)',textAlign:'center',margin:0}}>
-                Connect with {member.name.split(' ')[0]} to unlock messaging
-              </p>
-            )}
-          </div>
-        )}
+        {renderActions()}
       </div>
     </div>
   );

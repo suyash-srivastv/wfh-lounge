@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { auth, db } from './firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, addDoc, query, limit, serverTimestamp, updateDoc, deleteField, increment, getDocs, writeBatch, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, query, limit, serverTimestamp, updateDoc, deleteField, increment, getDocs, writeBatch, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { INIT_EVENTS, INIT_IDEAS, INIT_THREADS } from './mockData';
 import { ROLES, REACTIONS } from './constants';
 import { useFirestoreListeners } from './hooks/useFirestoreListeners';
@@ -50,6 +50,22 @@ function App(){
 
   const { events, members, ideas, threads } = useFirestoreListeners(user);
   const dm = useDM(user);
+
+  // Keep connections + requests in sync with Firestore in real-time
+  useEffect(() => {
+    if (!user?.uid) return;
+    return onSnapshot(doc(db, 'users', user.uid), snap => {
+      if (snap.exists()) {
+        const d = snap.data();
+        setUser(u => ({
+          ...u,
+          connections:      d.connections      || {},
+          sentRequests:     d.sentRequests     || {},
+          receivedRequests: d.receivedRequests || {},
+        }));
+      }
+    });
+  }, [user?.uid]);
 
   useEffect(() => {
     const SEQ = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
@@ -142,10 +158,29 @@ function App(){
     const going = !!(ev?.rsvps?.[user.uid]);
     await updateDoc(doc(db,'events',id), { [`rsvps.${user.uid}`]: going ? deleteField() : true, attendeeCount: increment(going ? -1 : 1) });
   }
-  async function connect(memberId) {
-    const connected = !!(user.connections?.[memberId]);
-    await updateDoc(doc(db,'users',user.uid), { [`connections.${memberId}`]: connected ? deleteField() : true });
-    setUser(u => ({ ...u, connections: { ...(u.connections||{}), [memberId]: connected ? undefined : true } }));
+  async function sendRequest(memberId) {
+    await updateDoc(doc(db,'users',user.uid), { [`sentRequests.${memberId}`]: true });
+    await updateDoc(doc(db,'users',memberId), {
+      [`receivedRequests.${user.uid}`]: { name: user.name, photoURL: user.photoURL || null },
+    });
+  }
+  async function cancelRequest(memberId) {
+    await updateDoc(doc(db,'users',user.uid), { [`sentRequests.${memberId}`]: deleteField() });
+    await updateDoc(doc(db,'users',memberId), { [`receivedRequests.${user.uid}`]: deleteField() });
+  }
+  async function acceptRequest(fromUid) {
+    await updateDoc(doc(db,'users',user.uid), {
+      [`connections.${fromUid}`]: true,
+      [`receivedRequests.${fromUid}`]: deleteField(),
+    });
+    await updateDoc(doc(db,'users',fromUid), {
+      [`connections.${user.uid}`]: true,
+      [`sentRequests.${user.uid}`]: deleteField(),
+    });
+  }
+  async function declineRequest(fromUid) {
+    await updateDoc(doc(db,'users',user.uid), { [`receivedRequests.${fromUid}`]: deleteField() });
+    await updateDoc(doc(db,'users',fromUid), { [`sentRequests.${user.uid}`]: deleteField() });
   }
   async function upvote(id) {
     const idea  = ideas.find(i => i.id === id);
@@ -221,7 +256,10 @@ function App(){
     if (showProfile) return <ProfileScreen user={user} threads={threads} events={events} userPosts={userPosts} openEdit={() => setEditOpen(true)} setShowProfile={setShowProfile} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} onStatusChange={async s=>{await setDoc(doc(db,'users',user.uid),{status:s},{merge:true});setUser(u=>({...u,status:s}));}}/>;
     switch (tab) {
       case 'events':  return <EventsScreen  events={fEvents}   city={city} userId={user.uid} rsvp={rsvp}   deleteEvent={deleteEvent} onHostEvent={() => setHostEventOpen(true)}/>;
-      case 'members': return <MembersScreen members={fMembers} city={city} userId={user.uid} userConnections={user.connections||{}} connect={connect} onSelect={setSelectedMember} onInvite={() => setInviteOpen(true)}/>;
+      case 'members': return <MembersScreen members={fMembers} city={city} userId={user.uid}
+        userConnections={user.connections||{}} sentRequests={user.sentRequests||{}} receivedRequests={user.receivedRequests||{}}
+        onSendRequest={sendRequest} onCancelRequest={cancelRequest} onAcceptRequest={acceptRequest}
+        onSelect={setSelectedMember} onInvite={() => setInviteOpen(true)}/>;
       case 'ideas':   return <IdeasScreen   ideas={fIdeas}     city={city} userId={user.uid} upvote={upvote} deleteIdea={deleteIdea} onPostIdea={() => setPostIdeaOpen(true)} reactIdea={reactIdea} reactions={REACTIONS}/>;
       case 'threads': return <ThreadsScreen threads={fThreads} city={city} userId={user.uid} openThread={openThread} toggleThread={toggleThread} replyText={replyText} setReplyText={setReplyText} submitReply={submitReply} likeThread={likeThread} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} reactThread={reactThread} reactions={REACTIONS}/>;
       case 'chat':    return <ChatScreen    {...chat} city={city}/>;
@@ -236,7 +274,9 @@ function App(){
   return (
     <div className="app">
       {confetti && <Confetti/>}
-      {dmPanelOpen && <DmPanel dm={dm} userConnections={user.connections||{}} onClose={() => setDmPanelOpen(false)}/>}
+      {dmPanelOpen && <DmPanel dm={dm} userConnections={user.connections||{}}
+        receivedRequests={user.receivedRequests||{}} onAcceptRequest={acceptRequest} onDeclineRequest={declineRequest}
+        onClose={() => setDmPanelOpen(false)}/>}
       <Nav
         tab={tab}             onTabChange={t => { setTab(t); setShowProfile(false); }}
         city={city}           setCity={changeCity}
@@ -245,7 +285,7 @@ function App(){
         openEdit={() => setEditOpen(true)}
         onLogout={() => { signOut(auth); setCity('All cities'); localStorage.removeItem('wfh-city'); }}
         crown={crown}
-        dmUnread={dm.totalUnread}
+        dmUnread={dm.totalUnread + Object.keys(user.receivedRequests||{}).length}
         onDmToggle={() => setDmPanelOpen(p => !p)}
       />
 
@@ -259,7 +299,9 @@ function App(){
       <PostIdeaModal    open={postIdeaOpen}   newIdea={newIdea}     onClose={() => setPostIdeaOpen(false)}  setNewIdea={setNewIdea}   submitIdea={submitIdea} ROLES={ROLES}/>
       <InviteModal      open={inviteOpen}                           onClose={() => setInviteOpen(false)}/>
       <MemberModal      member={selectedMember} onClose={() => setSelectedMember(null)} currentUserId={user?.uid}
-        onConnect={() => { connect(selectedMember.id); setSelectedMember(m => m ? { ...m, connected: !m.connected } : m); }}
+        userConnections={user?.connections||{}} sentRequests={user?.sentRequests||{}} receivedRequests={user?.receivedRequests||{}}
+        onSendRequest={sendRequest} onCancelRequest={cancelRequest}
+        onAcceptRequest={acceptRequest} onDeclineRequest={declineRequest}
         onMessage={m => { dm.openDm(m.id, m.name, m.photoURL); setDmPanelOpen(true); setSelectedMember(null); }}/>
     </div>
   );

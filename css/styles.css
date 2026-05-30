@@ -120,9 +120,15 @@ input,textarea,select{font-family:inherit;color:var(--text-1)}
 .rsvp-btn{background:var(--text-1);color:var(--bg);border:none;font-size:12px;padding:6px 14px;border-radius:20px;font-weight:500;transition:all .15s}
 .rsvp-btn:hover{opacity:.8}
 .rsvp-btn.going{background:#1D9E75;color:#fff}
-.connect-btn{border:1px solid var(--border);background:transparent;font-size:12px;padding:5px 12px;border-radius:20px;color:var(--text-mid);font-weight:500;transition:all .15s}
-.connect-btn:hover{border-color:var(--text-2)}
+.connect-btn{border:1px solid var(--border);background:transparent;font-size:12px;padding:5px 12px;border-radius:20px;color:var(--text-mid);font-weight:500;transition:all .15s;font-family:inherit;cursor:pointer}
+.connect-btn:hover:not(:disabled){border-color:var(--text-2)}
+.connect-btn:disabled{cursor:default}
 .connect-btn.connected{background:#EAF3DE;border-color:#C0DD97;color:#27500A}
+.connect-btn-pending{background:var(--border-sub);border-color:var(--border-hover);color:var(--text-2)}
+.connect-btn-pending:hover{background:#FEF0EF !important;border-color:#f5c6c2 !important;color:#c0392b !important}
+.connect-btn-accept{background:#EAF3DE;border-color:#C0DD97;color:#27500A}
+.connect-btn-accept:hover{background:#d5edbe !important;border-color:#a5c87d !important}
+.connect-btn-decline{background:var(--bg);border-color:var(--border);color:var(--text-2)}
 .upvote-btn{display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid var(--border);background:transparent;padding:8px 11px;border-radius:9px;color:var(--text-mid);font-size:13px;font-weight:600;transition:all .15s;min-width:46px}
 .upvote-btn:hover{border-color:var(--text-2)}
 .upvote-btn.upvoted{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent-tc)}
@@ -168,6 +174,17 @@ input,textarea,select{font-family:inherit;color:var(--text-1)}
 .dm-inbox-name{font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:2px}
 .dm-inbox-preview{font-size:12px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dm-unread-dot{position:absolute;bottom:0;right:0;width:10px;height:10px;background:#c0392b;border-radius:50%;border:2px solid var(--surface)}
+.dm-requests-section{border-bottom:1px solid var(--border-sub);padding:6px 0}
+.dm-requests-header{display:flex;align-items:center;gap:6px;padding:6px 14px 8px;font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em}
+.dm-request-item{display:flex;align-items:center;gap:10px;padding:8px 14px}
+.dm-request-text{flex:1;min-width:0}
+.dm-request-name{font-size:13px;font-weight:600;color:var(--text-1)}
+.dm-request-sub{font-size:11px;color:var(--text-3)}
+.dm-request-actions{display:flex;gap:6px;flex-shrink:0}
+.dm-req-accept{background:#EAF3DE;border:1px solid #C0DD97;color:#27500A;border-radius:8px;padding:5px 11px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .12s}
+.dm-req-accept:hover{background:#d5edbe}
+.dm-req-decline{background:var(--bg);border:1px solid var(--border);color:var(--text-2);border-radius:8px;padding:5px 11px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .12s}
+.dm-req-decline:hover{background:var(--border-sub)}
 
 /* ── Direct Messages (shared) ── */
 .dm-unread-badge{min-width:16px;height:16px;background:var(--accent);color:#fff;border-radius:10px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0}
