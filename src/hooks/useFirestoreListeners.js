@@ -20,7 +20,10 @@ export function useFirestoreListeners(user) {
           id: d.id, name: data.name || '', username: data.username || '',
           role: data.role || '', city: data.city || '',
           initials: data.initials || '??', ini: data.initials || '??',
-          skills: data.skills || [], bio: data.bio || '', bg, tc, online: false,
+          skills: data.skills || [], bio: data.bio || '',
+          yearsExp: data.yearsExp ?? null, status: data.status || '',
+          vibe: data.vibe || '', photoURL: data.photoURL || null,
+          bg, tc, online: false,
           conn: Object.keys(data.connections || {}).length, events: 0,
         };
       }))

@@ -48,8 +48,8 @@ export function useDM(user) {
     dmEnd.current?.scrollIntoView({ behavior: 'smooth' });
   }, [dmMsgs]);
 
-  async function openDm(uid, name, photoURL) {
-    setActiveDm({ uid, name, photoURL: photoURL || null });
+  async function openDm(uid, name, photoURL, justAccepted = false) {
+    setActiveDm({ uid, name, photoURL: photoURL || null, justAccepted });
     setDmMsgs([]);
     if (user?.uid) {
       setDoc(doc(db, 'userInbox', user.uid, 'dms', uid), { unread: 0 }, { merge: true }).catch(() => {});
@@ -60,7 +60,6 @@ export function useDM(user) {
 
   async function sendDm() {
     if (!dmInput.trim() || !activeDm?.uid || !user?.uid) return;
-    if (!user?.connections?.[activeDm.uid]) return; // must be connected
     const text = dmInput.trim();
     setDmInput('');
     const rid     = roomId(activeDm.uid);

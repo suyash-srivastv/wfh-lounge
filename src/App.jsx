@@ -301,7 +301,8 @@ function App(){
       <MemberModal      member={selectedMember} onClose={() => setSelectedMember(null)} currentUserId={user?.uid}
         userConnections={user?.connections||{}} sentRequests={user?.sentRequests||{}} receivedRequests={user?.receivedRequests||{}}
         onSendRequest={sendRequest} onCancelRequest={cancelRequest}
-        onAcceptRequest={acceptRequest} onDeclineRequest={declineRequest}
+        onAcceptRequest={uid => { acceptRequest(uid); dm.openDm(uid, selectedMember?.name, selectedMember?.photoURL, true); setDmPanelOpen(true); setSelectedMember(null); }}
+        onDeclineRequest={uid => { declineRequest(uid); setSelectedMember(null); }}
         onMessage={m => { dm.openDm(m.id, m.name, m.photoURL); setDmPanelOpen(true); setSelectedMember(null); }}/>
     </div>
   );

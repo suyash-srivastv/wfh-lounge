@@ -3,7 +3,8 @@ import Avatar from './Avatar';
 
 function DmPanel({ dm, userConnections, receivedRequests, onAcceptRequest, onDeclineRequest, onClose }) {
   const { inbox, activeDm, openDm, closeDm, dmMsgs, dmLoading, dmInput, setDmInput, sendDm, dmEnd } = dm;
-  const isFriend = activeDm ? !!(userConnections[activeDm.uid]) : false;
+  // userConnections updates via Firestore listener; activeDm.justAccepted covers the instant before listener fires
+  const isFriend = activeDm ? (!!(userConnections[activeDm.uid]) || !!activeDm.justAccepted) : false;
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose(); }
@@ -46,7 +47,7 @@ function DmPanel({ dm, userConnections, receivedRequests, onAcceptRequest, onDec
                   <div className="dm-request-sub">wants to connect</div>
                 </div>
                 <div className="dm-request-actions">
-                  <button className="dm-req-accept" onClick={() => onAcceptRequest(uid)}>✓</button>
+                  <button className="dm-req-accept" onClick={() => { onAcceptRequest(uid); openDm(uid, req.name, req.photoURL, true); }}>✓</button>
                   <button className="dm-req-decline" onClick={() => onDeclineRequest(uid)}>✗</button>
                 </div>
               </div>
