@@ -7,8 +7,8 @@ function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChat
     <div className={mobileChatView === 'messages' ? 'chat-messages-active' : ''}>
       <div className="page-header">
         <div>
-          <div className="page-title">City chat</div>
-          <div className="page-sub">Real-time rooms · your people</div>
+          <div className="page-title">{city === 'All cities' ? 'Global' : city} Chat Room</div>
+          <div className="page-sub">#{activeCh.id} · real-time</div>
         </div>
       </div>
 

@@ -5,14 +5,17 @@ import { avatarColors } from '../constants';
 
 export function useChat(user, tab, city) {
   const [chatRoom,       setChatRoom]       = useState(`${city}__general`);
-  const [mobileChatView, setMobileChatView] = useState('rooms');
+  const [mobileChatView, setMobileChatView] = useState(() => window.innerWidth < 768 ? 'messages' : 'rooms');
   const [allChatMsgs,    setAllChatMsgs]    = useState({});
   const [chatInput,      setChatInput]      = useState('');
   const [chatLoading,    setChatLoading]    = useState(false);
   const chatEnd = useRef(null);
 
-  // Reset room when city changes
-  useEffect(() => { setChatRoom(`${city}__general`); }, [city]);
+  // Reset to general when city changes; on mobile go straight to messages
+  useEffect(() => {
+    setChatRoom(`${city}__general`);
+    if (window.innerWidth < 768) setMobileChatView('messages');
+  }, [city]);
 
   // Scroll to latest message
   useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [allChatMsgs, chatRoom]);
