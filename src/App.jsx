@@ -17,7 +17,7 @@ import NewPostModal      from './components/modals/NewPostModal';
 import HostEventModal    from './components/modals/HostEventModal';
 import PostIdeaModal     from './components/modals/PostIdeaModal';
 import InviteModal       from './components/modals/InviteModal';
-import MemberModal       from './components/modals/MemberModal';
+import MemberProfilePage from './screens/MemberProfilePage';
 import EventsScreen      from './screens/EventsScreen';
 import MembersScreen     from './screens/MembersScreen';
 import IdeasScreen       from './screens/IdeasScreen';
@@ -43,7 +43,8 @@ function App(){
   const [newEvent,      setNewEvent]      = useState({ title: '', type: 'IRL', location: '', date: '', time: '', tags: '' });
   const [postIdeaOpen,  setPostIdeaOpen]  = useState(false);
   const [newIdea,       setNewIdea]       = useState({ title: '', desc: '', stage: 'Idea', tags: '', looking: [] });
-  const [inviteOpen,    setInviteOpen]    = useState(false);
+  const [inviteOpen,      setInviteOpen]      = useState(false);
+  const [viewingMemberId, setViewingMemberId] = useState(null);
   const [crown,         setCrown]         = useState(false);
   const [confetti,      setConfetti]      = useState(false);
   const [dmPanelOpen,   setDmPanelOpen]   = useState(false);
@@ -62,6 +63,7 @@ function App(){
           connections:      d.connections      || {},
           sentRequests:     d.sentRequests     || {},
           receivedRequests: d.receivedRequests || {},
+          blockedUsers:     d.blockedUsers     || {},
         }));
       }
     });
@@ -182,6 +184,26 @@ function App(){
     await updateDoc(doc(db,'users',user.uid), { [`receivedRequests.${fromUid}`]: deleteField() });
     await updateDoc(doc(db,'users',fromUid), { [`sentRequests.${user.uid}`]: deleteField() });
   }
+  async function unfriend(uid) {
+    await updateDoc(doc(db,'users',user.uid), { [`connections.${uid}`]: deleteField() });
+    await updateDoc(doc(db,'users',uid), { [`connections.${user.uid}`]: deleteField() });
+  }
+  async function blockUser(uid) {
+    await updateDoc(doc(db,'users',user.uid), {
+      [`blockedUsers.${uid}`]: true,
+      [`connections.${uid}`]: deleteField(),
+      [`sentRequests.${uid}`]: deleteField(),
+      [`receivedRequests.${uid}`]: deleteField(),
+    });
+    await updateDoc(doc(db,'users',uid), {
+      [`connections.${user.uid}`]: deleteField(),
+      [`sentRequests.${user.uid}`]: deleteField(),
+      [`receivedRequests.${user.uid}`]: deleteField(),
+    });
+  }
+  async function unblockUser(uid) {
+    await updateDoc(doc(db,'users',user.uid), { [`blockedUsers.${uid}`]: deleteField() });
+  }
   async function upvote(id) {
     const idea  = ideas.find(i => i.id === id);
     const voted = !!(idea?.upvotes?.[user.uid]);
@@ -245,21 +267,40 @@ function App(){
   }
 
   // Derived data
-  const filt      = arr => city === 'All cities' ? arr : arr.filter(x => x.city === city);
-  const userPosts = user ? threads.filter(t => t.authorId === user.uid) : [];
-  const fEvents   = filt(events);
-  const fMembers  = filt(members);
-  const fIdeas    = filt(ideas);
-  const fThreads  = city === 'All cities' ? threads : threads.filter(t => t.city === city || t.city === 'All');
+  const filt         = arr => city === 'All cities' ? arr : arr.filter(x => x.city === city);
+  const userPosts    = user ? threads.filter(t => t.authorId === user.uid) : [];
+  const fEvents      = filt(events);
+  const fMembers     = filt(members).filter(m => !user?.blockedUsers?.[m.id]);
+  const fIdeas       = filt(ideas);
+  const fThreads     = city === 'All cities' ? threads : threads.filter(t => t.city === city || t.city === 'All');
+  const viewingMember = viewingMemberId ? (members.find(m => m.id === viewingMemberId) || null) : null;
 
   function renderScreen() {
-    if (showProfile) return <ProfileScreen user={user} threads={threads} events={events} userPosts={userPosts} openEdit={() => setEditOpen(true)} setShowProfile={setShowProfile} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} onStatusChange={async s=>{await setDoc(doc(db,'users',user.uid),{status:s},{merge:true});setUser(u=>({...u,status:s}));}}/>;
+    const memberProfileProps = {
+      threads,
+      currentUserId: user.uid,
+      userConnections: user.connections||{},
+      sentRequests:    user.sentRequests||{},
+      receivedRequests: user.receivedRequests||{},
+      blockedUsers:    user.blockedUsers||{},
+      onSendRequest:   sendRequest,
+      onCancelRequest: cancelRequest,
+      onAcceptRequest: uid => { acceptRequest(uid); dm.openDm(uid, viewingMember?.name, viewingMember?.photoURL, true); setDmPanelOpen(true); setViewingMemberId(null); },
+      onDeclineRequest: uid => { declineRequest(uid); setViewingMemberId(null); },
+      onMessage:       m => { dm.openDm(m.id, m.name, m.photoURL); setDmPanelOpen(true); setViewingMemberId(null); },
+      onUnfriend:      uid => unfriend(uid),
+      onBlock:         uid => blockUser(uid),
+      onUnblock:       uid => unblockUser(uid),
+      onBack:          () => setViewingMemberId(null),
+    };
+    if (viewingMember) return <MemberProfilePage member={viewingMember} {...memberProfileProps}/>;
+    if (showProfile)   return <ProfileScreen user={user} threads={threads} events={events} userPosts={userPosts} openEdit={() => setEditOpen(true)} setShowProfile={setShowProfile} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} onStatusChange={async s=>{await setDoc(doc(db,'users',user.uid),{status:s},{merge:true});setUser(u=>({...u,status:s}));}}/>;
     switch (tab) {
       case 'events':  return <EventsScreen  events={fEvents}   city={city} userId={user.uid} rsvp={rsvp}   deleteEvent={deleteEvent} onHostEvent={() => setHostEventOpen(true)}/>;
       case 'members': return <MembersScreen members={fMembers} city={city} userId={user.uid}
         userConnections={user.connections||{}} sentRequests={user.sentRequests||{}} receivedRequests={user.receivedRequests||{}}
         onSendRequest={sendRequest} onCancelRequest={cancelRequest} onAcceptRequest={acceptRequest}
-        onSelect={setSelectedMember} onInvite={() => setInviteOpen(true)}/>;
+        onSelect={m => setViewingMemberId(m.id)} onInvite={() => setInviteOpen(true)}/>;
       case 'ideas':   return <IdeasScreen   ideas={fIdeas}     city={city} userId={user.uid} upvote={upvote} deleteIdea={deleteIdea} onPostIdea={() => setPostIdeaOpen(true)} reactIdea={reactIdea} reactions={REACTIONS}/>;
       case 'threads': return <ThreadsScreen threads={fThreads} city={city} userId={user.uid} openThread={openThread} toggleThread={toggleThread} replyText={replyText} setReplyText={setReplyText} submitReply={submitReply} likeThread={likeThread} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} reactThread={reactThread} reactions={REACTIONS}/>;
       case 'chat':    return <ChatScreen    {...chat} city={city}/>;
@@ -275,7 +316,9 @@ function App(){
     <div className="app">
       {confetti && <Confetti/>}
       {dmPanelOpen && <DmPanel dm={dm} userConnections={user.connections||{}}
-        receivedRequests={user.receivedRequests||{}} onAcceptRequest={acceptRequest} onDeclineRequest={declineRequest}
+        receivedRequests={user.receivedRequests||{}} blockedUsers={user.blockedUsers||{}}
+        onAcceptRequest={acceptRequest} onDeclineRequest={declineRequest}
+        onViewProfile={uid => { setViewingMemberId(uid); setDmPanelOpen(false); }}
         onClose={() => setDmPanelOpen(false)}/>}
       <Nav
         tab={tab}             onTabChange={t => { setTab(t); setShowProfile(false); }}
@@ -297,13 +340,7 @@ function App(){
       <NewPostModal     open={newPostOpen}    newPost={newPost}     onClose={() => setNewPostOpen(false)}   setNewPost={setNewPost}   submitPost={submitPost}/>
       <HostEventModal   open={hostEventOpen}  newEvent={newEvent}   onClose={() => setHostEventOpen(false)} setNewEvent={setNewEvent} submitEvent={submitEvent}/>
       <PostIdeaModal    open={postIdeaOpen}   newIdea={newIdea}     onClose={() => setPostIdeaOpen(false)}  setNewIdea={setNewIdea}   submitIdea={submitIdea} ROLES={ROLES}/>
-      <InviteModal      open={inviteOpen}                           onClose={() => setInviteOpen(false)}/>
-      <MemberModal      member={selectedMember} onClose={() => setSelectedMember(null)} currentUserId={user?.uid}
-        userConnections={user?.connections||{}} sentRequests={user?.sentRequests||{}} receivedRequests={user?.receivedRequests||{}}
-        onSendRequest={sendRequest} onCancelRequest={cancelRequest}
-        onAcceptRequest={uid => { acceptRequest(uid); dm.openDm(uid, selectedMember?.name, selectedMember?.photoURL, true); setDmPanelOpen(true); setSelectedMember(null); }}
-        onDeclineRequest={uid => { declineRequest(uid); setSelectedMember(null); }}
-        onMessage={m => { dm.openDm(m.id, m.name, m.photoURL); setDmPanelOpen(true); setSelectedMember(null); }}/>
+      <InviteModal      open={inviteOpen} onClose={() => setInviteOpen(false)}/>
     </div>
   );
 }

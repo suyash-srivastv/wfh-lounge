@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
 import Avatar from './Avatar';
 
-function DmPanel({ dm, userConnections, receivedRequests, onAcceptRequest, onDeclineRequest, onClose }) {
+function DmPanel({ dm, userConnections, receivedRequests, blockedUsers, onAcceptRequest, onDeclineRequest, onViewProfile, onClose }) {
   const { inbox, activeDm, openDm, closeDm, dmMsgs, dmLoading, dmInput, setDmInput, sendDm, dmEnd } = dm;
-  // userConnections updates via Firestore listener; activeDm.justAccepted covers the instant before listener fires
-  const isFriend = activeDm ? (!!(userConnections[activeDm.uid]) || !!activeDm.justAccepted) : false;
+  const isFriend      = activeDm ? (!!(userConnections[activeDm.uid]) || !!activeDm.justAccepted) : false;
+  const isBlocked     = activeDm ? !!(blockedUsers?.[activeDm.uid]) : false;
+  const filteredInbox = inbox.filter(item => !blockedUsers?.[item.id]);
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose(); }
@@ -23,7 +24,9 @@ function DmPanel({ dm, userConnections, receivedRequests, onAcceptRequest, onDec
               <i className="ti ti-arrow-left"/>
             </button>
           )}
-          <div className="dm-panel-title">
+          <div className="dm-panel-title"
+            onClick={activeDm ? () => onViewProfile(activeDm.uid) : undefined}
+            style={activeDm ? {cursor:'pointer'} : {}}>
             {activeDm
               ? <><Avatar user={{id:activeDm.uid,name:activeDm.name,photoURL:activeDm.photoURL,initials:(activeDm.name||'??').slice(0,2).toUpperCase()}} size={22}/>{activeDm.name}</>
               : 'Messages'}
@@ -58,13 +61,13 @@ function DmPanel({ dm, userConnections, receivedRequests, onAcceptRequest, onDec
         {/* Inbox */}
         {!activeDm && (
           <div className="dm-panel-inbox">
-            {inbox.length === 0 && (
+            {filteredInbox.length === 0 && (
               <div className="chat-empty" style={{padding:'40px 20px'}}>
                 No messages yet.<br/>
                 <span style={{fontSize:12}}>Go to Members and connect with someone to start a DM.</span>
               </div>
             )}
-            {inbox.map(item => (
+            {filteredInbox.map(item => (
               <button key={item.id} className="dm-inbox-item"
                 onClick={() => openDm(item.id, item.name, item.photoURL)}>
                 <div style={{position:'relative',flexShrink:0}}>
@@ -111,7 +114,12 @@ function DmPanel({ dm, userConnections, receivedRequests, onAcceptRequest, onDec
               <div ref={dmEnd}/>
             </div>
 
-            {isFriend ? (
+            {isBlocked ? (
+              <div className="dm-locked">
+                <i className="ti ti-ban" style={{fontSize:15}}/>
+                You've blocked this person
+              </div>
+            ) : isFriend ? (
               <form className="chat-input-row" onSubmit={e => { e.preventDefault(); sendDm(); }}>
                 <input className="chat-input" value={dmInput} onChange={e => setDmInput(e.target.value)}
                   placeholder={`Message ${activeDm.name}…`} enterKeyHint="send" autoComplete="off"/>
