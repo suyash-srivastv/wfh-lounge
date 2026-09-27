@@ -76,7 +76,7 @@ function AuthScreen(){
   return (
     <div className="auth-wrap">
       <div className="auth-card">
-        <div className="auth-logo"><div className="logo-icon"><i className="ti ti-coffee"/></div>WFH Lounge</div>
+        <div className="auth-logo"><div className="logo-icon"><i className="ti ti-coffee"/></div>The Stillroom</div>
         <p className="auth-tagline">{mode==="login"?"Welcome back.":"Join your city's remote community."}</p>
         <div className="auth-tabs">
           <button className={"auth-tab"+(mode==="login"?" active":"")} onClick={()=>{setMode("login");setErr("");}}>Log in</button>

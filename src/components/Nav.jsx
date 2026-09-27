@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import TrueNorth from './TrueNorth';
 
 function useDarkMode() {
   const [dark, setDark] = useState(() => localStorage.getItem('wfh-theme') === 'dark');
@@ -17,7 +18,7 @@ const NAV = [
   { id: 'threads', icon: 'ti-messages',       label: 'Forums'  },
 ];
 
-function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, user, showProfile, setShowProfile, openEdit, onLogout, crown, dmUnread, onDmToggle }) {
+function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetectLocation, user, showProfile, setShowProfile, openEdit, onLogout, crown, dmUnread, onDmToggle, onNavigate }) {
   const [dark, setDark] = useDarkMode();
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
   const [citySearch,     setCitySearch]     = useState('');
@@ -63,12 +64,15 @@ function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, user, s
 
   function pickCity(c) { setCity(c); setCityPickerOpen(false); setCitySearch(''); }
 
+  // Close the picker once a location lookup the user asked for succeeds.
+  useEffect(() => { if (detectedCity) { setCityPickerOpen(false); setCitySearch(''); } }, [detectedCity]);
+
   return (
     <>
       <div className="nav">
         <div className="nav-logo">
           <div className={'logo-icon' + (crown ? ' logo-crown' : '')}><i className="ti ti-coffee"/></div>
-          WFH Lounge
+          The Stillroom
         </div>
         <div className="nav-tabs">
           {NAV.map(n => (
@@ -79,6 +83,7 @@ function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, user, s
           ))}
         </div>
         <div className="nav-right">
+          <TrueNorth userId={user.uid} onNavigate={onNavigate}/>
           <button className="dm-trigger" onClick={onDmToggle} title="Messages">
             <i className="ti ti-message-circle"/>
             {dmUnread > 0 && <span className="dm-trigger-badge">{dmUnread > 99 ? '99+' : dmUnread}</span>}
@@ -101,6 +106,18 @@ function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, user, s
                     value={citySearch} onChange={e => setCitySearch(e.target.value)}/>
                   {cityLoading && <i className="ti ti-loader-2 city-search-spin"/>}
                 </div>
+                {!citySearch && !detectedCity && (
+                  <button className="city-drop-item city-locate" onClick={onDetectLocation} disabled={locStatus === 'detecting'}>
+                    <span className="city-locate-main">
+                      <i className={'ti ' + (locStatus === 'detecting' ? 'ti-loader-2' : 'ti-current-location')}
+                        style={locStatus === 'detecting' ? { animation: 'spin 1s linear infinite' } : {}}/>
+                      {locStatus === 'detecting' ? 'Finding your city…' : 'Use my location'}
+                    </span>
+                    <span className="city-locate-sub">
+                      {locStatus === 'failed' ? "Couldn't detect it — search instead" : 'Only your city is used, never your exact spot'}
+                    </span>
+                  </button>
+                )}
                 {!citySearch && (
                   <button className={'city-drop-item' + (city === 'All cities' ? ' active' : '')} onClick={() => pickCity('All cities')}>
                     <span>All cities</span>

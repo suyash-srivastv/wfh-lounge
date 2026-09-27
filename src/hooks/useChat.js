@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { avatarColors } from '../constants';
 
 export function useChat(user, tab, city) {
@@ -30,7 +30,7 @@ export function useChat(user, tab, city) {
         const data = d.data();
         const { bg, tc } = avatarColors(data.userId || data.user || '');
         return {
-          id: d.id, user: data.user, text: data.text, bg, tc,
+          id: d.id, user: data.user, userId: data.userId || null, text: data.text, bg, tc,
           time: data.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || '',
         };
       });
@@ -49,7 +49,11 @@ export function useChat(user, tab, city) {
     });
   }
 
+  async function deleteChatMsg(id) {
+    await deleteDoc(doc(db, 'chats', chatRoom, 'messages', id));
+  }
+
   const chatMsgs = allChatMsgs[chatRoom] || [];
 
-  return { chatRoom, setChatRoom, mobileChatView, setMobileChatView, chatMsgs, chatLoading, chatInput, setChatInput, sendChat, chatEnd };
+  return { chatRoom, setChatRoom, mobileChatView, setMobileChatView, chatMsgs, chatLoading, chatInput, setChatInput, sendChat, chatEnd, deleteChatMsg };
 }

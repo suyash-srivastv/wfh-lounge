@@ -86,10 +86,14 @@ function App(){
   }, []);
   const chat = useChat(user, tab, city);
 
-  // Geolocation — only run if no saved city preference exists
+  // Restore saved city. Location is never requested automatically — only when
+  // the user taps "Use my location" in the city picker.
   useEffect(() => {
     const saved = localStorage.getItem('wfh-city');
-    if (saved) { setCity(saved); setLocStatus('detected'); return; }
+    if (saved) { setCity(saved); setLocStatus('detected'); }
+  }, []);
+
+  function detectLocation() {
     if (!navigator.geolocation) { setLocStatus('failed'); return; }
     setLocStatus('detecting');
     navigator.geolocation.getCurrentPosition(
@@ -98,14 +102,17 @@ function App(){
           const { latitude, longitude } = pos.coords;
           const res  = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
           const data = await res.json();
-          setDetectedCity(data.city || data.locality || data.principalSubdivision || null);
+          const name = data.city || data.locality || data.principalSubdivision || null;
+          if (!name) { setLocStatus('failed'); return; }
+          setDetectedCity(name);
+          changeCity(name);
           setLocStatus('detected');
         } catch { setLocStatus('failed'); }
       },
       () => setLocStatus('failed'),
       { timeout: 8000 }
     );
-  }, []);
+  }
 
   // Firebase auth listener
   useEffect(() => {
@@ -121,8 +128,6 @@ function App(){
           } else {
             const profile = snap.data() || {};
             setUser({ ...profile, uid: fbUser.uid });
-            const savedCity = profile.selectedCity || profile.city;
-            if (savedCity) { setCity(savedCity); localStorage.setItem('wfh-city', savedCity); }
           }
         } catch {
           setUser({ uid: fbUser.uid, name: fbUser.email || '', initials: '??' });
@@ -145,6 +150,14 @@ function App(){
     INIT_THREADS.forEach(t   => batch.set(doc(collection(db,'threads')), {title:t.title,body:t.body,author:t.author,authorId:'seed',city:t.city,tags:t.tags,replyCount:t.replies,likeCount:t.likes,likes:{},createdAt:serverTimestamp()}));
     await batch.commit();
   }
+
+  // Open on the user's home city whenever they log in or finish sign-up.
+  // (Picking another city in the nav still works for the rest of the session.)
+  const hasProfile = !!user?.username;
+  useEffect(() => {
+    const home = user?.city || user?.selectedCity;
+    if (hasProfile && home) { setCity(home); localStorage.setItem('wfh-city', home); }
+  }, [user?.uid, hasProfile]);
 
   async function changeCity(c) {
     setCity(c);
@@ -303,7 +316,7 @@ function App(){
         onSelect={m => setViewingMemberId(m.id)} onInvite={() => setInviteOpen(true)}/>;
       case 'ideas':   return <IdeasScreen   ideas={fIdeas}     city={city} userId={user.uid} upvote={upvote} deleteIdea={deleteIdea} onPostIdea={() => setPostIdeaOpen(true)} reactIdea={reactIdea} reactions={REACTIONS}/>;
       case 'threads': return <ThreadsScreen threads={fThreads} city={city} userId={user.uid} openThread={openThread} toggleThread={toggleThread} replyText={replyText} setReplyText={setReplyText} submitReply={submitReply} likeThread={likeThread} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} reactThread={reactThread} reactions={REACTIONS}/>;
-      case 'chat':    return <ChatScreen    {...chat} city={city}/>;
+      case 'chat':    return <ChatScreen    {...chat} city={city} userId={user.uid} onViewProfile={uid => uid === user.uid ? setShowProfile(true) : setViewingMemberId(uid)}/>;
       default:        return null;
     }
   }
@@ -323,13 +336,14 @@ function App(){
       <Nav
         tab={tab}             onTabChange={t => { setTab(t); setShowProfile(false); }}
         city={city}           setCity={changeCity}
-        locStatus={locStatus} detectedCity={detectedCity}
+        locStatus={locStatus} detectedCity={detectedCity} onDetectLocation={detectLocation}
         user={user}           showProfile={showProfile} setShowProfile={setShowProfile}
         openEdit={() => setEditOpen(true)}
         onLogout={() => { signOut(auth); setCity('All cities'); localStorage.removeItem('wfh-city'); }}
         crown={crown}
         dmUnread={dm.totalUnread + Object.keys(user.receivedRequests||{}).length}
         onDmToggle={() => setDmPanelOpen(p => !p)}
+        onNavigate={t => { setTab(t); setShowProfile(false); setViewingMemberId(null); }}
       />
 
       <div className="content">

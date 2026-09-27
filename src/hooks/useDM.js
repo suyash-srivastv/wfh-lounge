@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { db } from '../firebase';
 import {
-  collection, doc, addDoc, setDoc,
+  collection, doc, addDoc, setDoc, deleteDoc,
   query, orderBy, limit, onSnapshot,
   serverTimestamp, increment,
 } from 'firebase/firestore';
@@ -86,11 +86,17 @@ export function useDM(user) {
     }, { merge: true }).catch(() => {});
   }
 
+  async function deleteDm(id) {
+    if (!activeDm?.uid) return;
+    await deleteDoc(doc(db, 'dms', roomId(activeDm.uid), 'messages', id));
+  }
+
   const totalUnread = inbox.reduce((s, d) => s + (d.unread || 0), 0);
 
   return {
     inbox, activeDm, openDm, closeDm,
-    dmMsgs, dmLoading, dmInput, setDmInput, sendDm, dmEnd,
+    dmMsgs, dmLoading, dmInput, setDmInput, sendDm, dmEnd, deleteDm,
+    myUid: user?.uid,
     totalUnread,
   };
 }

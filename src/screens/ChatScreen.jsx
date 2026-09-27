@@ -1,6 +1,7 @@
 import { CHANNELS } from '../constants';
+import MsgDelete from '../components/MsgDelete';
 
-function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChatView, chatMsgs, chatLoading, chatInput, setChatInput, sendChat, chatEnd }) {
+function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChatView, chatMsgs, chatLoading, chatInput, setChatInput, sendChat, chatEnd, deleteChatMsg, onViewProfile, userId }) {
   const activeCh = CHANNELS.find(c => chatRoom.endsWith(`__${c.id}`)) || CHANNELS[0];
 
   return (
@@ -46,13 +47,24 @@ function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChat
             {!chatLoading && chatMsgs.length === 0 && <div className="chat-empty">No messages yet — say hi! 👋</div>}
             {chatMsgs.map(msg => (
               <div key={msg.id || msg.text} className="msg">
-                <div className="msg-avatar" style={{background:msg.bg,color:msg.tc}}>
-                  {(msg.user || '?').slice(0, 2).toUpperCase()}
-                </div>
-                <div>
-                  <div className="msg-name">{msg.user}<span className="msg-time">{msg.time}</span></div>
+                {msg.userId && onViewProfile
+                  ? <button type="button" className="msg-avatar msg-profile-link" style={{background:msg.bg,color:msg.tc}}
+                      onClick={() => onViewProfile(msg.userId)} title={`View ${msg.user}'s profile`}>
+                      {(msg.user || '?').slice(0, 2).toUpperCase()}
+                    </button>
+                  : <div className="msg-avatar" style={{background:msg.bg,color:msg.tc}}>
+                      {(msg.user || '?').slice(0, 2).toUpperCase()}
+                    </div>}
+                <div className="msg-body">
+                  <div className="msg-name">
+                    {msg.userId && onViewProfile
+                      ? <button type="button" className="msg-name-link" onClick={() => onViewProfile(msg.userId)}>{msg.user}</button>
+                      : msg.user}
+                    <span className="msg-time">{msg.time}</span>
+                  </div>
                   <div className="msg-text">{msg.text}</div>
                 </div>
+                {msg.userId && msg.userId === userId && <MsgDelete onDelete={() => deleteChatMsg(msg.id)}/>}
               </div>
             ))}
             <div ref={chatEnd}/>

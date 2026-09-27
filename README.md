@@ -1,4 +1,4 @@
-# WFH Together
+# The Stillroom
 
 A community platform for remote workers in tier-2 Indian cities — discover meetups, connect with members, share startup ideas, and chat by city.
 

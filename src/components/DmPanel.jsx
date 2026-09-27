@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import Avatar from './Avatar';
+import MsgDelete from './MsgDelete';
 
 function DmPanel({ dm, userConnections, receivedRequests, blockedUsers, onAcceptRequest, onDeclineRequest, onViewProfile, onClose }) {
-  const { inbox, activeDm, openDm, closeDm, dmMsgs, dmLoading, dmInput, setDmInput, sendDm, dmEnd } = dm;
+  const { inbox, activeDm, openDm, closeDm, dmMsgs, dmLoading, dmInput, setDmInput, sendDm, dmEnd, deleteDm, myUid } = dm;
   const isFriend      = activeDm ? (!!(userConnections[activeDm.uid]) || !!activeDm.justAccepted) : false;
   const isBlocked     = activeDm ? !!(blockedUsers?.[activeDm.uid]) : false;
   const filteredInbox = inbox.filter(item => !blockedUsers?.[item.id]);
@@ -101,7 +102,7 @@ function DmPanel({ dm, userConnections, receivedRequests, blockedUsers, onAccept
                   <div className="msg-avatar">
                     {(msg.senderName || '?').slice(0, 2).toUpperCase()}
                   </div>
-                  <div>
+                  <div className="msg-body">
                     <div className="msg-name">{msg.senderName}
                       <span className="msg-time">
                         {msg.timestamp?.toDate().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) || ''}
@@ -109,6 +110,7 @@ function DmPanel({ dm, userConnections, receivedRequests, blockedUsers, onAccept
                     </div>
                     <div className="msg-text">{msg.text}</div>
                   </div>
+                  {msg.senderId === myUid && <MsgDelete onDelete={() => deleteDm(msg.id)}/>}
                 </div>
               ))}
               <div ref={dmEnd}/>

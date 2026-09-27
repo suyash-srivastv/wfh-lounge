@@ -68,7 +68,8 @@ function OnboardingScreen({ user, setUser }) {
   const [role, setRole]             = useState(user.role || '');
   const [yearsExp, setYearsExp]     = useState('');
   const [city, setCity]             = useState(user.city || '');
-  const [unameStatus, setUnameStatus] = useState('idle'); // idle | checking | available | taken | invalid
+  const [unameStatus, setUnameStatus] = useState('idle'); // idle | checking | available | taken | invalid | error
+  const [unameErr, setUnameErr]     = useState('');
   const [loading, setLoading]       = useState(false);
   const [err, setErr]               = useState('');
   const [detectingLoc, setDetectingLoc] = useState(false);
@@ -84,7 +85,13 @@ function OnboardingScreen({ user, setUser }) {
       try {
         const snap = await getDoc(doc(db, 'usernames', u));
         setUnameStatus(snap.exists() ? 'taken' : 'available');
-      } catch { setUnameStatus('idle'); }
+      } catch (e) {
+        console.error('Username check failed:', e);
+        setUnameErr(e.code === 'permission-denied'
+          ? "Couldn't check username (permission denied). Check Firestore rules for /usernames."
+          : "Couldn't check username. Check your connection and try again.");
+        setUnameStatus('error');
+      }
     }, 400);
     return () => clearTimeout(t);
   }, [username]);
@@ -95,6 +102,7 @@ function OnboardingScreen({ user, setUser }) {
     checking:  { ok: null,  msg: 'Checking…' },
     available: { ok: true,  msg: '@' + username.trim().toLowerCase() + ' is available' },
     taken:     { ok: false, msg: 'Username already taken' },
+    error:     { ok: false, msg: unameErr },
   }[unameStatus];
 
   function detectLocation() {
@@ -117,10 +125,6 @@ function OnboardingScreen({ user, setUser }) {
     );
   }
 
-  // Auto-detect when entering step 2 and no city set yet
-  useEffect(() => {
-    if (step === 2 && !city) detectLocation();
-  }, [step]);
 
   async function finish(e) {
     e.preventDefault();
@@ -157,7 +161,7 @@ function OnboardingScreen({ user, setUser }) {
   return (
     <div className="auth-wrap">
       <div className="auth-card" style={{ maxWidth: 460 }}>
-        <div className="auth-logo"><div className="logo-icon"><i className="ti ti-coffee" /></div>WFH Lounge</div>
+        <div className="auth-logo"><div className="logo-icon"><i className="ti ti-coffee" /></div>The Stillroom</div>
         <p className="auth-tagline">Almost there — set up your public profile.</p>
 
         <div className="onboard-steps">
@@ -231,14 +235,18 @@ function OnboardingScreen({ user, setUser }) {
               </div>
 
               <div className="auth-field">
-                <label className="auth-label">
-                  Your city
-                  {detectingLoc && <span className="auth-opt" style={{marginLeft:8}}><i className="ti ti-loader-2" style={{animation:'spin 1s linear infinite',marginRight:3}}/>Detecting…</span>}
-                  {!detectingLoc && city && <span style={{color:'#1D9E75',fontSize:11,marginLeft:8,fontWeight:400}}><i className="ti ti-check" style={{marginRight:2}}/>Detected</span>}
-                  {!detectingLoc && locFailed && !city && <button type="button" className="loc-retry-btn" onClick={detectLocation}><i className="ti ti-current-location"/>Try again</button>}
-                </label>
+                <label className="auth-label">Your city <span className="auth-opt">(optional)</span></label>
                 <CitySearch value={city} onChange={setCity} />
-                {!city && !detectingLoc && !locFailed && <span style={{fontSize:11,color:'#B4B2A9',marginTop:3}}>Detecting your location automatically…</span>}
+                {!city && (
+                  <button type="button" className="loc-ask" onClick={detectLocation} disabled={detectingLoc}>
+                    <i className={'ti ' + (detectingLoc ? 'ti-loader-2' : 'ti-current-location')}
+                      style={detectingLoc ? { animation: 'spin 1s linear infinite' } : {}}/>
+                    <span>
+                      <b>{detectingLoc ? 'Finding your city…' : 'Or use my location'}</b>
+                      <span>{locFailed ? "Couldn't detect it — just search above instead." : 'Helps you find people and events nearby. We only save your city, never your exact location.'}</span>
+                    </span>
+                  </button>
+                )}
                 {city && <span style={{fontSize:11,color:'#888780',marginTop:3}}>You can search for a different city above.</span>}
               </div>
 

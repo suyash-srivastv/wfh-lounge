@@ -6,7 +6,7 @@ function InviteModal({ open, onClose }){
     <div className="overlay" onClick={onClose}>
       <div className="modal" style={{maxWidth:440}} onClick={e=>e.stopPropagation()}>
         <div className="modal-title">Invite someone</div>
-        <p style={{fontSize:13,color:"#555550",marginBottom:16,lineHeight:1.6}}>Share WFH Lounge with your network. Anyone with the link can sign up and join the community.</p>
+        <p style={{fontSize:13,color:"#555550",marginBottom:16,lineHeight:1.6}}>Share The Stillroom with your network. Anyone with the link can sign up and join the community.</p>
         <div className="invite-link-row">
           <span className="invite-link-text">{typeof window!=="undefined"?window.location.origin:"https://wfhlounge.app"}</span>
           <button className="invite-copy-btn" onClick={()=>{

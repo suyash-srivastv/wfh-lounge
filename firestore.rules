@@ -1,0 +1,126 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+
+    // Top-level fields changed by this update.
+    function changed() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // Keys changed inside map field `f` (field may not exist yet).
+    function mapChanged(f) {
+      return request.resource.data.get(f, {}).diff(resource.data.get(f, {})).affectedKeys();
+    }
+
+    // The update only touches the caller's own entry inside map field `f`.
+    function onlyMyKeyIn(f) {
+      return mapChanged(f).hasOnly([me()]);
+    }
+
+    // ---------- Users ----------
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, delete: if signedIn() && uid == me();
+
+      // Your own profile: anything.
+      // Someone else's profile: only their own entry in the friend maps
+      // (send/cancel/accept/decline request, unfriend, block).
+      allow update: if signedIn() && (
+        uid == me() || (
+          changed().hasOnly(['receivedRequests', 'sentRequests', 'connections'])
+          && onlyMyKeyIn('receivedRequests')
+          && onlyMyKeyIn('sentRequests')
+          && onlyMyKeyIn('connections')
+          // May only ADD a connection to someone who sent you a request.
+          && (!(me() in request.resource.data.get('connections', {}))
+              || me() in resource.data.get('connections', {})
+              || me() in resource.data.get('sentRequests', {}))
+        )
+      );
+    }
+
+    // ---------- Usernames (unique handles) ----------
+    match /usernames/{name} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.uid == me();
+    }
+
+    // ---------- Events ----------
+    match /events/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.hostId == me();
+      allow delete: if signedIn() && resource.data.hostId == me();
+      allow update: if signedIn() && (
+        resource.data.hostId == me() || (
+          changed().hasOnly(['rsvps', 'attendeeCount']) && onlyMyKeyIn('rsvps')
+        )
+      );
+    }
+
+    // ---------- Ideas ----------
+    match /ideas/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.authorId == me();
+      allow delete: if signedIn() && resource.data.authorId == me();
+      allow update: if signedIn() && (
+        resource.data.authorId == me() || (
+          changed().hasOnly(['upvotes', 'votes', 'reactions']) && onlyMyKeyIn('upvotes')
+        )
+      );
+    }
+
+    // ---------- Threads ----------
+    match /threads/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.authorId == me();
+      allow delete: if signedIn() && resource.data.authorId == me();
+      allow update: if signedIn() && (
+        resource.data.authorId == me() || (
+          changed().hasOnly(['likes', 'likeCount', 'reactions', 'replyCount']) && onlyMyKeyIn('likes')
+        )
+      );
+
+      match /replies/{replyId} {
+        allow read: if signedIn();
+        allow create: if signedIn() && request.resource.data.authorId == me();
+      }
+    }
+
+    // ---------- City chat rooms ----------
+    match /chats/{room}/messages/{msgId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.userId == me();
+      allow delete: if signedIn() && resource.data.userId == me();
+    }
+
+    // ---------- DMs (room id = "<uidA>_<uidB>", sorted) ----------
+    match /dms/{room}/messages/{msgId} {
+      allow read: if signedIn() && me() in room.split('_');
+      allow create: if signedIn() && me() in room.split('_')
+                    && request.resource.data.senderId == me();
+      allow delete: if signedIn() && resource.data.senderId == me();
+    }
+
+    // ---------- What I Want results (private to each user) ----------
+    match /reflections/{uid} {
+      allow read, write: if signedIn() && uid == me();
+
+      // Every finished run, kept so people can see how their answers change.
+      match /history/{runId} {
+        allow read, create: if signedIn() && uid == me();
+      }
+    }
+
+    // ---------- DM inbox ----------
+    // Your inbox is yours to read; either side of a conversation may write
+    // the entry for it (sender updates the recipient's unread count).
+    match /userInbox/{uid}/dms/{otherUid} {
+      allow read: if signedIn() && uid == me();
+      allow write: if signedIn() && (uid == me() || otherUid == me());
+    }
+  }
+}
