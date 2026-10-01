@@ -326,6 +326,19 @@ function Clarity({ userId, variant = 'button' }) {
 
   const flow = open && <Flow initial={saved} onClose={() => setOpen(false)} onDone={save}/>;
 
+  // Phone bottom bar: a tab that opens Clarity.
+  if (variant === 'tab') {
+    return (
+      <>
+        <button className={'mobile-nav-btn mobile-clarity' + (saved ? '' : ' fresh')} onClick={() => setOpen(true)} aria-label="Clarity">
+          <span className="mc-mark"><ClarityMark size={20}/></span>
+          <span>Clarity</span>
+        </button>
+        {flow}
+      </>
+    );
+  }
+
   if (variant === 'card') {
     if (saved || dismissed) return flow || null;
     return (

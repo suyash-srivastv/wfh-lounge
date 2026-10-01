@@ -172,6 +172,7 @@ function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetec
                 <div className="profile-divider"/>
                 <button className="profile-item" onClick={() => { setShowProfile(true); setProfileOpen(false); }}><i className="ti ti-user"/>View profile</button>
                 <button className="profile-item" onClick={() => { openEdit(); setProfileOpen(false); }}><i className="ti ti-user-edit"/>Edit profile</button>
+                <button className="profile-item mobile-only" onClick={() => { onTabChange('about'); setProfileOpen(false); }}><i className="ti ti-info-circle"/>About The Stillroom</button>
                 {isAdmin && <button className="profile-item" onClick={() => { onAdmin(); setProfileOpen(false); }}><i className="ti ti-shield-lock"/>Admin</button>}
                 <div className="profile-divider"/>
                 <button className="profile-item profile-item-danger" onClick={onLogout}><i className="ti ti-logout"/>Log out</button>
@@ -181,14 +182,16 @@ function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetec
         </div>
       </div>
 
+      {/* Phones: Clarity sits in the middle of the bottom bar; About lives in the profile menu. */}
       <nav className="mobile-nav">
-        {NAV.map(n => (
+        {NAV.filter(n => n.id !== 'about').flatMap((n, i) => [
+          i === 2 && <Clarity key="clarity" userId={user.uid} variant="tab"/>,
           <button key={n.id} className={'mobile-nav-btn' + (tab === n.id && !showProfile ? ' active' : '')}
             onClick={() => onTabChange(n.id)}>
             <i className={'ti ' + n.icon}/>
             <span>{n.label}</span>
-          </button>
-        ))}
+          </button>,
+        ])}
       </nav>
     </>
   );

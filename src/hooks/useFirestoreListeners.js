@@ -28,7 +28,8 @@ function toMember(d) {
 }
 
 // Live list that grows a page at a time ("Load more").
-function useLivePages(user, coll, orderField, city) {
+// `extra` adds filters/ordering; by default newest first by `orderField`.
+function useLivePages(user, coll, orderField, city, extra) {
   const [pages, setPages]     = useState(1);
   const [items, setItems]     = useState([]);
   const [hasMore, setHasMore] = useState(false);
@@ -38,11 +39,12 @@ function useLivePages(user, coll, orderField, city) {
   useEffect(() => {
     if (!user) { setItems([]); setHasMore(false); return; }
     const n = PAGE * pages;
-    const q = query(collection(db, coll), ...cityFilter(city), orderBy(orderField, 'desc'), limit(n));
+    const order = extra ? extra() : [orderBy(orderField, 'desc')];
+    const q = query(collection(db, coll), ...cityFilter(city), ...order, limit(n));
     return onSnapshot(q,
       snap => { setItems(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setHasMore(snap.size === n); },
       e => console.error(`Loading ${coll} failed:`, e));
-  }, [user?.uid, coll, orderField, city, pages]);
+  }, [user?.uid, coll, orderField, city, pages, extra ? extra().map(String).join() : '']);
 
   const loadMore = useCallback(() => setPages(p => p + 1), []);
   return { items, hasMore, loadMore };
@@ -83,7 +85,10 @@ function useMemberPages(user, city) {
 }
 
 export function useFirestoreListeners(user, city) {
-  const events  = useLivePages(user, 'events', 'createdAt', city);
+  // What's on: soonest first, past events hidden. Dates are "YYYY-MM-DD"; "TBD"
+  // sorts after every date, so undated events come last.
+  const today   = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const events  = useLivePages(user, 'events', 'date', city, () => [where('date', '>=', today), orderBy('date', 'asc')]);
   const ideas   = useLivePages(user, 'ideas', 'votes', city);
   const threads = useLivePages(user, 'threads', 'createdAt', city);
   const members = useMemberPages(user, city);

@@ -924,3 +924,64 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:2000;o
 .fr-heading span{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--text-3)}
 .fr-request{display:flex;flex-direction:column;gap:12px}
 .fr-actions{display:flex;justify-content:flex-end;gap:8px}
+
+/* ── Event cards: the date leads ── */
+.ev-card{display:flex;flex-direction:column;gap:12px}
+.ev-top{display:flex;align-items:flex-start;gap:14px}
+.ev-date{width:54px;flex-shrink:0;border-radius:12px;border:1px solid var(--accent-border);background:var(--accent-bg);display:flex;flex-direction:column;align-items:center;padding:6px 0 7px;line-height:1}
+.ev-date.tbd{justify-content:center;min-height:62px;border-style:dashed;background:transparent}
+.ev-mon{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-tc)}
+.ev-day{font-family:'DM Serif Display',serif;font-size:26px;color:var(--text-1);margin:3px 0 2px}
+.ev-wd{font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em}
+.ev-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.ev-title{font-weight:600;font-size:16px;line-height:1.3;color:var(--text-1);margin-bottom:2px}
+.ev-meta{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-2);min-width:0}
+.ev-meta i{font-size:14px;flex-shrink:0}
+.ev-dot{color:var(--text-3)}
+.ev-tags .tag{margin-bottom:0}
+.ev-foot{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--border-sub)}
+.ev-going{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2)}
+
+/* ── Phones: calmer, one thing leads per screen ── */
+@media(max-width:768px){
+  /* top bar: logo mark only, tighter controls */
+  .nav-brand{display:none}
+  .nav-logo{margin-right:auto}
+  .nav-right{gap:7px}
+  .nav-right .dm-trigger,.nav-right .wiw-nav-btn{width:34px;height:34px}
+  .city-pill{height:34px}
+  /* greeting: smaller */
+  .home-hero{gap:10px;margin-bottom:14px}
+  .brew{width:54px;height:54px}
+  .hh-bubble{font-size:14.5px;padding:8px 12px;border-radius:13px 13px 13px 4px}
+  .hh-greet{font-size:12px}
+  /* headers: short subtitle, quiet secondary button */
+  .sub-extra{display:none}
+  .page-header{padding-bottom:12px;margin-bottom:14px;align-items:center}
+  .page-title{font-size:23px}
+  .page-header .btn-primary{background:transparent;color:var(--accent-tc);border:1px solid var(--accent-border);padding:7px 12px}
+  /* watercooler: one slim row */
+  .watercooler-card{flex-direction:row;align-items:center;padding:12px 14px}
+  .watercooler-sub,.warroom-copy{display:none}
+  .watercooler-emoji{font-size:20px;margin-top:0}
+  .watercooler-title{font-size:14px;margin:0}
+  .watercooler-actions{width:auto}
+  .watercooler-join{padding:7px 14px;font-size:12px;background:transparent;color:var(--accent-tc);border:1px solid var(--accent-border)}
+  /* event cards: compact */
+  .grid3{gap:10px}
+  .ev-card{padding:14px;gap:10px}
+  .ev-title{font-size:15px}
+  .ev-foot{padding-top:10px}
+}
+
+/* ── Phones: Clarity lives in the bottom bar, not the top ── */
+.mobile-only{display:none}
+.mobile-clarity{position:relative;color:var(--accent-tc)}
+.mobile-clarity .mc-mark{width:38px;height:38px;margin-top:-14px;border-radius:50%;background:var(--clarity-grad);color:#fff;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 14px rgba(217,180,90,.35),0 0 0 4px var(--surface)}
+.mobile-clarity.fresh .mc-mark::after{content:'';position:absolute;top:-12px;right:calc(50% - 22px);width:8px;height:8px;border-radius:50%;background:#F2A98B;border:2px solid var(--surface)}
+.mobile-clarity.fresh .tn-rays{animation:tnRise 3s ease-in-out infinite}
+@media(max-width:768px){
+  .nav-right .wiw-nav-btn{display:none}
+  .mobile-only{display:flex}
+}

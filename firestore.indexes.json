@@ -1,15 +1,89 @@
 {
   "indexes": [
-    { "collectionGroup": "events",  "queryScope": "COLLECTION", "fields": [
-      { "fieldPath": "city", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" } ] },
-    { "collectionGroup": "threads", "queryScope": "COLLECTION", "fields": [
-      { "fieldPath": "city", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" } ] },
-    { "collectionGroup": "threads", "queryScope": "COLLECTION", "fields": [
-      { "fieldPath": "authorId", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" } ] },
-    { "collectionGroup": "ideas",   "queryScope": "COLLECTION", "fields": [
-      { "fieldPath": "city", "order": "ASCENDING" }, { "fieldPath": "votes", "order": "DESCENDING" } ] },
-    { "collectionGroup": "users",   "queryScope": "COLLECTION", "fields": [
-      { "fieldPath": "city", "order": "ASCENDING" }, { "fieldPath": "name", "order": "ASCENDING" } ] }
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "city",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "threads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "city",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "threads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "authorId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ideas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "city",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "votes",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "city",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "city",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "ASCENDING"
+        }
+      ]
+    }
   ],
   "fieldOverrides": []
 }

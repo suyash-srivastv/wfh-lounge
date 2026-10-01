@@ -101,7 +101,7 @@ function MembersScreen({ members, hasMore, onLoadMore, loading, city, userId, us
   if (view === 'friends') return (
     <div>
       <div className="page-header">
-        <div><div className="page-title">Your people</div><div className="page-sub">{friends.length} {friends.length === 1 ? 'friend' : 'friends'} · any city · the ones you actually talk to</div></div>
+        <div><div className="page-title">Your people</div><div className="page-sub">{friends.length} {friends.length === 1 ? 'friend' : 'friends'} · any city<span className="sub-extra"> · the ones you actually talk to</span></div></div>
         <button className="btn-primary" onClick={onInvite}><i className="ti ti-user-plus"/>Invite someone</button>
       </div>
       {tabs}
@@ -114,7 +114,7 @@ function MembersScreen({ members, hasMore, onLoadMore, loading, city, userId, us
   return (
     <div>
       <div className="page-header">
-        <div><div className="page-title">People nearby</div><div className="page-sub">{members.length}{hasMore ? '+' : ''} {members.length === 1 && !hasMore ? 'member' : 'members'} · {city} · real people, not leads</div></div>
+        <div><div className="page-title">People nearby</div><div className="page-sub">{members.length}{hasMore ? '+' : ''} {members.length === 1 && !hasMore ? 'member' : 'members'} · {city}<span className="sub-extra"> · real people, not leads</span></div></div>
         <button className="btn-primary" onClick={onInvite}><i className="ti ti-user-plus"/>Invite someone</button>
       </div>
       {tabs}

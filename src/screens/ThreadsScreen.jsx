@@ -37,7 +37,7 @@ function ThreadsScreen({ threads, hasMore, onLoadMore, city, userId, openThread,
   return (
     <div>
       <div className="page-header">
-        <div><div className="page-title">Forums</div><div className="page-sub">{city} · ask anything, no humblebrags</div></div>
+        <div><div className="page-title">Forums</div><div className="page-sub">{city}<span className="sub-extra"> · ask anything, no humblebrags</span></div></div>
         <button className="btn-primary" onClick={onNewPost}><i className="ti ti-plus"/>New post</button>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:10}}>

@@ -5,7 +5,7 @@ function IdeasScreen({ ideas, hasMore, onLoadMore, city, userId, upvote, deleteI
   return (
     <div>
       <div className="page-header">
-        <div><div className="page-title">Ideas</div><div className="page-sub">Half-baked is welcome · find co-founders · get honest feedback</div></div>
+        <div><div className="page-title">Ideas</div><div className="page-sub">Half-baked is welcome<span className="sub-extra"> · find co-founders · get honest feedback</span></div></div>
         <button className="btn-primary" onClick={onPostIdea}><i className="ti ti-plus"/>Post idea</button>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
