@@ -251,12 +251,12 @@ input,textarea,select{font-family:inherit;color:var(--text-1)}
 
 /* ── Modals ── */
 .overlay{position:fixed;inset:0;background:var(--overlay-bg);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
-.modal{background:var(--surface);border-radius:16px;padding:24px;max-width:500px;width:100%}
+.modal{background:var(--surface);border-radius:16px;padding:24px;max-width:500px;width:100%;max-height:calc(100dvh - 40px);overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box}
 .modal-title{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:16px}
 .modal-input{width:100%;padding:9px 13px;border:1px solid var(--border);border-radius:9px;font-size:13px;background:var(--bg);margin-bottom:10px;outline:none;color:var(--text-1)}
 .modal-input:focus{border-color:var(--accent)}
 .modal-input option{background:var(--surface);color:var(--text-1)}
-.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px;position:sticky;bottom:-24px;background:var(--surface);padding:12px 0 0;margin-bottom:-4px}
 .modal-label{font-size:12px;font-weight:500;color:var(--text-dim);margin-bottom:6px}
 .modal-type-toggle{display:flex;gap:6px;margin-bottom:10px}
 .modal-type-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);font-size:13px;font-weight:500;background:transparent;color:var(--text-dim);cursor:pointer;transition:all .15s;font-family:inherit}
@@ -458,17 +458,34 @@ input,textarea,select{font-family:inherit;color:var(--text-1)}
   .profile-page-name{font-size:18px}
   .profile-stats{flex-wrap:wrap}
   .profile-stat{flex:none;width:calc(50% - 5px)}
-  .overlay{padding:12px}
-  .modal{padding:20px 16px}
+  /* Modals become bottom sheets on phones: full width, scroll inside, actions pinned. */
+  .overlay{padding:0;align-items:flex-end}
+  .modal{max-width:100% !important;border-radius:18px 18px 0 0;padding:20px 16px 0;max-height:92dvh}
+  .modal-actions{bottom:0;padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));margin:8px 0 0;border-top:1px solid var(--border-sub)}
+  .modal-actions>button{flex:1;justify-content:center}
+  .modal-input,.modal .auth-input-inner{font-size:16px}
   .chat-rooms{padding-bottom:4px}
   .room-btn{border-radius:9px;margin:0 4px}
   .theme-toggle{display:none}
 }
 
 /* ── What I Want ── */
-.wiw-nav-btn{display:flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--accent-border);background:var(--accent-bg);color:var(--accent-tc);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s}
-.wiw-nav-btn:hover{border-color:var(--accent);transform:translateY(-1px)}
-.wiw-nav-emoji{font-size:14px;line-height:1}
+.wiw-nav-btn{position:relative;display:flex;align-items:center;gap:7px;height:32px;padding:0 13px 0 5px;border-radius:999px;border:none;background:linear-gradient(120deg,#7F77DD 0%,#B592E8 55%,#F2A98B 100%);color:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;box-shadow:0 2px 10px rgba(127,119,221,.35);transition:transform .15s,box-shadow .15s}
+.wiw-nav-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(127,119,221,.45)}
+.wiw-nav-mark{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center}
+.tn-mark{display:block;overflow:visible}
+.tn-rays{transform-origin:12px 18px}
+.wiw-nav-btn.fresh .tn-rays,.tn-card-mark .tn-rays{animation:tnRise 3s ease-in-out infinite}
+@keyframes tnRise{0%,100%{opacity:.55;transform:scale(.88)}50%{opacity:1;transform:scale(1.06)}}
+.wiw-nav-dot{position:absolute;top:-2px;right:-2px;width:9px;height:9px;border-radius:50%;background:#F2A98B;border:2px solid var(--surface)}
+.tn-card{display:none;position:relative;align-items:center;gap:12px;padding:12px 40px 12px 12px;margin-bottom:14px;border-radius:16px;background:linear-gradient(120deg,#7F77DD 0%,#B592E8 55%,#F2A98B 100%);color:#fff;cursor:pointer;box-shadow:0 6px 20px rgba(127,119,221,.3)}
+.tn-card-mark{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tn-card-text{flex:1;min-width:0}
+.tn-card-text b{display:block;font-family:'DM Serif Display',serif;font-weight:400;font-size:17px;line-height:1.2;margin-bottom:2px}
+.tn-card-text span{display:block;font-size:12px;opacity:.9}
+.tn-card-go{flex-shrink:0;background:#fff;color:#534AB7;font-size:12px;font-weight:700;padding:7px 12px;border-radius:999px}
+.tn-card-x{position:absolute;top:6px;right:6px;width:26px;height:26px;border:none;border-radius:50%;background:transparent;color:rgba(255,255,255,.85);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.tn-card-x:hover{background:rgba(255,255,255,.18);color:#fff}
 .wiw-overlay{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;flex-direction:column;padding:calc(16px + env(safe-area-inset-top,0px)) 20px calc(16px + env(safe-area-inset-bottom,0px));overflow-y:auto}
 .wiw-top{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:620px;width:100%;margin:0 auto}
 .wiw-icon-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--text-2);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all .15s}
@@ -562,4 +579,4 @@ input,textarea,select{font-family:inherit;color:var(--text-1)}
 .tn-save-error{color:#c0392b}
 .tn-save-idle{display:none}
 .wiw-foot{margin-top:22px;font-size:12px;color:var(--text-3)}
-@media(max-width:768px){.wiw-nav-btn{width:30px;height:30px;padding:0;justify-content:center}.wiw-nav-label{display:none}.wiw-opt{font-size:14px;padding:14px 16px}}
+@media(max-width:768px){.wiw-nav-btn{width:32px;height:32px;padding:0;justify-content:center}.wiw-nav-mark{background:none}.wiw-nav-label{display:none}.tn-card{display:flex}.wiw-opt{font-size:14px;padding:14px 16px}}

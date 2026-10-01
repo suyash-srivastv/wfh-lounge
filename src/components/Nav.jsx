@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import TrueNorth from './TrueNorth';
+import Clarity from './Clarity';
 
 function useDarkMode() {
   const [dark, setDark] = useState(() => localStorage.getItem('wfh-theme') === 'dark');
@@ -83,7 +83,7 @@ function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetec
           ))}
         </div>
         <div className="nav-right">
-          <TrueNorth userId={user.uid} onNavigate={onNavigate}/>
+          <Clarity userId={user.uid}/>
           <button className="dm-trigger" onClick={onDmToggle} title="Messages">
             <i className="ti ti-message-circle"/>
             {dmUnread > 0 && <span className="dm-trigger-badge">{dmUnread > 99 ? '99+' : dmUnread}</span>}

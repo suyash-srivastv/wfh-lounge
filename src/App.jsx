@@ -11,6 +11,7 @@ import Confetti          from './components/Confetti';
 import DmPanel           from './components/DmPanel';
 import AuthScreen        from './components/AuthScreen';
 import OnboardingScreen  from './components/OnboardingScreen';
+import Clarity           from './components/Clarity';
 import Nav               from './components/Nav';
 import EditProfileModal  from './components/modals/EditProfileModal';
 import NewPostModal      from './components/modals/NewPostModal';
@@ -347,7 +348,10 @@ function App(){
       />
 
       <div className="content">
-        <div className="inner fade">{renderScreen()}</div>
+        <div className="inner fade">
+          {!viewingMember && !showProfile && tab !== 'chat' && <Clarity userId={user.uid} variant="card"/>}
+          {renderScreen()}
+        </div>
       </div>
 
       <EditProfileModal open={editOpen}       user={user}           onClose={() => setEditOpen(false)}      onSave={saveProfile}/>

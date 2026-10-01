@@ -92,7 +92,10 @@ function nudges(item, rank, items) {
 
 const isValid = r => !!(r && r.version === 4 && Array.isArray(r.items) && r.items.length);
 
+// Storage keys keep the old "truenorth" name so existing saved results still load.
 const LS_KEY = uid => `stillroom-truenorth-${uid}`;
+const SAVED_EVENT = 'truenorth:saved';
+const DISMISS_KEY = 'stillroom-truenorth-card-dismissed';
 
 function useSavedResult(uid) {
   const [saved, setSaved] = useState(() => {
@@ -105,10 +108,18 @@ function useSavedResult(uid) {
       .catch(() => {});
   }, [uid]);
 
+  // Keep the toolbar button and the mobile prompt card in sync.
+  useEffect(() => {
+    const onSaved = e => setSaved(e.detail);
+    window.addEventListener(SAVED_EVENT, onSaved);
+    return () => window.removeEventListener(SAVED_EVENT, onSaved);
+  }, []);
+
   // Latest result lives at reflections/{uid}; every finished run is also kept
   // in reflections/{uid}/history so people can see how their answers change.
   async function save(result) {
     setSaved(result);
+    window.dispatchEvent(new CustomEvent(SAVED_EVENT, { detail: result }));
     try { localStorage.setItem(LS_KEY(uid), JSON.stringify(result)); } catch {}
     const batch = writeBatch(db);
     batch.set(doc(db, 'reflections', uid), { ...result, updatedAt: serverTimestamp() });
@@ -230,7 +241,7 @@ function Flow({ onClose, onDone, initial }) {
   const aboutIdx  = aboutItem ? picked.indexOf(aboutItem) : -1;
 
   return createPortal(
-    <div className="wiw-overlay" role="dialog" aria-modal="true" aria-label="True North">
+    <div className="wiw-overlay" role="dialog" aria-modal="true" aria-label="Clarity">
       <div className="wiw-top">
         {step > 0
           ? <button className="wiw-icon-btn" onClick={() => go(step - 1)} aria-label="Back"><i className="ti ti-arrow-left"/></button>
@@ -345,15 +356,15 @@ function Flow({ onClose, onDone, initial }) {
             {!ownStep && <WriteOwn placeholder="This week I will…" onAdd={v => { setOwnStep(v); setNextStep(v); }}/>}
             <div className="tn-footer">
               <span className="tn-hint">{nextStep ? '' : 'Or skip it for now.'}</span>
-              <button className="wiw-primary" onClick={finish}>See my True North <i className="ti ti-arrow-right"/></button>
+              <button className="wiw-primary" onClick={finish}>Get my clarity <i className="ti ti-arrow-right"/></button>
             </div>
           </div>
         )}
 
         {screen === 'result' && result && (
           <div key="result" className="wiw-body wiw-result fade">
-            <div className="wiw-count">Your choices. Ranked by you.</div>
-            <h2 className="wiw-want">Your True North</h2>
+            <div className="wiw-count">Clarity · your choices, ranked by you</div>
+            <h2 className="wiw-want">Here's what you want.</h2>
 
             <div className="tn-result-list">
               {result.items.map((it, i) => {
@@ -401,22 +412,64 @@ function Flow({ onClose, onDone, initial }) {
   );
 }
 
-// Toolbar button: opens the reflection, or your saved one if you've done it.
-function TrueNorth({ userId }) {
+// Clarity mark: a sun rising over the horizon — things becoming clear.
+export function ClarityMark({ size = 16 }) {
+  const line = { fill: 'none', stroke: 'currentColor', strokeWidth: 2.1, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" className="tn-mark">
+      <path d="M3.5 18h17" {...line}/>
+      <path d="M7 18a5 5 0 0 1 10 0" {...line}/>
+      <g className="tn-rays">
+        <path d="M12 5v2.6M5.3 8.7l1.8 1.8M18.7 8.7l-1.8 1.8M2.8 14h1.6M19.6 14h1.6" {...line}/>
+      </g>
+    </svg>
+  );
+}
+
+// Toolbar button (variant "button") or the mobile prompt card (variant "card").
+// Both open the reflection, or your saved one if you've done it.
+function Clarity({ userId, variant = 'button' }) {
   const [saved, save] = useSavedResult(userId);
   const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem(DISMISS_KEY) === '1'; } catch { return false; }
+  });
+
+  const flow = open && <Flow initial={saved} onClose={() => setOpen(false)} onDone={save}/>;
+
+  if (variant === 'card') {
+    if (saved || dismissed) return flow || null;
+    return (
+      <>
+        <div className="tn-card" role="button" tabIndex={0} onClick={() => setOpen(true)}
+          onKeyDown={e => { if (e.key === 'Enter') setOpen(true); }}>
+          <span className="tn-card-mark"><ClarityMark size={24}/></span>
+          <span className="tn-card-text">
+            <b>Not sure what you want in life?</b>
+            <span>2 minutes, tap-only, private to you.</span>
+          </span>
+          <span className="tn-card-go">Start</span>
+          <button className="tn-card-x" aria-label="Dismiss"
+            onClick={e => { e.stopPropagation(); setDismissed(true); try { localStorage.setItem(DISMISS_KEY, '1'); } catch {} }}>
+            <i className="ti ti-x"/>
+          </button>
+        </div>
+        {flow}
+      </>
+    );
+  }
 
   return (
     <>
-      <button className="wiw-nav-btn" onClick={() => setOpen(true)}
-        title={saved ? `Your #1: ${saved.items[0].label}` : 'What do you actually want?'}>
-        <span className="wiw-nav-emoji">🧘</span>
-        <span className="wiw-nav-label">True North</span>
+      <button className={'wiw-nav-btn' + (saved ? '' : ' fresh')} onClick={() => setOpen(true)}
+        title={saved ? `Your #1: ${saved.items[0].label}` : 'Not sure what you want in life?'} aria-label="Clarity">
+        <span className="wiw-nav-mark"><ClarityMark size={16}/></span>
+        <span className="wiw-nav-label">Clarity</span>
+        {!saved && <span className="wiw-nav-dot"/>}
       </button>
-
-      {open && <Flow initial={saved} onClose={() => setOpen(false)} onDone={save}/>}
+      {flow}
     </>
   );
 }
 
-export default TrueNorth;
+export default Clarity;
