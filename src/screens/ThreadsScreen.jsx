@@ -1,10 +1,11 @@
 import EmptyState from '../components/EmptyState';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import LoadMore from '../components/LoadMore';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { timeAgo } from '../constants';
 import MsgDelete from '../components/MsgDelete';
+import { STARTERS, pick } from '../components/modals/NewPostModal';
 
 // Replies for the open thread only (most recent 50), loaded when it's opened.
 function Replies({ threadId, userId, deleteReply, isAdmin }) {
@@ -32,6 +33,7 @@ function Replies({ threadId, userId, deleteReply, isAdmin }) {
 }
 
 function ThreadsScreen({ threads, hasMore, onLoadMore, city, userId, openThread, toggleThread, replyText, setReplyText, submitReply, likeThread, deleteThread, onNewPost, reactThread, reactions, deleteReply, isAdmin }){
+  const starters = useMemo(() => pick(STARTERS, 3).map(q => q.replace('{city}', city === 'All cities' ? 'your city' : city)), [city]);
   return (
     <div>
       <div className="page-header">
@@ -80,8 +82,14 @@ function ThreadsScreen({ threads, hasMore, onLoadMore, city, userId, openThread,
             </div>
           </div>
         ))}
-        {threads.length===0&&<EmptyState title="Quiet in here" line="Ask the question everyone's thinking but nobody's posted."
-          action={<button className="btn-primary" onClick={onNewPost}><i className="ti ti-plus"/>Start a conversation</button>}/>}
+        {threads.length===0&&<EmptyState title="No questions yet — lucky you, you go first."
+          line="Ask something real. The kind of thing you'd only ask a friend over chai."
+          action={<div className="empty-starters">
+            {starters.map(s => (
+              <button key={s} className="np-starter" onClick={() => onNewPost(s)}>{s}</button>
+            ))}
+            <button className="btn-primary" onClick={() => onNewPost()}><i className="ti ti-plus"/>Ask your own</button>
+          </div>}/>}
       </div>
       <LoadMore hasMore={hasMore} onLoadMore={onLoadMore}/>
     </div>

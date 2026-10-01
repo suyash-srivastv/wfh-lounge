@@ -337,7 +337,7 @@ function App(){
         onSendRequest={sendRequest} onCancelRequest={cancelRequest} onAcceptRequest={acceptRequest}
         onSelect={m => setViewingMemberId(m.id)} onInvite={() => setInviteOpen(true)}/>;
       case 'ideas':   return <IdeasScreen   ideas={ideas} {...more(lists.ideas)} city={city} userId={user.uid} upvote={upvote} deleteIdea={deleteIdea} onPostIdea={() => setPostIdeaOpen(true)} reactIdea={reactIdea} reactions={REACTIONS} isAdmin={isAdmin}/>;
-      case 'threads': return <ThreadsScreen threads={threads} {...more(lists.threads)} city={city} userId={user.uid} openThread={openThread} toggleThread={toggleThread} replyText={replyText} setReplyText={setReplyText} submitReply={submitReply} likeThread={likeThread} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} reactThread={reactThread} reactions={REACTIONS} deleteReply={deleteReply} isAdmin={isAdmin}/>;
+      case 'threads': return <ThreadsScreen threads={threads} {...more(lists.threads)} city={city} userId={user.uid} openThread={openThread} toggleThread={toggleThread} replyText={replyText} setReplyText={setReplyText} submitReply={submitReply} likeThread={likeThread} deleteThread={deleteThread} onNewPost={t => { if (typeof t === 'string') setNewPost({ title: t, body: '' }); setNewPostOpen(true); }} reactThread={reactThread} reactions={REACTIONS} deleteReply={deleteReply} isAdmin={isAdmin}/>;
       case 'about':   return <AboutScreen/>;
       case 'chat':    return <ChatScreen    {...chat} city={city} userId={user.uid} isAdmin={isAdmin} onViewProfile={uid => uid === user.uid ? setShowProfile(true) : setViewingMemberId(uid)}/>;
       default:        return null;
@@ -384,7 +384,7 @@ function App(){
       </div>
 
       <EditProfileModal open={editOpen}       user={user}           onClose={() => setEditOpen(false)}      onSave={saveProfile}/>
-      <NewPostModal     open={newPostOpen}    newPost={newPost}     onClose={() => setNewPostOpen(false)}   setNewPost={setNewPost}   submitPost={submitPost}/>
+      <NewPostModal     open={newPostOpen}    newPost={newPost}     onClose={() => setNewPostOpen(false)}   setNewPost={setNewPost}   submitPost={submitPost} city={city}/>
       <HostEventModal   open={hostEventOpen}  newEvent={newEvent}   onClose={() => setHostEventOpen(false)} setNewEvent={setNewEvent} submitEvent={submitEvent}/>
       <PostIdeaModal    open={postIdeaOpen}   newIdea={newIdea}     onClose={() => setPostIdeaOpen(false)}  setNewIdea={setNewIdea}   submitIdea={submitIdea} ROLES={ROLES}/>
       <InviteModal      open={inviteOpen} onClose={() => setInviteOpen(false)}/>

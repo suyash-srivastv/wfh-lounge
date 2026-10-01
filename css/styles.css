@@ -883,3 +883,13 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:2000;o
 @media(prefers-reduced-motion:reduce){.brew-body,.brew-arm,.brew-eyes,.brew-steam path,.hh-bubble{animation:none!important}.brew-steam path{opacity:.6}}
 @media(max-width:768px){.brew{width:72px;height:72px}.hh-bubble{font-size:16px;padding:10px 13px}}
 
+.np-sub{font-size:13px;color:var(--text-2);margin:-8px 0 16px}
+.np-starters-head{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:8px}
+.np-shuffle{display:inline-flex;align-items:center;gap:4px;border:none;background:none;color:var(--accent-tc);font-family:inherit;font-size:12px;font-weight:500;cursor:pointer}
+.np-shuffle i{font-size:14px}
+.np-starters{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.np-starter{text-align:left;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text-mid);font-family:'DM Serif Display',serif;font-size:15px;line-height:1.3;cursor:pointer;transition:border-color .15s,background .15s}
+.np-starter:hover{border-color:var(--accent-border)}
+.np-starter.on{border-color:var(--accent);background:var(--accent-bg);color:var(--text-1)}
+.empty-starters{display:flex;flex-direction:column;align-items:stretch;gap:6px;width:100%;max-width:440px;margin-top:4px}
+.empty-starters .btn-primary{align-self:center;margin-top:8px}
