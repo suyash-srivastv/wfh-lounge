@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import Clarity from './Clarity';
+import { TAGLINE } from '../constants';
 
 function useDarkMode() {
   const [dark, setDark] = useState(() => localStorage.getItem('wfh-theme') === 'dark');
@@ -72,7 +73,10 @@ function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetec
       <div className="nav">
         <div className="nav-logo">
           <div className={'logo-icon' + (crown ? ' logo-crown' : '')}><i className="ti ti-coffee"/></div>
-          The Stillroom
+          <div className="nav-brand">
+            <span>The Stillroom</span>
+            <span className="nav-tagline">{TAGLINE}</span>
+          </div>
         </div>
         <div className="nav-tabs">
           {NAV.map(n => (

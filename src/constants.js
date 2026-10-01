@@ -1,3 +1,4 @@
+export const TAGLINE="A community for working professionals";
 export const ROLES=["Designer","Developer","Freelancer","Founder","Product Manager","Marketer","Writer","Other"];
 export const VIBES=[
   {emoji:'🧠',label:'deep work mode'},

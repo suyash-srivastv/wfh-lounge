@@ -1,6 +1,6 @@
 # The Stillroom
 
-A community platform for remote workers in tier-2 Indian cities — discover meetups, connect with members, share startup ideas, and chat by city.
+A community for working professionals — meet people in your city, join events, share ideas, chat, and use Clarity to figure out what you actually want from work and life.
 
 ## Stack
 
@@ -33,7 +33,8 @@ Then open http://localhost:3000.
 ## Features
 
 - **Meetups** — browse and RSVP to IRL / virtual events, filtered by city
-- **Members** — find and connect with remote workers nearby
+- **Members** — find and connect with professionals nearby
 - **Ideas** — post startup ideas, upvote, see what people are building
 - **Forums** — async threaded discussions
 - **Chat** — city-scoped real-time-style chat rooms
+- **Clarity** — a private, tap-only check-in on what you want, ranked by you

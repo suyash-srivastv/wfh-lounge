@@ -17,10 +17,10 @@ function InviteModal({ open, onClose }){
           </button>
         </div>
         <div style={{marginTop:16,display:"flex",gap:8,justifyContent:"center"}}>
-          <a href={`https://wa.me/?text=Join%20me%20on%20WFH%20Lounge%20${encodeURIComponent(typeof window!=="undefined"?window.location.origin:"")}`} target="_blank" rel="noopener noreferrer" className="invite-share-btn" style={{background:"#25D366"}}>
+          <a href={`https://wa.me/?text=${encodeURIComponent('Join me on The Stillroom — a community for working professionals. ')}${encodeURIComponent(typeof window!=="undefined"?window.location.origin:"")}`} target="_blank" rel="noopener noreferrer" className="invite-share-btn" style={{background:"#25D366"}}>
             <i className="ti ti-brand-whatsapp"/>WhatsApp
           </a>
-          <a href={`https://twitter.com/intent/tweet?text=Join%20me%20on%20WFH%20Lounge%20—%20the%20community%20for%20remote%20workers%20in%20Indian%20cities.%20${encodeURIComponent(typeof window!=="undefined"?window.location.origin:"")}`} target="_blank" rel="noopener noreferrer" className="invite-share-btn" style={{background:"#1DA1F2"}}>
+          <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent('Join me on The Stillroom — a community for working professionals. ')}${encodeURIComponent(typeof window!=="undefined"?window.location.origin:"")}`} target="_blank" rel="noopener noreferrer" className="invite-share-btn" style={{background:"#1DA1F2"}}>
             <i className="ti ti-brand-twitter"/>Twitter
           </a>
         </div>

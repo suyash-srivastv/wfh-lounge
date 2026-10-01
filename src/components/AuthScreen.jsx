@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { auth, db } from '../firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { ROLES, firebaseErrMsg } from '../constants';
+import { ROLES, TAGLINE, firebaseErrMsg } from '../constants';
 
 function AuthScreen(){
   const [mode,setMode]=useState("login");
@@ -77,7 +77,8 @@ function AuthScreen(){
     <div className="auth-wrap">
       <div className="auth-card">
         <div className="auth-logo"><div className="logo-icon"><i className="ti ti-coffee"/></div>The Stillroom</div>
-        <p className="auth-tagline">{mode==="login"?"Welcome back.":"Join your city's remote community."}</p>
+        <div className="brand-tagline">{TAGLINE}</div>
+        <p className="auth-tagline">{mode==="login"?"Welcome back.":"Meet people in your city, share ideas, and figure out what you actually want."}</p>
         <div className="auth-tabs">
           <button className={"auth-tab"+(mode==="login"?" active":"")} onClick={()=>{setMode("login");setErr("");}}>Log in</button>
           <button className={"auth-tab"+(mode==="signup"?" active":"")} onClick={()=>{setMode("signup");setErr("");}}>Sign up</button>

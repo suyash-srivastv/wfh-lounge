@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { db } from '../firebase';
 import { doc, getDoc, runTransaction, collection, query, limit, getDocs } from 'firebase/firestore';
-import { ROLES, firebaseErrMsg } from '../constants';
+import { ROLES, TAGLINE, firebaseErrMsg } from '../constants';
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
@@ -162,6 +162,7 @@ function OnboardingScreen({ user, setUser }) {
     <div className="auth-wrap">
       <div className="auth-card" style={{ maxWidth: 460 }}>
         <div className="auth-logo"><div className="logo-icon"><i className="ti ti-coffee" /></div>The Stillroom</div>
+        <div className="brand-tagline">{TAGLINE}</div>
         <p className="auth-tagline">Almost there — set up your public profile.</p>
 
         <div className="onboard-steps">
