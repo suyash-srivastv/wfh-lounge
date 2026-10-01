@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { db } from '../firebase';
 import {
-  collection, doc, addDoc, setDoc, deleteDoc,
+  collection, doc, setDoc, deleteDoc,
   query, orderBy, limit, onSnapshot,
   serverTimestamp, increment,
 } from 'firebase/firestore';
 import { getDmKey, encryptMessage, decryptMessage } from '../crypto';
+import { addWithRate } from '../firestoreWrites';
 
 export function useDM(user) {
   const [inbox,     setInbox]     = useState([]);
@@ -71,11 +72,18 @@ export function useDM(user) {
     const encryptedText = await encryptMessage(text, key);
     const now           = serverTimestamp();
 
-    await addDoc(collection(db, 'dms', roomId(activeDm.uid), 'messages'), {
-      text: encryptedText, senderId: user.uid, senderName: user.name, timestamp: now,
-    });
+    try {
+      await addWithRate(user.uid, ['dms', roomId(activeDm.uid), 'messages'], {
+        text: encryptedText, senderId: user.uid, senderName: user.name, timestamp: now,
+      });
+    } catch (e) {
+      console.error('DM not sent:', e);
+      setDmInput(text);  // give the text back so it isn't lost
+      return;
+    }
 
-    const inboxFields = { lastMsg: '🔒 Encrypted message', lastAt: now };
+    // Must match the security rules exactly (fixed preview, no message content).
+    const inboxFields = { lastMsg: 'New message', lastAt: now };
 
     setDoc(doc(db, 'userInbox', user.uid, 'dms', activeDm.uid), {
       name: activeDm.name, photoURL: activeDm.photoURL || null, ...inboxFields, unread: 0,

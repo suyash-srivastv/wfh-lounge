@@ -176,7 +176,7 @@ function OnboardingScreen({ user, setUser }) {
             <>
               <div className="auth-field">
                 <label className="auth-label">Display name <span style={{color:'#c0392b'}}>*</span></label>
-                <input className="auth-input" placeholder="How people will see you"
+                <input className="auth-input" maxLength={50} placeholder="How people will see you"
                   value={displayName} onChange={e => setDisplayName(e.target.value)} />
                 <span style={{ fontSize: 11, color: '#B4B2A9', marginTop: 3 }}>This is shown on your posts and profile — not your legal name.</span>
               </div>

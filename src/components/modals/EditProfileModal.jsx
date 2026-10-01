@@ -3,6 +3,23 @@ import { storage } from '../../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { ROLES, STATUSES, VIBES } from '../../constants';
 
+const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+const PHOTO_SIZE = 512;
+
+// Square-crop and shrink to 512px WebP (~30–60KB) so member lists stay light.
+async function shrinkPhoto(file) {
+  const bitmap = await createImageBitmap(file);
+  const side = Math.min(bitmap.width, bitmap.height);
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = Math.min(PHOTO_SIZE, side);
+  canvas.getContext('2d').drawImage(bitmap,
+    (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, canvas.width, canvas.height);
+  bitmap.close?.();
+  return new Promise((resolve, reject) =>
+    canvas.toBlob(b => b ? resolve(b) : reject(new Error('Could not process photo')), 'image/webp', 0.85));
+}
+
 function EditProfileModal({ open, user, onClose, onSave }) {
   const [form,       setForm]       = useState({ name: '', city: '', role: '', bio: '', yearsExp: '', status: '', vibe: '' });
   const [cityQ,      setCityQ]      = useState('');
@@ -10,6 +27,7 @@ function EditProfileModal({ open, user, onClose, onSave }) {
   const [cityOpen,   setCityOpen]   = useState(false);
   const [uploading,  setUploading]  = useState(false);
   const [preview,    setPreview]    = useState(null);
+  const [photoErr,   setPhotoErr]   = useState('');
   const cityRef  = useRef(null);
   const fileRef  = useRef(null);
 
@@ -53,14 +71,23 @@ function EditProfileModal({ open, user, onClose, onSave }) {
 
   async function handlePhotoChange(e) {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    setPreview(URL.createObjectURL(file));
+    setPhotoErr('');
+    if (!PHOTO_TYPES.includes(file.type)) { setPhotoErr('Use a JPG, PNG or WebP image.'); return; }
+    if (file.size > PHOTO_MAX_BYTES)      { setPhotoErr('That image is over 5MB.'); return; }
     setUploading(true);
     try {
+      const small = await shrinkPhoto(file);
+      setPreview(URL.createObjectURL(small));
       const storageRef = ref(storage, `avatars/${user.uid}`);
-      await uploadBytes(storageRef, file);
+      await uploadBytes(storageRef, small, { contentType: 'image/webp', cacheControl: 'public, max-age=3600' });
       const url = await getDownloadURL(storageRef);
       setForm(p => ({ ...p, photoURL: url }));
+    } catch (err) {
+      console.error('Photo upload failed:', err);
+      setPhotoErr("Couldn't upload that photo. Try another one.");
+      setPreview(user.photoURL || null);
     } finally { setUploading(false); }
   }
 
@@ -86,14 +113,14 @@ function EditProfileModal({ open, user, onClose, onSave }) {
           </div>
           <div>
             <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>Profile photo</div>
-            <div style={{ fontSize: 12, color: '#888780' }}>JPG or PNG, max 5MB</div>
+            <div style={{ fontSize: 12, color: photoErr ? '#c0392b' : '#888780' }}>{photoErr || 'JPG, PNG or WebP, max 5MB'}</div>
           </div>
           <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={handlePhotoChange}/>
         </div>
 
         <div className="auth-field" style={{ marginBottom: 10 }}>
           <label className="auth-label">Display name</label>
-          <input className="modal-input" placeholder="Your name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}/>
+          <input className="modal-input" maxLength={50} placeholder="Your name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}/>
         </div>
 
         <div className="auth-field" style={{ marginBottom: 10 }}>

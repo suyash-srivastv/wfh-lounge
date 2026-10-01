@@ -6,8 +6,8 @@ function PostIdeaModal({ open, onClose, newIdea, setNewIdea, submitIdea, ROLES }
     <div className="overlay" onClick={onClose}>
       <div className="modal" style={{maxWidth:520}} onClick={e=>e.stopPropagation()}>
         <div className="modal-title">Post a startup idea</div>
-        <input className="modal-input" placeholder="Idea title…" value={newIdea.title} onChange={e=>setNewIdea(p=>({...p,title:e.target.value}))}/>
-        <textarea className="modal-input" placeholder="Describe the problem and your solution…" rows={3} style={{resize:"vertical"}} value={newIdea.desc} onChange={e=>setNewIdea(p=>({...p,desc:e.target.value}))}/>
+        <input className="modal-input" maxLength={120} placeholder="Idea title…" value={newIdea.title} onChange={e=>setNewIdea(p=>({...p,title:e.target.value}))}/>
+        <textarea className="modal-input" maxLength={2000} placeholder="Describe the problem and your solution…" rows={3} style={{resize:"vertical"}} value={newIdea.desc} onChange={e=>setNewIdea(p=>({...p,desc:e.target.value}))}/>
         <div className="modal-label">Stage</div>
         <div className="modal-type-toggle">
           {["Idea","Validating","Building"].map(s=>(

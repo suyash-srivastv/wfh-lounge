@@ -38,3 +38,29 @@ Then open http://localhost:3000.
 - **Forums** — async threaded discussions
 - **Chat** — city-scoped real-time-style chat rooms
 - **Clarity** — a private, tap-only check-in on what you want, ranked by you
+
+## Security rules & deploying
+
+Firestore rules live in [`firestore.rules`](firestore.rules) and indexes in [`firestore.indexes.json`](firestore.indexes.json). Deploy both from the repo (never edit them in the console, or they drift):
+
+```bash
+npx firebase login          # once
+npm run deploy:rules        # rules + indexes
+```
+
+New indexes take a few minutes to build; queries filtered by city fail until they finish.
+
+## Tests
+
+```bash
+npm run test:rules          # rules tests on the Firestore emulator (no real data)
+
+# End-to-end: the real app against local emulators
+npm run emulators           # terminal 1
+npm run dev:emulators       # terminal 2 → http://localhost:5174
+npm run test:e2e            # terminal 3
+```
+
+## Optional: App Check
+
+Blocks scripts and bots that call Firebase directly. Create a reCAPTCHA v3 key, register it in Firebase Console → App Check, put it in `.env` as `VITE_RECAPTCHA_SITE_KEY=...`, then turn on enforcement for Firestore.

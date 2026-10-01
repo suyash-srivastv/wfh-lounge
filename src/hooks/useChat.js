@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, deleteDoc, doc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { collection, deleteDoc, doc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { addWithRate } from '../firestoreWrites';
 import { avatarColors } from '../constants';
 
 export function useChat(user, tab, city) {
@@ -44,9 +45,14 @@ export function useChat(user, tab, city) {
     if (!chatInput.trim() || !user) return;
     const text = chatInput.trim();
     setChatInput('');
-    await addDoc(collection(db, 'chats', chatRoom, 'messages'), {
-      text, user: user.name, userId: user.uid, timestamp: serverTimestamp(),
-    });
+    try {
+      await addWithRate(user.uid, ['chats', chatRoom, 'messages'], {
+        text, user: user.name, userId: user.uid, timestamp: serverTimestamp(),
+      });
+    } catch (e) {
+      console.error('Chat message not sent:', e);
+      setChatInput(text);  // give the text back so it isn't lost
+    }
   }
 
   async function deleteChatMsg(id) {

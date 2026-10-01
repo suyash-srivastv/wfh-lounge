@@ -10,8 +10,8 @@ function HostEventModal({ open, onClose, newEvent, setNewEvent, submitEvent }){
           <button className={"modal-type-btn"+(newEvent.type==="IRL"?" active":"")} onClick={()=>setNewEvent(p=>({...p,type:"IRL"}))}>📍 IRL</button>
           <button className={"modal-type-btn"+(newEvent.type==="Virtual"?" active":"")} onClick={()=>setNewEvent(p=>({...p,type:"Virtual"}))}>🌐 Virtual</button>
         </div>
-        <input className="modal-input" placeholder="Event title…" value={newEvent.title} onChange={e=>setNewEvent(p=>({...p,title:e.target.value}))}/>
-        <input className="modal-input" placeholder={newEvent.type==="IRL"?"Venue / café / coworking space…":"Zoom, Google Meet link…"} value={newEvent.location} onChange={e=>setNewEvent(p=>({...p,location:e.target.value}))}/>
+        <input className="modal-input" maxLength={120} placeholder="Event title…" value={newEvent.title} onChange={e=>setNewEvent(p=>({...p,title:e.target.value}))}/>
+        <input className="modal-input" maxLength={200} placeholder={newEvent.type==="IRL"?"Venue / café / coworking space…":"Zoom, Google Meet link…"} value={newEvent.location} onChange={e=>setNewEvent(p=>({...p,location:e.target.value}))}/>
         <div style={{display:"flex",gap:8}}>
           <input className="modal-input" type="date" style={{flex:1}} value={newEvent.date} onChange={e=>setNewEvent(p=>({...p,date:e.target.value}))}/>
           <input className="modal-input" type="time" style={{flex:1}} value={newEvent.time} onChange={e=>setNewEvent(p=>({...p,time:e.target.value}))}/>

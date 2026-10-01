@@ -3,124 +3,282 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ---------- Helpers ----------
+
     function signedIn() { return request.auth != null; }
     function me() { return request.auth.uid; }
 
+    // Email/password accounts must verify their email before using the app
+    // (Google sign-ins are verified already). Slows down fake-account scraping.
+    function verified() { return signedIn() && request.auth.token.email_verified == true; }
+
+    function userPath(uid) { return /databases/$(database)/documents/users/$(uid); }
+    function myProfile() { return get(userPath(me())).data; }
+    function myName() { return myProfile().get('name', ''); }
+    function myPhoto() { return myProfile().get('photoURL', null); }
+
+    function str(v, max) { return v is string && v.size() <= max; }
+    function nonEmpty(v, max) { return str(v, max) && v.size() > 0; }
+    function shortList(v, max) { return v is list && v.size() <= max; }
+
     // Top-level fields changed by this update.
-    function changed() {
-      return request.resource.data.diff(resource.data).affectedKeys();
-    }
+    function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
 
     // Keys changed inside map field `f` (field may not exist yet).
     function mapChanged(f) {
       return request.resource.data.get(f, {}).diff(resource.data.get(f, {})).affectedKeys();
     }
+    function onlyMyKeyIn(f) { return mapChanged(f).hasOnly([me()]); }
+    function hadMine(f) { return me() in resource.data.get(f, {}); }
+    function hasMine(f) { return me() in request.resource.data.get(f, {}); }
 
-    // The update only touches the caller's own entry inside map field `f`.
-    function onlyMyKeyIn(f) {
-      return mapChanged(f).hasOnly([me()]);
+    // Counter `c` may only move by exactly +1 when I add my entry to map `f`,
+    // and -1 when I remove it (likes ↔ likeCount, rsvps ↔ attendeeCount, …).
+    function countFollows(f, c) {
+      let before = resource.data.get(c, 0);
+      let after  = request.resource.data.get(c, 0);
+      return (!hadMine(f) && hasMine(f) && after == before + 1)
+          || (hadMine(f) && !hasMine(f) && after == before - 1)
+          || (hadMine(f) == hasMine(f) && after == before);
+    }
+
+    // Reactions: only the app's emojis, and only my own entry under each.
+    function reactionOk(e) {
+      return request.resource.data.get('reactions', {}).get(e, {})
+        .diff(resource.data.get('reactions', {}).get(e, {})).affectedKeys().hasOnly([me()]);
+    }
+    function reactionsOk() {
+      return mapChanged('reactions').hasOnly(['🔥', '💀', '🫡', '💯', '✨'])
+        && reactionOk('🔥') && reactionOk('💀') && reactionOk('🫡') && reactionOk('💯') && reactionOk('✨');
+    }
+
+    // Slow mode: every new message/post also stamps rate/{uid} in the same
+    // batch, and must come at least 2 seconds after the previous one.
+    function ratePath() { return /databases/$(database)/documents/rate/$(me()); }
+    function slowMode() {
+      return getAfter(ratePath()).data.last == request.time
+        && (!exists(ratePath()) || request.time > get(ratePath()).data.last + duration.value(2, 's'));
+    }
+
+    // DMs are only allowed between connected users where neither has blocked
+    // the other. Both sides must list the connection, so nobody can add it alone.
+    function canDm(other) {
+      let mine   = myProfile();
+      let theirs = get(userPath(other)).data;
+      return other in mine.get('connections', {})
+        && me() in theirs.get('connections', {})
+        && !(other in mine.get('blockedUsers', {}))
+        && !(me() in theirs.get('blockedUsers', {}));
     }
 
     // ---------- Users ----------
-    match /users/{uid} {
-      allow read: if signedIn();
-      allow create, delete: if signedIn() && uid == me();
 
-      // Your own profile: anything.
-      // Someone else's profile: only their own entry in the friend maps
-      // (send/cancel/accept/decline request, unfriend, block).
+    // A username is set once (during onboarding), never changed, and must be
+    // one this account claimed in /usernames in the same write.
+    function usernameOk() {
+      let u    = request.resource.data.get('username', null);
+      let prev = resource == null ? null : resource.data.get('username', null);
+      return u == prev
+        || (prev == null && getAfter(/databases/$(database)/documents/usernames/$(u)).data.uid == me());
+    }
+
+    function profileFieldsOk() {
+      let d = request.resource.data;
+      return str(d.get('name', ''), 50) && str(d.get('bio', ''), 160)
+        && str(d.get('city', ''), 80) && str(d.get('role', ''), 50)
+        && str(d.get('status', ''), 60) && str(d.get('vibe', ''), 60)
+        && str(d.get('initials', ''), 4)
+        && (d.get('photoURL', null) == null || str(d.photoURL, 1000));
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (uid == me() || verified());
+      allow create: if signedIn() && uid == me() && profileFieldsOk() && usernameOk();
+      allow delete: if signedIn() && uid == me();
+
       allow update: if signedIn() && (
-        uid == me() || (
-          changed().hasOnly(['receivedRequests', 'sentRequests', 'connections'])
+        // Your own profile: any valid change.
+        (uid == me() && profileFieldsOk() && usernameOk())
+        // Someone else's profile: only their own entry in the friend maps.
+        || (verified()
+          && changed().hasOnly(['receivedRequests', 'sentRequests', 'connections'])
           && onlyMyKeyIn('receivedRequests')
           && onlyMyKeyIn('sentRequests')
           && onlyMyKeyIn('connections')
-          // May only ADD a connection to someone who sent you a request.
-          && (!(me() in request.resource.data.get('connections', {}))
-              || me() in resource.data.get('connections', {})
-              || me() in resource.data.get('sentRequests', {}))
-        )
+          // A friend request must carry my real name and photo.
+          && (!(me() in mapChanged('receivedRequests')) || !hasMine('receivedRequests')
+              || request.resource.data.receivedRequests[me()] == { 'name': myName(), 'photoURL': myPhoto() })
+          // I can remove myself from their sent requests (decline), never add.
+          && (!hasMine('sentRequests') || hadMine('sentRequests'))
+          // I can only add a connection to someone who sent me a request.
+          && (!hasMine('connections') || hadMine('connections') || hadMine('sentRequests')))
       );
     }
 
-    // ---------- Usernames (unique handles) ----------
+    // ---------- Usernames (one per account) ----------
+
     match /usernames/{name} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.uid == me();
+      // Claimed together with setting it on your own profile, so an account
+      // can't hoard extra handles.
+      allow create: if signedIn()
+        && name.matches('^[a-z0-9_]{3,20}$')
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == me()
+        && getAfter(userPath(me())).data.get('username', null) == name;
+    }
+
+    // ---------- Slow-mode timestamps ----------
+
+    match /rate/{uid} {
+      allow read: if signedIn() && uid == me();
+      allow create, update: if verified() && uid == me()
+        && request.resource.data.keys().hasOnly(['last'])
+        && request.resource.data.last == request.time;
     }
 
     // ---------- Events ----------
+
     match /events/{id} {
-      allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.hostId == me();
-      allow delete: if signedIn() && resource.data.hostId == me();
-      allow update: if signedIn() && (
-        resource.data.hostId == me() || (
-          changed().hasOnly(['rsvps', 'attendeeCount']) && onlyMyKeyIn('rsvps')
-        )
-      );
+      allow read: if verified();
+      allow create: if verified() && slowMode()
+        && request.resource.data.hostId == me()
+        && request.resource.data.host == myName()
+        && nonEmpty(request.resource.data.title, 120)
+        && nonEmpty(request.resource.data.location, 200)
+        && str(request.resource.data.get('city', ''), 80)
+        && shortList(request.resource.data.get('tags', []), 10)
+        && request.resource.data.attendeeCount == 1
+        && request.resource.data.rsvps.keys().hasOnly([me()])
+        && request.resource.data.rsvps[me()] == true;
+      allow delete: if verified() && resource.data.hostId == me();
+      allow update: if verified()
+        && changed().hasOnly(['rsvps', 'attendeeCount'])
+        && onlyMyKeyIn('rsvps') && countFollows('rsvps', 'attendeeCount');
     }
 
     // ---------- Ideas ----------
+
     match /ideas/{id} {
-      allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.authorId == me();
-      allow delete: if signedIn() && resource.data.authorId == me();
-      allow update: if signedIn() && (
-        resource.data.authorId == me() || (
-          changed().hasOnly(['upvotes', 'votes', 'reactions']) && onlyMyKeyIn('upvotes')
-        )
-      );
+      allow read: if verified();
+      allow create: if verified() && slowMode()
+        && request.resource.data.authorId == me()
+        && request.resource.data.author == myName()
+        && nonEmpty(request.resource.data.title, 120)
+        && str(request.resource.data.get('desc', ''), 2000)
+        && str(request.resource.data.get('city', ''), 80)
+        && shortList(request.resource.data.get('tags', []), 10)
+        && shortList(request.resource.data.get('looking', []), 10)
+        && request.resource.data.votes == 0
+        && request.resource.data.upvotes == {};
+      allow delete: if verified() && resource.data.authorId == me();
+      allow update: if verified()
+        && changed().hasOnly(['upvotes', 'votes', 'reactions'])
+        && onlyMyKeyIn('upvotes') && countFollows('upvotes', 'votes')
+        && reactionsOk();
     }
 
-    // ---------- Threads ----------
+    // ---------- Forum threads + replies ----------
+
     match /threads/{id} {
-      allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.authorId == me();
-      allow delete: if signedIn() && resource.data.authorId == me();
-      allow update: if signedIn() && (
-        resource.data.authorId == me() || (
-          changed().hasOnly(['likes', 'likeCount', 'reactions', 'replyCount']) && onlyMyKeyIn('likes')
-        )
-      );
+      function replyPath(rid) { return /databases/$(database)/documents/threads/$(id)/replies/$(rid); }
+
+      // replyCount moves +1 only alongside a reply I create in the same batch,
+      // and -1 only alongside a reply of mine I delete.
+      function replyCountOk() {
+        let before = resource.data.get('replyCount', 0);
+        let after  = request.resource.data.get('replyCount', 0);
+        let added  = request.resource.data.get('lastReplyId', '');
+        let gone   = request.resource.data.get('lastDeletedReplyId', '');
+        return after == before
+          || (after == before + 1 && !exists(replyPath(added)) && getAfter(replyPath(added)).data.authorId == me())
+          || (after == before - 1 && get(replyPath(gone)).data.authorId == me() && !existsAfter(replyPath(gone)));
+      }
+
+      allow read: if verified();
+      allow create: if verified() && slowMode()
+        && request.resource.data.authorId == me()
+        && request.resource.data.author == myName()
+        && nonEmpty(request.resource.data.title, 120)
+        && str(request.resource.data.get('body', ''), 5000)
+        && str(request.resource.data.get('city', ''), 80)
+        && shortList(request.resource.data.get('tags', []), 10)
+        && request.resource.data.replyCount == 0
+        && request.resource.data.likeCount == 0
+        && request.resource.data.likes == {};
+      allow delete: if verified() && resource.data.authorId == me();
+      allow update: if verified()
+        && changed().hasOnly(['likes', 'likeCount', 'reactions', 'replyCount', 'lastReplyId', 'lastDeletedReplyId'])
+        && onlyMyKeyIn('likes') && countFollows('likes', 'likeCount')
+        && reactionsOk() && replyCountOk();
 
       match /replies/{replyId} {
-        allow read: if signedIn();
-        allow create: if signedIn() && request.resource.data.authorId == me();
+        allow read: if verified();
+        allow create: if verified() && slowMode()
+          && request.resource.data.authorId == me()
+          && request.resource.data.author == myName()
+          && nonEmpty(request.resource.data.body, 2000);
+        allow delete: if verified() && resource.data.authorId == me();
       }
     }
 
     // ---------- City chat rooms ----------
+
     match /chats/{room}/messages/{msgId} {
-      allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.userId == me();
-      allow delete: if signedIn() && resource.data.userId == me();
+      allow read: if verified();
+      allow create: if verified() && slowMode()
+        && request.resource.data.userId == me()
+        && request.resource.data.user == myName()
+        && nonEmpty(request.resource.data.text, 1000);
+      allow delete: if verified() && resource.data.userId == me();
     }
 
     // ---------- DMs (room id = "<uidA>_<uidB>", sorted) ----------
+
     match /dms/{room}/messages/{msgId} {
-      allow read: if signedIn() && me() in room.split('_');
-      allow create: if signedIn() && me() in room.split('_')
-                    && request.resource.data.senderId == me();
-      allow delete: if signedIn() && resource.data.senderId == me();
+      function parts() { return room.split('_'); }
+      function inRoom() { return parts().size() == 2 && (parts()[0] == me() || parts()[1] == me()); }
+      function peer() { return parts()[0] == me() ? parts()[1] : parts()[0]; }
+
+      allow read: if verified() && inRoom();
+      allow create: if verified() && inRoom() && slowMode()
+        && request.resource.data.senderId == me()
+        && request.resource.data.senderName == myName()
+        && nonEmpty(request.resource.data.text, 8000)   // encrypted, so longer than the 1,000-char message
+        && canDm(peer());
+      allow delete: if verified() && resource.data.senderId == me();
     }
 
-    // ---------- What I Want results (private to each user) ----------
+    // ---------- Clarity plans (private to each user) ----------
+
     match /reflections/{uid} {
       allow read, write: if signedIn() && uid == me();
 
-      // Every finished run, kept so people can see how their answers change.
+      // Every new plan, kept so people can see how their answers change.
       match /history/{runId} {
         allow read, create: if signedIn() && uid == me();
       }
     }
 
     // ---------- DM inbox ----------
-    // Your inbox is yours to read; either side of a conversation may write
-    // the entry for it (sender updates the recipient's unread count).
+
     match /userInbox/{uid}/dms/{otherUid} {
       allow read: if signedIn() && uid == me();
-      allow write: if signedIn() && (uid == me() || otherUid == me());
+      allow delete: if signedIn() && uid == me();
+      allow create, update: if verified() && (
+        // Your own inbox: anything.
+        uid == me()
+        // The sender updating your entry for their conversation: only real,
+        // fixed values — their real name and photo, the standard preview,
+        // and the unread count going up by exactly one.
+        || (otherUid == me() && canDm(uid)
+          && request.resource.data.keys().hasOnly(['name', 'photoURL', 'lastMsg', 'lastAt', 'unread'])
+          && request.resource.data.name == myName()
+          && request.resource.data.get('photoURL', null) == myPhoto()
+          && request.resource.data.lastMsg == 'New message'
+          && request.resource.data.lastAt == request.time
+          && request.resource.data.unread == (resource == null ? 0 : resource.data.get('unread', 0)) + 1)
+      );
     }
   }
 }

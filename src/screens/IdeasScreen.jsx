@@ -1,4 +1,5 @@
-function IdeasScreen({ ideas, city, userId, upvote, deleteIdea, onPostIdea, reactIdea, reactions }){
+import LoadMore from '../components/LoadMore';
+function IdeasScreen({ ideas, hasMore, onLoadMore, city, userId, upvote, deleteIdea, onPostIdea, reactIdea, reactions }){
   return (
     <div>
       <div className="page-header">
@@ -48,6 +49,7 @@ function IdeasScreen({ ideas, city, userId, upvote, deleteIdea, onPostIdea, reac
         ))}
         {ideas.length===0&&<div className="empty">No ideas in {city} yet.</div>}
       </div>
+      <LoadMore hasMore={hasMore} onLoadMore={onLoadMore}/>
     </div>
   );
 }

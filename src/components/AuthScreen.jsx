@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { auth, db } from '../firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { ROLES, TAGLINE, firebaseErrMsg } from '../constants';
 
@@ -58,6 +58,7 @@ function AuthScreen(){
       } else {
         if(!form.name.trim()||!form.email.trim()||!form.password.trim()){setErr("Name, email and password are required.");setLoading(false);return;}
         const cred=await createUserWithEmailAndPassword(auth, form.email.trim(), form.password);
+        sendEmailVerification(cred.user).catch(()=>{});
         const initials=form.name.trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
         await setDoc(doc(db, "users", cred.user.uid), {
           name:form.name.trim(),
@@ -98,7 +99,7 @@ function AuthScreen(){
           {mode==="signup"&&(
             <div className="auth-field">
               <label className="auth-label">Full name</label>
-              <input className="auth-input" placeholder="Your name" value={form.name} onChange={e=>field("name",e.target.value)}/>
+              <input className="auth-input" maxLength={50} placeholder="Your name" value={form.name} onChange={e=>field("name",e.target.value)}/>
             </div>
           )}
           <div className="auth-field">

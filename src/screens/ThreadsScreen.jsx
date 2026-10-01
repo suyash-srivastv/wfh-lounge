@@ -1,6 +1,36 @@
+import { useEffect, useState } from 'react';
+import LoadMore from '../components/LoadMore';
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase';
 import { timeAgo } from '../constants';
+import MsgDelete from '../components/MsgDelete';
 
-function ThreadsScreen({ threads, city, userId, openThread, toggleThread, replyText, setReplyText, submitReply, likeThread, deleteThread, onNewPost, reactThread, reactions }){
+// Replies for the open thread only (most recent 50), loaded when it's opened.
+function Replies({ threadId, userId, deleteReply }) {
+  const [replies, setReplies] = useState(null);
+  useEffect(() => {
+    const q = query(collection(db, 'threads', threadId, 'replies'), orderBy('createdAt'), limit(50));
+    return onSnapshot(q, snap => setReplies(snap.docs.map(d => ({ id: d.id, ...d.data() }))), () => setReplies([]));
+  }, [threadId]);
+
+  if (!replies) return <div className="reply-empty">Loading replies…</div>;
+  if (!replies.length) return <div className="reply-empty">No replies yet.</div>;
+  return (
+    <div className="reply-list">
+      {replies.map(r => (
+        <div key={r.id} className="msg reply">
+          <div className="msg-body">
+            <div className="msg-name">{r.author}<span className="msg-time">{timeAgo(r.createdAt?.toDate())}</span></div>
+            <div className="msg-text">{r.body}</div>
+          </div>
+          {r.authorId === userId && <MsgDelete onDelete={() => deleteReply(threadId, r.id)}/>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ThreadsScreen({ threads, hasMore, onLoadMore, city, userId, openThread, toggleThread, replyText, setReplyText, submitReply, likeThread, deleteThread, onNewPost, reactThread, reactions, deleteReply }){
   return (
     <div>
       <div className="page-header">
@@ -16,9 +46,10 @@ function ThreadsScreen({ threads, city, userId, openThread, toggleThread, replyT
             </div>
             {openThread===t.id&&(
               <div className="thread-expand" onClick={e=>e.stopPropagation()}>
-                <div style={{fontSize:13,color:"#555550",lineHeight:1.7,marginBottom:12}}>{t.body}</div>
+                <div style={{fontSize:13,color:"var(--text-dim)",lineHeight:1.7,marginBottom:12}}>{t.body}</div>
+                <Replies threadId={t.id} userId={userId} deleteReply={deleteReply}/>
                 <form style={{display:"flex",gap:8}} onSubmit={e=>{e.preventDefault();submitReply();}}>
-                  <input className="chat-input" value={replyText} onChange={e=>setReplyText(e.target.value)} placeholder="Write a reply…" enterKeyHint="send" autoComplete="off"/>
+                  <input className="chat-input" value={replyText} onChange={e=>setReplyText(e.target.value)} placeholder="Write a reply…" maxLength={2000} enterKeyHint="send" autoComplete="off"/>
                   <button type="submit" className="send-btn">Reply</button>
                 </form>
               </div>
@@ -49,6 +80,7 @@ function ThreadsScreen({ threads, city, userId, openThread, toggleThread, replyT
         ))}
         {threads.length===0&&<div className="empty">No posts yet. Start the conversation!</div>}
       </div>
+      <LoadMore hasMore={hasMore} onLoadMore={onLoadMore}/>
     </div>
   );
 }

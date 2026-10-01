@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { auth, db } from './firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, addDoc, query, limit, serverTimestamp, updateDoc, deleteField, increment, getDocs, writeBatch, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { INIT_EVENTS, INIT_IDEAS, INIT_THREADS } from './mockData';
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc, deleteField, increment, writeBatch, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { addWithRate } from './firestoreWrites';
 import { ROLES, REACTIONS } from './constants';
-import { useFirestoreListeners } from './hooks/useFirestoreListeners';
+import { useFirestoreListeners, useMemberProfile, useAuthorThreads, useMyStats } from './hooks/useFirestoreListeners';
 import { useChat } from './hooks/useChat';
 import { useDM }   from './hooks/useDM';
 import Confetti          from './components/Confetti';
 import DmPanel           from './components/DmPanel';
 import AuthScreen        from './components/AuthScreen';
 import OnboardingScreen  from './components/OnboardingScreen';
+import VerifyEmailScreen from './components/VerifyEmailScreen';
 import Clarity           from './components/Clarity';
 import Nav               from './components/Nav';
 import EditProfileModal  from './components/modals/EditProfileModal';
@@ -29,6 +30,7 @@ import ProfileScreen     from './screens/ProfileScreen';
 function App(){
   const [user,          setUser]          = useState(null);
   const [authLoading,   setAuthLoading]   = useState(true);
+  const [needsVerify,   setNeedsVerify]   = useState(null);  // email to verify, or null
   const [tab,           setTab]           = useState('events');
   const [city,          setCity]          = useState('All cities');
   const [detectedCity,  setDetectedCity]  = useState(null);
@@ -50,8 +52,14 @@ function App(){
   const [confetti,      setConfetti]      = useState(false);
   const [dmPanelOpen,   setDmPanelOpen]   = useState(false);
 
-  const { events, members, ideas, threads } = useFirestoreListeners(user);
-  const dm = useDM(user);
+  // Nothing loads until the account is verified (the rules would refuse it).
+  const activeUser = user && !needsVerify ? user : null;
+  const lists   = useFirestoreListeners(activeUser, city);
+  const events  = lists.events.items;
+  const ideas   = lists.ideas.items;
+  const threads = lists.threads.items;
+  const members = lists.members.items;
+  const dm = useDM(activeUser);
 
   // Keep connections + requests in sync with Firestore in real-time
   useEffect(() => {
@@ -85,7 +93,7 @@ function App(){
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
-  const chat = useChat(user, tab, city);
+  const chat = useChat(activeUser, tab, city);
 
   // Restore saved city. Location is never requested automatically — only when
   // the user taps "Use my location" in the city picker.
@@ -118,12 +126,17 @@ function App(){
   // Firebase auth listener
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async fbUser => {
+      // Email/password accounts must verify first; Google accounts already are.
+      const unverified = fbUser && !fbUser.emailVerified && fbUser.providerData.some(p => p.providerId === 'password');
+      setNeedsVerify(unverified ? fbUser.email : null);
       if (fbUser) {
         try {
           const snap = await getDoc(doc(db, 'users', fbUser.uid));
           if (!snap.exists()) {
-            const initials = (fbUser.displayName || fbUser.email || '??').split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
-            const profile  = { name: fbUser.displayName || fbUser.email || '', city: '', role: '', initials };
+            // Never fall back to the email: profiles are visible to other members.
+            const name     = (fbUser.displayName || 'New member').slice(0, 50);
+            const initials = name.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            const profile  = { name, city: '', role: '', initials };
             await setDoc(doc(db, 'users', fbUser.uid), profile);
             setUser({ ...profile, uid: fbUser.uid });
           } else {
@@ -131,41 +144,29 @@ function App(){
             setUser({ ...profile, uid: fbUser.uid });
           }
         } catch {
-          setUser({ uid: fbUser.uid, name: fbUser.email || '', initials: '??' });
+          setUser({ uid: fbUser.uid, name: 'New member', initials: 'NM' });
         }
       } else {
         setUser(null);
       }
       setAuthLoading(false);
-      seedFirestoreIfEmpty().catch(() => {});
     });
     return unsub;
   }, []);
-
-  async function seedFirestoreIfEmpty() {
-    const check = await getDocs(query(collection(db, 'events'), limit(1)));
-    if (!check.empty) return;
-    const batch = writeBatch(db);
-    INIT_EVENTS.forEach(ev   => batch.set(doc(collection(db,'events')),  {title:ev.title,type:ev.type,city:ev.city,location:ev.location,date:ev.date,time:ev.time,tags:ev.tags,host:ev.host,hostId:'seed',attendeeCount:ev.attendees,rsvps:{},createdAt:serverTimestamp()}));
-    INIT_IDEAS.forEach(idea  => batch.set(doc(collection(db,'ideas')),   {title:idea.title,desc:idea.desc,author:idea.author,authorId:'seed',city:idea.city,votes:idea.votes,stage:idea.stage,tags:idea.tags,looking:idea.looking,upvotes:{},createdAt:serverTimestamp()}));
-    INIT_THREADS.forEach(t   => batch.set(doc(collection(db,'threads')), {title:t.title,body:t.body,author:t.author,authorId:'seed',city:t.city,tags:t.tags,replyCount:t.replies,likeCount:t.likes,likes:{},createdAt:serverTimestamp()}));
-    await batch.commit();
-  }
 
   // Open on the user's home city whenever they log in or finish sign-up.
   // (Picking another city in the nav still works for the rest of the session.)
   const hasProfile = !!user?.username;
   useEffect(() => {
-    const home = user?.city || user?.selectedCity;
+    const home = user?.city;
     if (hasProfile && home) { setCity(home); localStorage.setItem('wfh-city', home); }
   }, [user?.uid, hasProfile]);
 
-  async function changeCity(c) {
+  // The city you're browsing is kept on this device only — switching it
+  // doesn't write to your profile (your home city is set in Edit profile).
+  function changeCity(c) {
     setCity(c);
     localStorage.setItem('wfh-city', c);
-    if (user?.uid) {
-      await updateDoc(doc(db, 'users', user.uid), { selectedCity: c }).catch(() => {});
-    }
   }
 
   // --- Action functions ---
@@ -230,27 +231,36 @@ function App(){
     await updateDoc(doc(db,'threads',id), { [`likes.${user.uid}`]: liked ? deleteField() : true, likeCount: increment(liked ? -1 : 1) });
   }
   function toggleThread(id) { setOpenThread(p => { if (p === id) return null; setReplyText(''); return id; }); }
+  // A reply and its count change are written together; the rules check they match.
   async function submitReply() {
     if (!replyText.trim() || !openThread) return;
-    await addDoc(collection(db,'threads',openThread,'replies'), { body: replyText.trim(), author: user.name, authorId: user.uid, createdAt: serverTimestamp() });
-    await updateDoc(doc(db,'threads',openThread), { replyCount: increment(1) });
+    const threadId = openThread;
+    await addWithRate(user.uid, ['threads', threadId, 'replies'],
+      { body: replyText.trim(), author: user.name, authorId: user.uid, createdAt: serverTimestamp() },
+      (batch, ref) => batch.update(doc(db, 'threads', threadId), { replyCount: increment(1), lastReplyId: ref.id }));
     setReplyText('');
+  }
+  async function deleteReply(threadId, replyId) {
+    const batch = writeBatch(db);
+    batch.delete(doc(db, 'threads', threadId, 'replies', replyId));
+    batch.update(doc(db, 'threads', threadId), { replyCount: increment(-1), lastDeletedReplyId: replyId });
+    await batch.commit();
   }
   async function submitPost() {
     if (!newPost.title.trim()) return;
-    await addDoc(collection(db,'threads'), { title:newPost.title.trim(), body:newPost.body.trim(), author:user.name, authorId:user.uid, city:city==='All cities'?'All':city, tags:['general'], replyCount:0, likeCount:0, likes:{}, createdAt:serverTimestamp() });
+    await addWithRate(user.uid, ['threads'], { title:newPost.title.trim(), body:newPost.body.trim(), author:user.name, authorId:user.uid, city:city==='All cities'?'All':city, tags:['general'], replyCount:0, likeCount:0, likes:{}, createdAt:serverTimestamp() });
     setNewPost({ title:'', body:'' }); setNewPostOpen(false);
   }
   async function submitEvent() {
     if (!newEvent.title.trim() || !newEvent.location.trim()) return;
-    const tags = newEvent.tags.split(',').map(t => t.trim()).filter(Boolean);
-    await addDoc(collection(db,'events'), { title:newEvent.title.trim(), type:newEvent.type, city:city==='All cities'?'All':city, location:newEvent.location.trim(), date:newEvent.date||'TBD', time:newEvent.time||'TBD', tags, host:user.name, hostId:user.uid, attendeeCount:1, rsvps:{[user.uid]:true}, createdAt:serverTimestamp() });
+    const tags = newEvent.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10);
+    await addWithRate(user.uid, ['events'], { title:newEvent.title.trim(), type:newEvent.type, city:city==='All cities'?'All':city, location:newEvent.location.trim(), date:newEvent.date||'TBD', time:newEvent.time||'TBD', tags, host:user.name, hostId:user.uid, attendeeCount:1, rsvps:{[user.uid]:true}, createdAt:serverTimestamp() });
     setNewEvent({ title:'', type:'IRL', location:'', date:'', time:'', tags:'' }); setHostEventOpen(false);
   }
   async function submitIdea() {
     if (!newIdea.title.trim()) return;
-    const tags = newIdea.tags.split(',').map(t => t.trim()).filter(Boolean);
-    await addDoc(collection(db,'ideas'), { title:newIdea.title.trim(), desc:newIdea.desc.trim(), author:user.name, authorId:user.uid, city:city==='All cities'?'All':city, votes:0, stage:newIdea.stage, tags, looking:newIdea.looking, upvotes:{}, createdAt:serverTimestamp() });
+    const tags = newIdea.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10);
+    await addWithRate(user.uid, ['ideas'], { title:newIdea.title.trim(), desc:newIdea.desc.trim(), author:user.name, authorId:user.uid, city:city==='All cities'?'All':city, votes:0, stage:newIdea.stage, tags, looking:newIdea.looking, upvotes:{}, createdAt:serverTimestamp() });
     setNewIdea({ title:'', desc:'', stage:'Idea', tags:'', looking:[] }); setPostIdeaOpen(false);
   }
   async function reactIdea(ideaId, emoji) {
@@ -273,25 +283,24 @@ function App(){
     const updated  = { ...user, ...form, initials, yearsExp: form.yearsExp !== '' ? Number(form.yearsExp) : null };
     const fields   = { name: updated.name, city: updated.city, role: updated.role, bio: updated.bio || '', status: updated.status || '', vibe: updated.vibe || '', yearsExp: updated.yearsExp, initials };
     if (form.photoURL) fields.photoURL = form.photoURL;
-    if (updated.city) { fields.selectedCity = updated.city; }
     await setDoc(doc(db,'users',user.uid), fields, { merge: true });
     setUser(updated);
     if (updated.city) changeCity(updated.city);
     setEditOpen(false);
   }
 
-  // Derived data
-  const filt         = arr => city === 'All cities' ? arr : arr.filter(x => x.city === city);
-  const userPosts    = user ? threads.filter(t => t.authorId === user.uid) : [];
-  const fEvents      = filt(events);
-  const fMembers     = filt(members).filter(m => !user?.blockedUsers?.[m.id]);
-  const fIdeas       = filt(ideas);
-  const fThreads     = city === 'All cities' ? threads : threads.filter(t => t.city === city || t.city === 'All');
-  const viewingMember = viewingMemberId ? (members.find(m => m.id === viewingMemberId) || null) : null;
+  // Derived data (city filtering now happens on the server)
+  const userPosts     = useAuthorThreads(activeUser, user?.uid);
+  const myStats       = useMyStats(showProfile ? activeUser : null);
+  const fMembers      = members.filter(m => !user?.blockedUsers?.[m.id]);
+  const fetchedMember = useMemberProfile(activeUser, viewingMemberId);
+  const viewingMember = viewingMemberId ? (members.find(m => m.id === viewingMemberId) || fetchedMember) : null;
+  const memberPosts   = useAuthorThreads(activeUser, viewingMemberId);
+  const more = l => ({ hasMore: l.hasMore, onLoadMore: l.loadMore });
 
   function renderScreen() {
     const memberProfileProps = {
-      threads,
+      threads: memberPosts,
       currentUserId: user.uid,
       userConnections: user.connections||{},
       sentRequests:    user.sentRequests||{},
@@ -308,15 +317,16 @@ function App(){
       onBack:          () => setViewingMemberId(null),
     };
     if (viewingMember) return <MemberProfilePage member={viewingMember} {...memberProfileProps}/>;
-    if (showProfile)   return <ProfileScreen user={user} threads={threads} events={events} userPosts={userPosts} openEdit={() => setEditOpen(true)} setShowProfile={setShowProfile} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} onStatusChange={async s=>{await setDoc(doc(db,'users',user.uid),{status:s},{merge:true});setUser(u=>({...u,status:s}));}}/>;
+    if (viewingMemberId) return <div className="empty">Loading profile…</div>;
+    if (showProfile)   return <ProfileScreen user={user} stats={myStats} userPosts={userPosts} openEdit={() => setEditOpen(true)} setShowProfile={setShowProfile} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} onStatusChange={async s=>{await setDoc(doc(db,'users',user.uid),{status:s},{merge:true});setUser(u=>({...u,status:s}));}}/>;
     switch (tab) {
-      case 'events':  return <EventsScreen  events={fEvents}   city={city} userId={user.uid} rsvp={rsvp}   deleteEvent={deleteEvent} onHostEvent={() => setHostEventOpen(true)}/>;
-      case 'members': return <MembersScreen members={fMembers} city={city} userId={user.uid}
+      case 'events':  return <EventsScreen  events={events} {...more(lists.events)} city={city} userId={user.uid} rsvp={rsvp}   deleteEvent={deleteEvent} onHostEvent={() => setHostEventOpen(true)}/>;
+      case 'members': return <MembersScreen members={fMembers} {...more(lists.members)} loading={lists.members.loading} city={city} userId={user.uid}
         userConnections={user.connections||{}} sentRequests={user.sentRequests||{}} receivedRequests={user.receivedRequests||{}}
         onSendRequest={sendRequest} onCancelRequest={cancelRequest} onAcceptRequest={acceptRequest}
         onSelect={m => setViewingMemberId(m.id)} onInvite={() => setInviteOpen(true)}/>;
-      case 'ideas':   return <IdeasScreen   ideas={fIdeas}     city={city} userId={user.uid} upvote={upvote} deleteIdea={deleteIdea} onPostIdea={() => setPostIdeaOpen(true)} reactIdea={reactIdea} reactions={REACTIONS}/>;
-      case 'threads': return <ThreadsScreen threads={fThreads} city={city} userId={user.uid} openThread={openThread} toggleThread={toggleThread} replyText={replyText} setReplyText={setReplyText} submitReply={submitReply} likeThread={likeThread} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} reactThread={reactThread} reactions={REACTIONS}/>;
+      case 'ideas':   return <IdeasScreen   ideas={ideas} {...more(lists.ideas)} city={city} userId={user.uid} upvote={upvote} deleteIdea={deleteIdea} onPostIdea={() => setPostIdeaOpen(true)} reactIdea={reactIdea} reactions={REACTIONS}/>;
+      case 'threads': return <ThreadsScreen threads={threads} {...more(lists.threads)} city={city} userId={user.uid} openThread={openThread} toggleThread={toggleThread} replyText={replyText} setReplyText={setReplyText} submitReply={submitReply} likeThread={likeThread} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} reactThread={reactThread} reactions={REACTIONS} deleteReply={deleteReply}/>;
       case 'chat':    return <ChatScreen    {...chat} city={city} userId={user.uid} onViewProfile={uid => uid === user.uid ? setShowProfile(true) : setViewingMemberId(uid)}/>;
       default:        return null;
     }
@@ -324,6 +334,7 @@ function App(){
 
   if (authLoading)    return <div className="auth-wrap"><div className="auth-loading"><i className="ti ti-loader-2" style={{ animation: 'spin 1s linear infinite' }}/>Loading…</div></div>;
   if (!user)          return <AuthScreen/>;
+  if (needsVerify)    return <VerifyEmailScreen email={needsVerify} onVerified={() => setNeedsVerify(null)}/>;
   if (!user.username) return <OnboardingScreen user={user} setUser={setUser}/>;
 
   return (

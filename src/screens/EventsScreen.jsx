@@ -1,10 +1,11 @@
 import WarRoom from '../components/WarRoom';
+import LoadMore from '../components/LoadMore';
 
-function EventsScreen({ events, city, userId, rsvp, deleteEvent, onHostEvent }){
+function EventsScreen({ events, hasMore, onLoadMore, city, userId, rsvp, deleteEvent, onHostEvent }){
   return (
     <div>
       <div className="page-header">
-        <div><div className="page-title">Upcoming events</div><div className="page-sub">{events.length} events · {city}</div></div>
+        <div><div className="page-title">Upcoming events</div><div className="page-sub">{events.length}{hasMore ? '+' : ''} events · {city}</div></div>
         <button className="btn-primary" onClick={onHostEvent}><i className="ti ti-plus"/>Host event</button>
       </div>
       <WarRoom city={city}/>
@@ -38,6 +39,7 @@ function EventsScreen({ events, city, userId, rsvp, deleteEvent, onHostEvent }){
         ))}
         {events.length===0&&<div className="empty" style={{gridColumn:"1/-1"}}>No events in {city} yet — be the first to host one!</div>}
       </div>
+      <LoadMore hasMore={hasMore} onLoadMore={onLoadMore}/>
     </div>
   );
 }

@@ -6,8 +6,8 @@ function NewPostModal({ open, onClose, newPost, setNewPost, submitPost }){
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={e=>e.stopPropagation()}>
         <div className="modal-title">New post</div>
-        <input className="modal-input" placeholder="Post title…" value={newPost.title} onChange={e=>setNewPost(p=>({...p,title:e.target.value}))}/>
-        <textarea className="modal-input" placeholder="What's on your mind?" rows={4} value={newPost.body} onChange={e=>setNewPost(p=>({...p,body:e.target.value}))} style={{resize:"vertical"}}/>
+        <input className="modal-input" maxLength={120} placeholder="Post title…" value={newPost.title} onChange={e=>setNewPost(p=>({...p,title:e.target.value}))}/>
+        <textarea className="modal-input" maxLength={5000} placeholder="What's on your mind?" rows={4} value={newPost.body} onChange={e=>setNewPost(p=>({...p,body:e.target.value}))} style={{resize:"vertical"}}/>
         <div className="modal-actions">
           <button className="btn-cancel" onClick={onClose}>Cancel</button>
           <button className="btn-primary" onClick={submitPost}>Post</button>

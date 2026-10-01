@@ -63,7 +63,7 @@ function StatusPicker({ current, onChange }) {
   );
 }
 
-function ProfileScreen({ user, threads, events, userPosts, openEdit, setShowProfile, deleteThread, onNewPost, onStatusChange }){
+function ProfileScreen({ user, stats, userPosts, openEdit, setShowProfile, deleteThread, onNewPost, onStatusChange }){
   return (
     <div className="profile-page">
       <button className="profile-back" onClick={() => setShowProfile(false)}>
@@ -115,8 +115,8 @@ function ProfileScreen({ user, threads, events, userPosts, openEdit, setShowProf
       {/* Stats */}
       <div className="profile-stats">
         <div className="profile-stat"><div className="profile-stat-val">{userPosts.length}</div><div className="profile-stat-label">Posts</div></div>
-        <div className="profile-stat"><div className="profile-stat-val">{threads.filter(t => !!(t.likes?.[user.uid])).length}</div><div className="profile-stat-label">Liked</div></div>
-        <div className="profile-stat"><div className="profile-stat-val">{events.filter(e => !!(e.rsvps?.[user.uid])).length}</div><div className="profile-stat-label">RSVPs</div></div>
+        <div className="profile-stat"><div className="profile-stat-val">{stats.liked}</div><div className="profile-stat-label">Liked</div></div>
+        <div className="profile-stat"><div className="profile-stat-val">{stats.going}</div><div className="profile-stat-label">RSVPs</div></div>
         <div className="profile-stat"><div className="profile-stat-val">{Object.keys(user.connections || {}).length}</div><div className="profile-stat-label">Connected</div></div>
       </div>
 

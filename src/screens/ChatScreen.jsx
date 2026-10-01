@@ -71,7 +71,7 @@ function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChat
           </div>
 
           <form className="chat-input-row" onSubmit={e => { e.preventDefault(); sendChat(); }}>
-            <input className="chat-input" value={chatInput} onChange={e => setChatInput(e.target.value)}
+            <input className="chat-input" maxLength={1000} value={chatInput} onChange={e => setChatInput(e.target.value)}
               placeholder={`Message #${activeCh.label}…`} enterKeyHint="send" autoComplete="off"/>
             <button type="submit" className="send-btn"><i className="ti ti-send" style={{fontSize:15}}/></button>
           </form>

@@ -1,4 +1,5 @@
 import Avatar from '../components/Avatar';
+import LoadMore from '../components/LoadMore';
 
 const STATUS_COLORS = {
   'Open to work':            { bg: '#EAF3DE', tc: '#27500A' },
@@ -21,11 +22,11 @@ function ConnectBtn({ id, userId, userConnections, sentRequests, receivedRequest
   return <button className="connect-btn" onClick={e=>{e.stopPropagation();onSendRequest(id);}}>Connect</button>;
 }
 
-function MembersScreen({ members, city, userId, userConnections, sentRequests, receivedRequests, onSendRequest, onCancelRequest, onAcceptRequest, onSelect, onInvite }) {
+function MembersScreen({ members, hasMore, onLoadMore, loading, city, userId, userConnections, sentRequests, receivedRequests, onSendRequest, onCancelRequest, onAcceptRequest, onSelect, onInvite }) {
   return (
     <div>
       <div className="page-header">
-        <div><div className="page-title">Member network</div><div className="page-sub">{members.length} members · {city}</div></div>
+        <div><div className="page-title">Member network</div><div className="page-sub">{members.length}{hasMore ? '+' : ''} members · {city}</div></div>
         <button className="btn-primary" onClick={onInvite}><i className="ti ti-user-plus"/>Invite someone</button>
       </div>
       <div className="grid2">
@@ -59,8 +60,9 @@ function MembersScreen({ members, city, userId, userConnections, sentRequests, r
             </div>
           </div>
         ))}
-        {members.length === 0 && <div className="empty" style={{gridColumn:'1/-1'}}>No members in {city} yet.</div>}
+        {members.length === 0 && <div className="empty" style={{gridColumn:'1/-1'}}>{loading ? 'Loading members…' : `No members in ${city} yet.`}</div>}
       </div>
+      <LoadMore hasMore={hasMore} onLoadMore={onLoadMore} loading={loading}/>
     </div>
   );
 }

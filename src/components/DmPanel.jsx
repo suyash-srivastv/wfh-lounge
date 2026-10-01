@@ -123,7 +123,7 @@ function DmPanel({ dm, userConnections, receivedRequests, blockedUsers, onAccept
               </div>
             ) : isFriend ? (
               <form className="chat-input-row" onSubmit={e => { e.preventDefault(); sendDm(); }}>
-                <input className="chat-input" value={dmInput} onChange={e => setDmInput(e.target.value)}
+                <input className="chat-input" maxLength={1000} value={dmInput} onChange={e => setDmInput(e.target.value)}
                   placeholder={`Message ${activeDm.name}…`} enterKeyHint="send" autoComplete="off"/>
                 <button type="submit" className="send-btn">
                   <i className="ti ti-send" style={{fontSize:15}}/>

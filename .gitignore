@@ -1,1 +1,4 @@
 node_modules
+*-debug.log
+.env
+.env.local
