@@ -688,3 +688,53 @@ input,textarea,select{font-family:inherit;color:var(--text-1)}
 .reply .msg-text{font-size:13px}
 .reply-empty{font-size:12px;color:var(--text-3);margin:0 0 12px;padding-top:10px;border-top:1px solid var(--border-sub)}
 .load-more{display:flex;justify-content:center;margin:18px 0 8px}
+.msg-delete.show{opacity:1}
+
+/* ── About ── */
+.about{max-width:680px;margin:0 auto;padding-bottom:40px}
+.about-back{display:inline-flex;align-items:center;gap:6px;border:none;background:none;color:var(--text-2);font-family:inherit;font-size:13px;cursor:pointer;padding:0;margin-bottom:18px}
+.about-back:hover{color:var(--text-1)}
+.about-hero{padding:8px 0 22px;border-bottom:1px solid var(--border);margin-bottom:24px}
+.about-kicker{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-tc);margin-bottom:10px}
+.about-title{font-family:'DM Serif Display',serif;font-weight:400;font-size:clamp(30px,5vw,42px);line-height:1.12;letter-spacing:-0.02em;margin:0;color:var(--text-1)}
+.about-body{font-size:16px;line-height:1.75;color:var(--text-mid)}
+.about-p{margin:0 0 18px}
+.about-h{font-family:'DM Serif Display',serif;font-weight:400;font-size:22px;color:var(--text-1);margin:30px 0 10px}
+.about-list{margin:0 0 18px;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.about-faq-title{font-family:'DM Serif Display',serif;font-weight:400;font-size:24px;margin:40px 0 12px;color:var(--text-1)}
+.about-faq{border-top:1px solid var(--border)}
+.faq-item{border-bottom:1px solid var(--border)}
+.faq-q{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 2px;border:none;background:none;font-family:inherit;font-size:15px;font-weight:500;color:var(--text-1);text-align:left;cursor:pointer}
+.faq-q i{color:var(--text-3);font-size:16px;flex-shrink:0}
+.faq-a{padding:0 2px 16px;font-size:14px;line-height:1.7;color:var(--text-dim)}
+.auth-about{min-height:100dvh;background:var(--bg);padding:32px 20px}
+.auth-about-link{display:block;margin:14px auto 0;border:none;background:none;font-family:inherit;font-size:13px;color:var(--accent-tc);cursor:pointer}
+.auth-about-link:hover{text-decoration:underline}
+
+/* ── Admin ── */
+.admin-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px}
+.admin-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px}
+.admin-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.admin-stat{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px}
+.admin-stat-val{font-family:'DM Serif Display',serif;font-size:30px;color:var(--text-1)}
+.admin-stat-label{font-size:12px;color:var(--text-2);margin-top:2px}
+.admin-textarea{font-family:inherit;line-height:1.6;resize:vertical}
+.admin-row{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:4px}
+.admin-row .admin-note{margin-right:auto}
+.admin-note{font-size:12px;color:var(--text-2);margin:0 0 10px}
+.admin-preview{margin-top:18px;padding-top:18px;border-top:1px dashed var(--border-hover)}
+.admin-faq{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border-sub)}
+.admin-faq-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--text-dim)}
+.admin-faq-text b{color:var(--text-1);font-size:14px}
+.admin-faq-actions{display:flex;align-items:center;gap:2px;flex-shrink:0}
+.admin-faq-form{flex:1}
+.admin-icon{width:28px;height:28px;border:none;background:transparent;border-radius:6px;color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.admin-icon:hover:not(:disabled){background:var(--border-sub);color:var(--text-1)}
+.admin-icon:disabled{opacity:.3;cursor:not-allowed}
+.admin-add{margin-top:12px;display:inline-flex;align-items:center;gap:6px}
+.admin-empty{display:flex;flex-direction:column;align-items:flex-start;gap:10px;font-size:13px;color:var(--text-2);padding:8px 0 14px}
+.admin-kinds{display:flex;gap:6px;margin-bottom:10px}
+.admin-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border-sub)}
+.admin-item-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--text-2)}
+.admin-item-text b{font-size:14px;color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:768px){.admin-stats{grid-template-columns:repeat(2,1fr)}}

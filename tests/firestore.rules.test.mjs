@@ -14,6 +14,8 @@ setLogLevel('silent');
 let env;
 const verified = uid => env.authenticatedContext(uid, { email_verified: true }).firestore();
 const unverified = uid => env.authenticatedContext(uid, { email_verified: false }).firestore();
+const admin = () => env.authenticatedContext('suyash', { email: 'suyash101997@gmail.com', email_verified: true }).firestore();
+const fakeAdmin = () => env.authenticatedContext('mallory', { email: 'suyash101997@gmail.com', email_verified: false }).firestore();
 
 // Writes a new doc together with the slow-mode stamp, the way the app does.
 function withRate(db, uid, ref, data) {
@@ -260,4 +262,52 @@ test('editing your own profile works, within limits', async () => {
   const db = verified('alice');
   await assertSucceeds(updateDoc(doc(db, 'users/alice'), { bio: 'Building things', city: 'Pune' }));
   await assertFails(updateDoc(doc(db, 'users/alice'), { bio: 'x'.repeat(161) }));
+});
+
+// ---- Admin (only suyash101997@gmail.com, verified) ----
+
+test('admin: can edit About and FAQ; everyone (even logged out) can read them', async () => {
+  await assertSucceeds(setDoc(doc(admin(), 'site/about'), { title: 'Why', body: 'Because.' }));
+  await assertSucceeds(setDoc(doc(admin(), 'faqs/f1'), { q: 'What?', a: 'This.', order: 1 }));
+  await assertSucceeds(getDoc(doc(env.unauthenticatedContext().firestore(), 'site/about')));
+  await assertSucceeds(getDoc(doc(env.unauthenticatedContext().firestore(), 'faqs/f1')));
+});
+
+test('admin: other users cannot edit About or FAQ', async () => {
+  await assertFails(setDoc(doc(verified('alice'), 'site/about'), { title: 'Hacked', body: '' }));
+  await assertFails(setDoc(doc(verified('alice'), 'faqs/f1'), { q: 'x', a: 'y', order: 1 }));
+});
+
+test('admin: an unverified account using the admin email gets nothing', async () => {
+  await assertFails(setDoc(doc(fakeAdmin(), 'site/about'), { title: 'x', body: '' }));
+  await assertFails(deleteDoc(doc(fakeAdmin(), 'events/e1')));
+});
+
+test("admin: can delete anyone's event, idea, thread and chat message", async () => {
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'chats/Pune__general/messages/m1'), { text: 'spam', user: 'Bob', userId: 'bob' }));
+  const db = admin();
+  await assertSucceeds(deleteDoc(doc(db, 'events/e1')));
+  await assertSucceeds(deleteDoc(doc(db, 'ideas/i1')));
+  await assertSucceeds(deleteDoc(doc(db, 'chats/Pune__general/messages/m1')));
+  await assertSucceeds(deleteDoc(doc(db, 'threads/t1')));
+});
+
+test("admin: can delete someone's reply (and its count)", async () => {
+  await env.withSecurityRulesDisabled(ctx => updateDoc(doc(ctx.firestore(), 'threads/t1'), { replyCount: 1 }));
+  const db = admin();
+  const b = writeBatch(db);
+  b.delete(doc(db, 'threads/t1/replies/rBob'));
+  b.update(doc(db, 'threads/t1'), { replyCount: increment(-1), lastDeletedReplyId: 'rBob' });
+  await assertSucceeds(b.commit());
+});
+
+test("admin: still can't read anyone's DMs or Clarity plans", async () => {
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'reflections/alice'), { version: 6 }));
+  await assertFails(getDoc(doc(admin(), 'dms/alice_bob/messages/m1')));
+  await assertFails(getDoc(doc(admin(), 'reflections/alice')));
+});
+
+test("non-admins still can't delete other people's content", async () => {
+  await assertFails(deleteDoc(doc(verified('alice'), 'events/e1')));
+  await assertFails(deleteDoc(doc(verified('alice'), 'threads/t1')));
 });

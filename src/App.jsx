@@ -26,11 +26,17 @@ import IdeasScreen       from './screens/IdeasScreen';
 import ThreadsScreen     from './screens/ThreadsScreen';
 import ChatScreen        from './screens/ChatScreen';
 import ProfileScreen     from './screens/ProfileScreen';
+import AboutScreen       from './screens/AboutScreen';
+import AdminScreen       from './screens/AdminScreen';
+import { ADMIN_EMAIL }   from './aboutContent';
 
 function App(){
   const [user,          setUser]          = useState(null);
   const [authLoading,   setAuthLoading]   = useState(true);
   const [needsVerify,   setNeedsVerify]   = useState(null);  // email to verify, or null
+  const [isAdmin,       setIsAdmin]       = useState(false); // UI only — the rules enforce it
+  const [showAbout,     setShowAbout]     = useState(false);
+  const [showAdmin,     setShowAdmin]     = useState(false);
   const [tab,           setTab]           = useState('events');
   const [city,          setCity]          = useState('All cities');
   const [detectedCity,  setDetectedCity]  = useState(null);
@@ -129,6 +135,7 @@ function App(){
       // Email/password accounts must verify first; Google accounts already are.
       const unverified = fbUser && !fbUser.emailVerified && fbUser.providerData.some(p => p.providerId === 'password');
       setNeedsVerify(unverified ? fbUser.email : null);
+      setIsAdmin(!!fbUser && fbUser.email === ADMIN_EMAIL && fbUser.emailVerified);
       if (fbUser) {
         try {
           const snap = await getDoc(doc(db, 'users', fbUser.uid));
@@ -318,22 +325,25 @@ function App(){
     };
     if (viewingMember) return <MemberProfilePage member={viewingMember} {...memberProfileProps}/>;
     if (viewingMemberId) return <div className="empty">Loading profile…</div>;
+    if (showAdmin && isAdmin) return <AdminScreen onBack={() => setShowAdmin(false)}/>;
     if (showProfile)   return <ProfileScreen user={user} stats={myStats} userPosts={userPosts} openEdit={() => setEditOpen(true)} setShowProfile={setShowProfile} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} onStatusChange={async s=>{await setDoc(doc(db,'users',user.uid),{status:s},{merge:true});setUser(u=>({...u,status:s}));}}/>;
     switch (tab) {
-      case 'events':  return <EventsScreen  events={events} {...more(lists.events)} city={city} userId={user.uid} rsvp={rsvp}   deleteEvent={deleteEvent} onHostEvent={() => setHostEventOpen(true)}/>;
+      case 'events':  return <EventsScreen  events={events} {...more(lists.events)} city={city} userId={user.uid} rsvp={rsvp}   deleteEvent={deleteEvent} onHostEvent={() => setHostEventOpen(true)} isAdmin={isAdmin}/>;
       case 'members': return <MembersScreen members={fMembers} {...more(lists.members)} loading={lists.members.loading} city={city} userId={user.uid}
         userConnections={user.connections||{}} sentRequests={user.sentRequests||{}} receivedRequests={user.receivedRequests||{}}
         onSendRequest={sendRequest} onCancelRequest={cancelRequest} onAcceptRequest={acceptRequest}
         onSelect={m => setViewingMemberId(m.id)} onInvite={() => setInviteOpen(true)}/>;
-      case 'ideas':   return <IdeasScreen   ideas={ideas} {...more(lists.ideas)} city={city} userId={user.uid} upvote={upvote} deleteIdea={deleteIdea} onPostIdea={() => setPostIdeaOpen(true)} reactIdea={reactIdea} reactions={REACTIONS}/>;
-      case 'threads': return <ThreadsScreen threads={threads} {...more(lists.threads)} city={city} userId={user.uid} openThread={openThread} toggleThread={toggleThread} replyText={replyText} setReplyText={setReplyText} submitReply={submitReply} likeThread={likeThread} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} reactThread={reactThread} reactions={REACTIONS} deleteReply={deleteReply}/>;
-      case 'chat':    return <ChatScreen    {...chat} city={city} userId={user.uid} onViewProfile={uid => uid === user.uid ? setShowProfile(true) : setViewingMemberId(uid)}/>;
+      case 'ideas':   return <IdeasScreen   ideas={ideas} {...more(lists.ideas)} city={city} userId={user.uid} upvote={upvote} deleteIdea={deleteIdea} onPostIdea={() => setPostIdeaOpen(true)} reactIdea={reactIdea} reactions={REACTIONS} isAdmin={isAdmin}/>;
+      case 'threads': return <ThreadsScreen threads={threads} {...more(lists.threads)} city={city} userId={user.uid} openThread={openThread} toggleThread={toggleThread} replyText={replyText} setReplyText={setReplyText} submitReply={submitReply} likeThread={likeThread} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} reactThread={reactThread} reactions={REACTIONS} deleteReply={deleteReply} isAdmin={isAdmin}/>;
+      case 'about':   return <AboutScreen/>;
+      case 'chat':    return <ChatScreen    {...chat} city={city} userId={user.uid} isAdmin={isAdmin} onViewProfile={uid => uid === user.uid ? setShowProfile(true) : setViewingMemberId(uid)}/>;
       default:        return null;
     }
   }
 
   if (authLoading)    return <div className="auth-wrap"><div className="auth-loading"><i className="ti ti-loader-2" style={{ animation: 'spin 1s linear infinite' }}/>Loading…</div></div>;
-  if (!user)          return <AuthScreen/>;
+  if (!user && showAbout) return <div className="auth-about"><AboutScreen onBack={() => setShowAbout(false)}/></div>;
+  if (!user)          return <AuthScreen onAbout={() => setShowAbout(true)}/>;
   if (needsVerify)    return <VerifyEmailScreen email={needsVerify} onVerified={() => setNeedsVerify(null)}/>;
   if (!user.username) return <OnboardingScreen user={user} setUser={setUser}/>;
 
@@ -346,12 +356,14 @@ function App(){
         onViewProfile={uid => { setViewingMemberId(uid); setDmPanelOpen(false); }}
         onClose={() => setDmPanelOpen(false)}/>}
       <Nav
-        tab={tab}             onTabChange={t => { setTab(t); setShowProfile(false); }}
+        tab={tab}             onTabChange={t => { setTab(t); setShowProfile(false); setShowAdmin(false); setViewingMemberId(null); }}
+        isAdmin={isAdmin}
+        onAdmin={() => { setShowAdmin(true); setShowProfile(false); setViewingMemberId(null); }}
         city={city}           setCity={changeCity}
         locStatus={locStatus} detectedCity={detectedCity} onDetectLocation={detectLocation}
         user={user}           showProfile={showProfile} setShowProfile={setShowProfile}
         openEdit={() => setEditOpen(true)}
-        onLogout={() => { signOut(auth); setCity('All cities'); localStorage.removeItem('wfh-city'); }}
+        onLogout={() => { signOut(auth); setCity('All cities'); localStorage.removeItem('wfh-city'); setShowAdmin(false); setShowAbout(false); setTab('events'); }}
         crown={crown}
         dmUnread={dm.totalUnread + Object.keys(user.receivedRequests||{}).length}
         onDmToggle={() => setDmPanelOpen(p => !p)}
@@ -360,7 +372,7 @@ function App(){
 
       <div className="content">
         <div className="inner fade">
-          {!viewingMember && !showProfile && tab !== 'chat' && <Clarity userId={user.uid} variant="card"/>}
+          {!viewingMember && !showProfile && !showAdmin && tab !== 'chat' && tab !== 'about' && <Clarity userId={user.uid} variant="card"/>}
           {renderScreen()}
         </div>
       </div>

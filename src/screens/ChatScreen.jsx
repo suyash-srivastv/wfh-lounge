@@ -1,7 +1,7 @@
 import { CHANNELS } from '../constants';
 import MsgDelete from '../components/MsgDelete';
 
-function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChatView, chatMsgs, chatLoading, chatInput, setChatInput, sendChat, chatEnd, deleteChatMsg, onViewProfile, userId }) {
+function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChatView, chatMsgs, chatLoading, chatInput, setChatInput, sendChat, chatEnd, deleteChatMsg, onViewProfile, userId, isAdmin }) {
   const activeCh = CHANNELS.find(c => chatRoom.endsWith(`__${c.id}`)) || CHANNELS[0];
 
   return (
@@ -64,7 +64,7 @@ function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChat
                   </div>
                   <div className="msg-text">{msg.text}</div>
                 </div>
-                {msg.userId && msg.userId === userId && <MsgDelete onDelete={() => deleteChatMsg(msg.id)}/>}
+                {((msg.userId && msg.userId === userId) || isAdmin) && <MsgDelete onDelete={() => deleteChatMsg(msg.id)}/>}
               </div>
             ))}
             <div ref={chatEnd}/>

@@ -17,9 +17,10 @@ const NAV = [
   { id: 'members', icon: 'ti-users',          label: 'Members' },
   { id: 'ideas',   icon: 'ti-bulb',           label: 'Ideas'   },
   { id: 'threads', icon: 'ti-messages',       label: 'Forums'  },
+  { id: 'about',   icon: 'ti-info-circle',    label: 'About'   },
 ];
 
-function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetectLocation, user, showProfile, setShowProfile, openEdit, onLogout, crown, dmUnread, onDmToggle, onNavigate }) {
+function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetectLocation, user, showProfile, setShowProfile, openEdit, onLogout, crown, dmUnread, onDmToggle, onNavigate, isAdmin, onAdmin }) {
   const [dark, setDark] = useDarkMode();
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
   const [citySearch,     setCitySearch]     = useState('');
@@ -169,6 +170,8 @@ function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetec
                 <div className="profile-divider"/>
                 <button className="profile-item" onClick={() => { setShowProfile(true); setProfileOpen(false); }}><i className="ti ti-user"/>View profile</button>
                 <button className="profile-item" onClick={() => { openEdit(); setProfileOpen(false); }}><i className="ti ti-user-edit"/>Edit profile</button>
+                {isAdmin && <button className="profile-item" onClick={() => { onAdmin(); setProfileOpen(false); }}><i className="ti ti-shield-lock"/>Admin</button>}
+                <div className="profile-divider"/>
                 <button className="profile-item profile-item-danger" onClick={onLogout}><i className="ti ti-logout"/>Log out</button>
               </div>
             )}

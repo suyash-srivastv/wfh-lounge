@@ -1,7 +1,8 @@
+import MsgDelete from '../components/MsgDelete';
 import WarRoom from '../components/WarRoom';
 import LoadMore from '../components/LoadMore';
 
-function EventsScreen({ events, hasMore, onLoadMore, city, userId, rsvp, deleteEvent, onHostEvent }){
+function EventsScreen({ events, hasMore, onLoadMore, city, userId, rsvp, deleteEvent, onHostEvent, isAdmin }){
   return (
     <div>
       <div className="page-header">
@@ -17,6 +18,7 @@ function EventsScreen({ events, hasMore, onLoadMore, city, userId, rsvp, deleteE
               <div style={{display:"flex",alignItems:"center",gap:6}}>
                 <span style={{fontSize:11,color:"#888780"}}>{ev.city}</span>
                 {ev.hostId===userId&&<button className="delete-btn" title="Delete event" onClick={e=>{e.stopPropagation();deleteEvent(ev.id);}}><i className="ti ti-trash"/></button>}
+                {ev.hostId!==userId&&isAdmin&&<MsgDelete visible title="Delete event (admin)" onDelete={()=>deleteEvent(ev.id)}/>}
               </div>
             </div>
             <div style={{fontWeight:600,fontSize:14,lineHeight:1.3,marginBottom:6}}>{ev.title}</div>

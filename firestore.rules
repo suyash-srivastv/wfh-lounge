@@ -12,6 +12,11 @@ service cloud.firestore {
     // (Google sign-ins are verified already). Slows down fake-account scraping.
     function verified() { return signedIn() && request.auth.token.email_verified == true; }
 
+    // The one admin account. Checked on the server, so it can't be faked from
+    // the browser. Admin can moderate public content and edit About / FAQ —
+    // but can never read anyone's DMs or Clarity plans.
+    function isAdmin() { return verified() && request.auth.token.email == 'suyash101997@gmail.com'; }
+
     function userPath(uid) { return /databases/$(database)/documents/users/$(uid); }
     function myProfile() { return get(userPath(me())).data; }
     function myName() { return myProfile().get('name', ''); }
@@ -151,7 +156,7 @@ service cloud.firestore {
         && request.resource.data.attendeeCount == 1
         && request.resource.data.rsvps.keys().hasOnly([me()])
         && request.resource.data.rsvps[me()] == true;
-      allow delete: if verified() && resource.data.hostId == me();
+      allow delete: if verified() && (resource.data.hostId == me() || isAdmin());
       allow update: if verified()
         && changed().hasOnly(['rsvps', 'attendeeCount'])
         && onlyMyKeyIn('rsvps') && countFollows('rsvps', 'attendeeCount');
@@ -171,7 +176,7 @@ service cloud.firestore {
         && shortList(request.resource.data.get('looking', []), 10)
         && request.resource.data.votes == 0
         && request.resource.data.upvotes == {};
-      allow delete: if verified() && resource.data.authorId == me();
+      allow delete: if verified() && (resource.data.authorId == me() || isAdmin());
       allow update: if verified()
         && changed().hasOnly(['upvotes', 'votes', 'reactions'])
         && onlyMyKeyIn('upvotes') && countFollows('upvotes', 'votes')
@@ -192,7 +197,7 @@ service cloud.firestore {
         let gone   = request.resource.data.get('lastDeletedReplyId', '');
         return after == before
           || (after == before + 1 && !exists(replyPath(added)) && getAfter(replyPath(added)).data.authorId == me())
-          || (after == before - 1 && get(replyPath(gone)).data.authorId == me() && !existsAfter(replyPath(gone)));
+          || (after == before - 1 && (get(replyPath(gone)).data.authorId == me() || isAdmin()) && !existsAfter(replyPath(gone)));
       }
 
       allow read: if verified();
@@ -206,7 +211,7 @@ service cloud.firestore {
         && request.resource.data.replyCount == 0
         && request.resource.data.likeCount == 0
         && request.resource.data.likes == {};
-      allow delete: if verified() && resource.data.authorId == me();
+      allow delete: if verified() && (resource.data.authorId == me() || isAdmin());
       allow update: if verified()
         && changed().hasOnly(['likes', 'likeCount', 'reactions', 'replyCount', 'lastReplyId', 'lastDeletedReplyId'])
         && onlyMyKeyIn('likes') && countFollows('likes', 'likeCount')
@@ -218,7 +223,7 @@ service cloud.firestore {
           && request.resource.data.authorId == me()
           && request.resource.data.author == myName()
           && nonEmpty(request.resource.data.body, 2000);
-        allow delete: if verified() && resource.data.authorId == me();
+        allow delete: if verified() && (resource.data.authorId == me() || isAdmin());
       }
     }
 
@@ -230,7 +235,7 @@ service cloud.firestore {
         && request.resource.data.userId == me()
         && request.resource.data.user == myName()
         && nonEmpty(request.resource.data.text, 1000);
-      allow delete: if verified() && resource.data.userId == me();
+      allow delete: if verified() && (resource.data.userId == me() || isAdmin());
     }
 
     // ---------- DMs (room id = "<uidA>_<uidB>", sorted) ----------
@@ -258,6 +263,21 @@ service cloud.firestore {
       match /history/{runId} {
         allow read, create: if signedIn() && uid == me();
       }
+    }
+
+    // ---------- About page + FAQ (admin-edited, read by everyone) ----------
+
+    // Public: shown on the sign-in page too.
+    match /site/{docId} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && str(request.resource.data.get('title', ''), 120)
+        && str(request.resource.data.get('body', ''), 8000);
+    }
+
+    match /faqs/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // ---------- DM inbox ----------

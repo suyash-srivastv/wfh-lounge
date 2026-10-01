@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 // Two-tap delete for your own messages: 🗑 → "Delete?" (resets after 3s).
-function MsgDelete({ onDelete }) {
+function MsgDelete({ onDelete, visible = false, title = 'Delete message' }) {
   const [armed, setArmed] = useState(false);
   const [busy, setBusy]   = useState(false);
 
@@ -18,8 +18,9 @@ function MsgDelete({ onDelete }) {
   }
 
   return (
-    <button type="button" className={'msg-delete' + (armed ? ' armed' : '')} onClick={click} disabled={busy}
-      title="Delete message" aria-label={armed ? 'Confirm delete' : 'Delete message'}>
+    <button type="button" className={'msg-delete' + (armed ? ' armed' : '') + (visible ? ' show' : '')}
+      onClick={e => { e.stopPropagation(); click(); }} disabled={busy}
+      title={title} aria-label={armed ? 'Confirm delete' : 'Delete message'}>
       {armed ? (busy ? 'Deleting…' : 'Delete?') : <i className="ti ti-trash"/>}
     </button>
   );

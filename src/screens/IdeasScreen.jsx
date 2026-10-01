@@ -1,5 +1,6 @@
+import MsgDelete from '../components/MsgDelete';
 import LoadMore from '../components/LoadMore';
-function IdeasScreen({ ideas, hasMore, onLoadMore, city, userId, upvote, deleteIdea, onPostIdea, reactIdea, reactions }){
+function IdeasScreen({ ideas, hasMore, onLoadMore, city, userId, upvote, deleteIdea, onPostIdea, reactIdea, reactions, isAdmin }){
   return (
     <div>
       <div className="page-header">
@@ -28,6 +29,7 @@ function IdeasScreen({ ideas, hasMore, onLoadMore, city, userId, upvote, deleteI
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
                   {idea.looking?.length>0&&<div style={{fontSize:12,color:"var(--accent)",fontWeight:500}}>Looking for: {idea.looking.join(", ")}</div>}
                   {idea.authorId===userId&&<button className="delete-btn" title="Delete idea" onClick={()=>deleteIdea(idea.id)}><i className="ti ti-trash"/></button>}
+                  {idea.authorId!==userId&&isAdmin&&<MsgDelete visible title="Delete idea (admin)" onDelete={()=>deleteIdea(idea.id)}/>}
                 </div>
               </div>
               {reactions && (

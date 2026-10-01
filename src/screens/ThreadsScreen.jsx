@@ -6,7 +6,7 @@ import { timeAgo } from '../constants';
 import MsgDelete from '../components/MsgDelete';
 
 // Replies for the open thread only (most recent 50), loaded when it's opened.
-function Replies({ threadId, userId, deleteReply }) {
+function Replies({ threadId, userId, deleteReply, isAdmin }) {
   const [replies, setReplies] = useState(null);
   useEffect(() => {
     const q = query(collection(db, 'threads', threadId, 'replies'), orderBy('createdAt'), limit(50));
@@ -23,14 +23,14 @@ function Replies({ threadId, userId, deleteReply }) {
             <div className="msg-name">{r.author}<span className="msg-time">{timeAgo(r.createdAt?.toDate())}</span></div>
             <div className="msg-text">{r.body}</div>
           </div>
-          {r.authorId === userId && <MsgDelete onDelete={() => deleteReply(threadId, r.id)}/>}
+          {(r.authorId === userId || isAdmin) && <MsgDelete onDelete={() => deleteReply(threadId, r.id)}/>}
         </div>
       ))}
     </div>
   );
 }
 
-function ThreadsScreen({ threads, hasMore, onLoadMore, city, userId, openThread, toggleThread, replyText, setReplyText, submitReply, likeThread, deleteThread, onNewPost, reactThread, reactions, deleteReply }){
+function ThreadsScreen({ threads, hasMore, onLoadMore, city, userId, openThread, toggleThread, replyText, setReplyText, submitReply, likeThread, deleteThread, onNewPost, reactThread, reactions, deleteReply, isAdmin }){
   return (
     <div>
       <div className="page-header">
@@ -47,7 +47,7 @@ function ThreadsScreen({ threads, hasMore, onLoadMore, city, userId, openThread,
             {openThread===t.id&&(
               <div className="thread-expand" onClick={e=>e.stopPropagation()}>
                 <div style={{fontSize:13,color:"var(--text-dim)",lineHeight:1.7,marginBottom:12}}>{t.body}</div>
-                <Replies threadId={t.id} userId={userId} deleteReply={deleteReply}/>
+                <Replies threadId={t.id} userId={userId} deleteReply={deleteReply} isAdmin={isAdmin}/>
                 <form style={{display:"flex",gap:8}} onSubmit={e=>{e.preventDefault();submitReply();}}>
                   <input className="chat-input" value={replyText} onChange={e=>setReplyText(e.target.value)} placeholder="Write a reply…" maxLength={2000} enterKeyHint="send" autoComplete="off"/>
                   <button type="submit" className="send-btn">Reply</button>
@@ -75,6 +75,7 @@ function ThreadsScreen({ threads, hasMore, onLoadMore, city, userId, openThread,
                 <i className={"ti "+(!!(t.likes?.[userId])?"ti-heart-filled":"ti-heart")} style={{fontSize:13}}/>{t.likeCount||0}
               </button>
               {t.authorId===userId&&<button className="delete-btn" style={{marginLeft:"auto"}} title="Delete post" onClick={e=>{e.stopPropagation();deleteThread(t.id);}}><i className="ti ti-trash"/></button>}
+              {t.authorId!==userId&&isAdmin&&<span style={{marginLeft:"auto"}}><MsgDelete visible title="Delete post (admin)" onDelete={()=>deleteThread(t.id)}/></span>}
             </div>
           </div>
         ))}
