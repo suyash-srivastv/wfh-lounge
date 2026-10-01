@@ -148,11 +148,16 @@ function App(){
             // Never fall back to the email: profiles are visible to other members.
             const name     = (fbUser.displayName || 'New member').slice(0, 50);
             const initials = name.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
-            const profile  = { name, city: '', role: '', initials };
+            const profile  = { name, city: '', role: '', initials, ...(fbUser.photoURL ? { photoURL: fbUser.photoURL } : {}) };
             await setDoc(doc(db, 'users', fbUser.uid), profile);
             setUser({ ...profile, uid: fbUser.uid });
           } else {
             const profile = snap.data() || {};
+            // Google sign-ins without a photo yet get their Google picture.
+            if (!profile.photoURL && fbUser.photoURL) {
+              profile.photoURL = fbUser.photoURL;
+              setDoc(doc(db, 'users', fbUser.uid), { photoURL: fbUser.photoURL }, { merge: true }).catch(() => {});
+            }
             setUser({ ...profile, uid: fbUser.uid });
           }
         } catch {

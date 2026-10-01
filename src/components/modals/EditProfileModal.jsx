@@ -1,13 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { storage } from '../../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { ROLES, STATUSES, VIBES } from '../../constants';
 
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
-const PHOTO_SIZE = 512;
+const PHOTO_SIZE = 128;
 
-// Square-crop and shrink to 512px WebP (~30–60KB) so member lists stay light.
+// Square-crop and shrink to a 128px WebP (~5–10KB) and keep it as text right on
+// the profile in Firestore — no file storage needed, so it works on the free plan.
 async function shrinkPhoto(file) {
   const bitmap = await createImageBitmap(file);
   const side = Math.min(bitmap.width, bitmap.height);
@@ -16,8 +15,10 @@ async function shrinkPhoto(file) {
   canvas.getContext('2d').drawImage(bitmap,
     (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, canvas.width, canvas.height);
   bitmap.close?.();
-  return new Promise((resolve, reject) =>
-    canvas.toBlob(b => b ? resolve(b) : reject(new Error('Could not process photo')), 'image/webp', 0.85));
+  let url = canvas.toDataURL('image/webp', 0.82);
+  if (!url.startsWith('data:image/webp')) url = canvas.toDataURL('image/jpeg', 0.82); // Safari can't make WebP
+  if (url.length > 60000) throw new Error('Photo too detailed after shrinking');
+  return url;
 }
 
 function EditProfileModal({ open, user, onClose, onSave }) {
@@ -78,15 +79,12 @@ function EditProfileModal({ open, user, onClose, onSave }) {
     if (file.size > PHOTO_MAX_BYTES)      { setPhotoErr('That image is over 5MB.'); return; }
     setUploading(true);
     try {
-      const small = await shrinkPhoto(file);
-      setPreview(URL.createObjectURL(small));
-      const storageRef = ref(storage, `avatars/${user.uid}`);
-      await uploadBytes(storageRef, small, { contentType: 'image/webp', cacheControl: 'public, max-age=3600' });
-      const url = await getDownloadURL(storageRef);
+      const url = await shrinkPhoto(file);
+      setPreview(url);
       setForm(p => ({ ...p, photoURL: url }));
     } catch (err) {
-      console.error('Photo upload failed:', err);
-      setPhotoErr("Couldn't upload that photo. Try another one.");
+      console.error('Photo processing failed:', err);
+      setPhotoErr("Couldn't use that photo. Try another one.");
       setPreview(user.photoURL || null);
     } finally { setUploading(false); }
   }

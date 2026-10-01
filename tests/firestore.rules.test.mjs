@@ -311,3 +311,19 @@ test("non-admins still can't delete other people's content", async () => {
   await assertFails(deleteDoc(doc(verified('alice'), 'events/e1')));
   await assertFails(deleteDoc(doc(verified('alice'), 'threads/t1')));
 });
+
+// ---- Profile photos (small inline images or https links, no file storage) ----
+
+test('photo: a small inline image or an https link is allowed', async () => {
+  const db = verified('alice');
+  await assertSucceeds(updateDoc(doc(db, 'users/alice'), { photoURL: 'data:image/webp;base64,' + 'A'.repeat(8000) }));
+  await assertSucceeds(updateDoc(doc(db, 'users/alice'), { photoURL: 'https://lh3.googleusercontent.com/a/photo' }));
+});
+
+test('photo: huge images, other links and scripts are blocked', async () => {
+  const db = verified('alice');
+  await assertFails(updateDoc(doc(db, 'users/alice'), { photoURL: 'data:image/webp;base64,' + 'A'.repeat(70000) }));
+  await assertFails(updateDoc(doc(db, 'users/alice'), { photoURL: 'javascript:alert(1)' }));
+  await assertFails(updateDoc(doc(db, 'users/alice'), { photoURL: 'data:text/html;base64,PHNjcmlwdD4=' }));
+  await assertFails(updateDoc(doc(db, 'users/alice'), { photoURL: 'http://insecure.example/x.png' }));
+});

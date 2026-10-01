@@ -11,7 +11,7 @@
     "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes",
     "dev:emulators": "VITE_USE_EMULATORS=1 vite --port 5174",
     "emulators": "firebase emulators:start --only auth,firestore --project wfh-lounge",
-    "test:e2e": "node tests/e2e/seed.mjs && node tests/e2e/app.e2e.mjs && node tests/e2e/seed.mjs && node tests/e2e/signup.e2e.mjs && node tests/e2e/seed.mjs && node tests/e2e/admin.e2e.mjs"
+    "test:e2e": "node tests/e2e/seed.mjs && node tests/e2e/app.e2e.mjs && node tests/e2e/seed.mjs && node tests/e2e/signup.e2e.mjs && node tests/e2e/seed.mjs && node tests/e2e/admin.e2e.mjs && node tests/e2e/seed.mjs && node tests/e2e/photo.e2e.mjs"
   },
   "dependencies": {
     "firebase": "^10.12.0",

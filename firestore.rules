@@ -87,13 +87,21 @@ service cloud.firestore {
         || (prev == null && getAfter(/databases/$(database)/documents/usernames/$(u)).data.uid == me());
     }
 
+    // A profile photo is either a link (e.g. the Google picture) or a small
+    // inline image (128px, ~5–10KB) — photos aren't kept in file storage.
+    function photoOk(p) {
+      return p is string && (
+        (p.size() <= 1000 && p.matches('^https://.*'))
+        || (p.size() <= 60000 && p.matches('^data:image/(webp|jpeg|png);base64,[A-Za-z0-9+/=]+$')));
+    }
+
     function profileFieldsOk() {
       let d = request.resource.data;
       return str(d.get('name', ''), 50) && str(d.get('bio', ''), 160)
         && str(d.get('city', ''), 80) && str(d.get('role', ''), 50)
         && str(d.get('status', ''), 60) && str(d.get('vibe', ''), 60)
         && str(d.get('initials', ''), 4)
-        && (d.get('photoURL', null) == null || str(d.photoURL, 1000));
+        && (d.get('photoURL', null) == null || photoOk(d.photoURL));
     }
 
     match /users/{uid} {
