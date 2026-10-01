@@ -4,8 +4,8 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthP
 import { doc, setDoc } from 'firebase/firestore';
 import { ROLES, TAGLINE, firebaseErrMsg } from '../constants';
 
-function AuthScreen({ onAbout } = {}){
-  const [mode,setMode]=useState("login");
+function AuthScreen({ initialMode = 'login' } = {}){
+  const [mode,setMode]=useState(initialMode);
   const [form,setForm]=useState({name:"",email:"",password:"",city:"",role:"",yearsExp:""});
   const [cityInput,setCityInput]=useState("");
   const [cityR,setCityR]=useState([]);
@@ -161,7 +161,6 @@ function AuthScreen({ onAbout } = {}){
             {mode==="login"?" Sign up":" Log in"}
           </button>
         </p>
-        {onAbout && <button className="auth-about-link" onClick={onAbout}>Why The Stillroom exists →</button>}
       </div>
     </div>
   );

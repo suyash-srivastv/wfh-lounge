@@ -19,10 +19,15 @@ try {
   ws = new WebSocket(url); await new Promise(r => ws.onopen = r);
   ws.onmessage = e => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m.result); pending.delete(m.id); } };
   await send('Page.enable'); await send('Page.navigate', { url: 'http://localhost:5174/' });
-  await until(`!!document.querySelector('input[type=email]')`, 20000);
+  check('first-time visitors see the full-screen intro', await until(`!!document.querySelector('.intro') && document.body.innerText.includes('We forgot to socialise')`, 20000));
   await ev(`window.btn = t => [...document.querySelectorAll('button')].find(b => b.textContent.trim().startsWith(t));
     window.type = (el, v) => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, v); el.dispatchEvent(new Event('input', { bubbles: true })); };`);
-  await ev(`btn('Sign up').click()`); await wait(300);
+  if (process.env.SHOTS) for (const [w, h, n] of [[1200, 900, 'intro-desk'], [390, 844, 'intro-mob']]) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: w < 600 }); await wait(400);
+    const r = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true }); (await import('node:fs')).writeFileSync(`${process.env.SHOTS}/${n}.png`, Buffer.from(r.data, 'base64'));
+  }
+  await ev(`btn('Join The Stillroom').click()`);
+  check('"Join" goes straight to the sign-up form', await until(`!!document.querySelector('input[placeholder="Your name"]')`));
   await ev(`type(document.querySelector('input[placeholder="Your name"]'), 'Carol'); type(document.querySelector('input[type=email]'), 'carol@test.dev'); type(document.querySelector('input[type=password]'), 'password123')`);
   await ev(`document.querySelector('.auth-submit').click()`);
   check('new sign-up lands on "Verify your email"', await until(`document.body.innerText.includes('Verify your email')`));
@@ -38,7 +43,10 @@ try {
   check('username shows as available', await until(`document.body.innerText.includes('@carol_test is available')`));
   await ev(`btn('Next').click()`); await wait(400);
   await ev(`btn('Finish setup').click()`);
-  check('finishing setup claims the username and opens the app', await until(`!!document.querySelector('.nav-tabs')`, 15000));
+  check('finishing setup opens the app', await until(`!!document.querySelector('.nav-tabs')`, 15000));
+  await ev(`document.querySelector('.avatar').click()`); await wait(200);
+  await ev(`btn('Log out').click()`);
+  check('returning visitors skip the intro', await until(`!!document.querySelector('input[type=email]') && !document.querySelector('.intro')`));
 } finally {
   const failed = results.filter(r => !r).length;
   console.log(`\n${results.length - failed}/${results.length} checks passed`); chrome.kill(); process.exit(failed ? 1 : 0);

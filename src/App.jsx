@@ -28,6 +28,7 @@ import ChatScreen        from './screens/ChatScreen';
 import ProfileScreen     from './screens/ProfileScreen';
 import AboutScreen       from './screens/AboutScreen';
 import AdminScreen       from './screens/AdminScreen';
+import IntroScreen       from './screens/IntroScreen';
 import { ADMIN_EMAIL }   from './aboutContent';
 
 function App(){
@@ -35,8 +36,10 @@ function App(){
   const [authLoading,   setAuthLoading]   = useState(true);
   const [needsVerify,   setNeedsVerify]   = useState(null);  // email to verify, or null
   const [isAdmin,       setIsAdmin]       = useState(false); // UI only — the rules enforce it
-  const [showAbout,     setShowAbout]     = useState(false);
   const [showAdmin,     setShowAdmin]     = useState(false);
+  // First visit on this device: show the full-screen intro before sign-in.
+  const [introSeen,     setIntroSeen]     = useState(() => { try { return localStorage.getItem('stillroom-intro-seen') === '1'; } catch { return true; } });
+  const [authMode,      setAuthMode]      = useState('login');
   const [tab,           setTab]           = useState('events');
   const [city,          setCity]          = useState('All cities');
   const [detectedCity,  setDetectedCity]  = useState(null);
@@ -342,8 +345,11 @@ function App(){
   }
 
   if (authLoading)    return <div className="auth-wrap"><div className="auth-loading"><i className="ti ti-loader-2" style={{ animation: 'spin 1s linear infinite' }}/>Loading…</div></div>;
-  if (!user && showAbout) return <div className="auth-about"><AboutScreen onBack={() => setShowAbout(false)}/></div>;
-  if (!user)          return <AuthScreen onAbout={() => setShowAbout(true)}/>;
+  if (!user && !introSeen) {
+    const done = mode => { try { localStorage.setItem('stillroom-intro-seen', '1'); } catch {} setAuthMode(mode); setIntroSeen(true); };
+    return <IntroScreen onJoin={() => done('signup')} onLogin={() => done('login')}/>;
+  }
+  if (!user)          return <AuthScreen key={authMode} initialMode={authMode}/>;
   if (needsVerify)    return <VerifyEmailScreen email={needsVerify} onVerified={() => setNeedsVerify(null)}/>;
   if (!user.username) return <OnboardingScreen user={user} setUser={setUser}/>;
 
@@ -363,7 +369,7 @@ function App(){
         locStatus={locStatus} detectedCity={detectedCity} onDetectLocation={detectLocation}
         user={user}           showProfile={showProfile} setShowProfile={setShowProfile}
         openEdit={() => setEditOpen(true)}
-        onLogout={() => { signOut(auth); setCity('All cities'); localStorage.removeItem('wfh-city'); setShowAdmin(false); setShowAbout(false); setTab('events'); }}
+        onLogout={() => { signOut(auth); setCity('All cities'); localStorage.removeItem('wfh-city'); setShowAdmin(false); setTab('events'); }}
         crown={crown}
         dmUnread={dm.totalUnread + Object.keys(user.receivedRequests||{}).length}
         onDmToggle={() => setDmPanelOpen(p => !p)}

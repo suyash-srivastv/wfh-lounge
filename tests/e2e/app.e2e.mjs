@@ -42,6 +42,7 @@ try {
       if (/permission|denied|insufficient|failed|not sent/i.test(t)) problems.push(t.slice(0, 220));
     } };
   await send('Runtime.enable'); await send('Page.enable');
+  await send('Page.addScriptToEvaluateOnNewDocument', { source: `localStorage.setItem('stillroom-intro-seen', '1')` }); // these tests start past the intro
   await send('Emulation.setDeviceMetricsOverride', { width: 1200, height: 900, deviceScaleFactor: 1, mobile: false });
   await send('Page.navigate', { url: APP });
   await until(`!!document.querySelector('input[type=email]')`, 20000); await ev(H);
@@ -66,7 +67,7 @@ try {
   check('react to a post', await until(`document.querySelector('.reaction-btn')?.classList.contains('reacted')`));
   await ev(`document.querySelector('.thread-card').click()`);
   await until(`!!document.querySelector('input[placeholder="Write a reply…"]')`);
-  await ev(`type(document.querySelector('input[placeholder="Write a reply…"]'), 'Walks without my phone.')`);
+  await ev(`type(document.querySelector('input[placeholder="Write a reply…"]'), 'Walks without my phone.')`); await wait(150);
   await ev(`submitForm(document.querySelector('input[placeholder="Write a reply…"]'))`);
   check('reply to a post (shows in the new replies list)', await until(`!!$$('.reply .msg-text').find(e => e.textContent === 'Walks without my phone.')`));
   check('reply count went up by one', await until(`document.querySelector('.thread-card').innerText.includes(' 1')`));
@@ -89,7 +90,8 @@ try {
   await wait(2200);
   await ev(`tab('Chat')`);
   await until(`!!document.querySelector('.chat-main .chat-input')`);
-  await ev(`type(document.querySelector('.chat-main .chat-input'), 'Hello Pune'); submitForm(document.querySelector('.chat-main .chat-input'))`);
+  await ev(`type(document.querySelector('.chat-main .chat-input'), 'Hello Pune')`); await wait(150);
+  await ev(`submitForm(document.querySelector('.chat-main .chat-input'))`);
   check('send a chat message', await until(`!!$$('.chat-main .msg-text').find(e => e.textContent === 'Hello Pune')`));
   await ev(`$$('.chat-main .msg-delete').pop().click()`); await wait(150); await ev(`$$('.chat-main .msg-delete').pop().click()`);
   check('delete your own chat message', await until(`!$$('.chat-main .msg-text').find(e => e.textContent === 'Hello Pune')`));
@@ -102,7 +104,8 @@ try {
   await wait(2200);
   await ev(`btn('Message').click()`);
   await until(`!!document.querySelector('.dm-panel .chat-input, [class*=dm] .chat-input')`);
-  await ev(`window.dmInput = $$('.chat-input').pop(); type(dmInput, 'Hi Bob'); submitForm(dmInput)`);
+  await ev(`window.dmInput = $$('.chat-input').pop(); type(dmInput, 'Hi Bob')`); await wait(150);  // let the typing register, like a person would
+  await ev(`submitForm(dmInput)`);
   check('send a DM to a connection', await until(`!!$$('.msg-text').find(e => e.textContent === 'Hi Bob')`));
   await shot('dm');
 

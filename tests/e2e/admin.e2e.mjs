@@ -35,13 +35,9 @@ try {
     if (m.method === 'Runtime.exceptionThrown') problems.push('EXC ' + m.params.exceptionDetails.exception?.description?.slice(0, 160));
     if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') { const t = m.params.args.map(a => a.value ?? a.description ?? '').join(' '); if (/permission|denied/i.test(t)) problems.push(t.slice(0, 160)); } };
   await send('Runtime.enable'); await send('Page.enable');
+  await send('Page.addScriptToEvaluateOnNewDocument', { source: `localStorage.setItem('stillroom-intro-seen', '1')` }); // these tests start past the intro
   await send('Emulation.setDeviceMetricsOverride', { width: 1200, height: 900, deviceScaleFactor: 1, mobile: false });
 
-  // Logged out: About is reachable from the sign-in page
-  await send('Page.navigate', { url: 'http://localhost:5174/' }); await until(`!!document.querySelector('input[type=email]')`, 20000); await ev(H);
-  await ev(`btn('Why The Stillroom exists').click()`);
-  check('logged-out visitors can open About', await until(`document.body.innerText.includes('A quieter room')`));
-  await ev(`btn('Back').click()`); await wait(300);
 
   // Regular member: no admin anywhere
   await login('alice@test.dev');
@@ -79,11 +75,10 @@ try {
   check("admin deletes Bob's post", await until(`!document.body.innerText.includes('How do you switch off?')`));
   await logout();
 
-  // Changes are live for everyone, including logged-out visitors
-  await ev(`btn('Why The Stillroom exists').click()`);
-  check('the new About title + FAQ order show for everyone', await until(`document.body.innerText.includes('Why we built The Stillroom') && document.querySelector('.faq-q')?.textContent.startsWith('Is it free?')`));
-  await shot('about-public');
+  // Changes are live for other members
   await login('alice@test.dev'); await shot('nav');
+  await ev(`tab('About')`);
+  check('the new About title + FAQ order show for other members', await until(`document.body.innerText.includes('Why we built The Stillroom') && document.querySelector('.faq-q')?.textContent.startsWith('Is it free?')`));
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true }); await wait(600); await shot('mobile');
   check('no permission errors', problems.length === 0, problems.slice(0, 3).join(' | '));
 } finally {

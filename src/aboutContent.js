@@ -2,8 +2,10 @@
 // their own version from the Admin panel (stored in Firestore: site/about, faqs).
 
 export const DEFAULT_ABOUT = {
-  title: 'Why The Stillroom exists',
-  body: `Most of us spend our best hours working — and somewhere along the way, work started deciding everything else.
+  title: 'Why The Stillroom',
+  body: `Most of us spend our best hours working — and somewhere along the way, work started deciding everything else. We forgot to socialise. We stopped talking the way we used to, before jobs filled our calendars — at college, between jobs, on slow afternoons with nowhere to be.
+
+Now our conversations happen in meetings and on Slack. Friends become "let's catch up soon". Weekends go to recovering from the week.
 
 We chase the next number, the next title, the next appraisal. We check layoff news at midnight. We compare ourselves to people we've never met. We're surrounded by colleagues and contacts, and still feel like we're doing it alone.
 
