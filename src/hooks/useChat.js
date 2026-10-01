@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { track } from '../analytics';
 import { db } from '../firebase';
 import { collection, deleteDoc, doc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { addWithRate } from '../firestoreWrites';
@@ -49,6 +50,7 @@ export function useChat(user, tab, city) {
       await addWithRate(user.uid, ['chats', chatRoom, 'messages'], {
         text, user: user.name, userId: user.uid, timestamp: serverTimestamp(),
       });
+      track('chat_message', { room: chatRoom.split('__')[1] || 'general' });
     } catch (e) {
       console.error('Chat message not sent:', e);
       setChatInput(text);  // give the text back so it isn't lost

@@ -1,4 +1,5 @@
 import React from 'react';
+import { inviteLink, track } from '../../analytics';
 
 function InviteModal({ open, onClose }){
   if(!open) return null;
@@ -8,19 +9,20 @@ function InviteModal({ open, onClose }){
         <div className="modal-title">Invite someone</div>
         <p style={{fontSize:13,color:"var(--text-dim)",marginBottom:16,lineHeight:1.6}}>Share The Stillroom with your network. Anyone with the link can sign up and join the community.</p>
         <div className="invite-link-row">
-          <span className="invite-link-text">{typeof window!=="undefined"?window.location.origin:"https://wfhlounge.app"}</span>
+          <span className="invite-link-text">{window.location.origin}</span>
           <button className="invite-copy-btn" onClick={()=>{
-            navigator.clipboard.writeText(typeof window!=="undefined"?window.location.origin:"");
+            navigator.clipboard.writeText(inviteLink('link'));
+            track('share', { method: 'link', content_type: 'invite' });
             onClose();
           }}>
             <i className="ti ti-copy"/>Copy link
           </button>
         </div>
         <div style={{marginTop:16,display:"flex",gap:8,justifyContent:"center"}}>
-          <a href={`https://wa.me/?text=${encodeURIComponent('Join me on The Stillroom — a community for working professionals. ')}${encodeURIComponent(typeof window!=="undefined"?window.location.origin:"")}`} target="_blank" rel="noopener noreferrer" className="invite-share-btn" style={{background:"#25D366"}}>
+          <a href={`https://wa.me/?text=${encodeURIComponent('Join me on The Stillroom — a community for working professionals. ')}${encodeURIComponent(inviteLink('whatsapp'))}`} onClick={() => track('share', { method: 'whatsapp', content_type: 'invite' })} target="_blank" rel="noopener noreferrer" className="invite-share-btn" style={{background:"#25D366"}}>
             <i className="ti ti-brand-whatsapp"/>WhatsApp
           </a>
-          <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent('Join me on The Stillroom — a community for working professionals. ')}${encodeURIComponent(typeof window!=="undefined"?window.location.origin:"")}`} target="_blank" rel="noopener noreferrer" className="invite-share-btn" style={{background:"#1DA1F2"}}>
+          <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent('Join me on The Stillroom — a community for working professionals. ')}${encodeURIComponent(inviteLink('twitter'))}`} onClick={() => track('share', { method: 'twitter', content_type: 'invite' })} target="_blank" rel="noopener noreferrer" className="invite-share-btn" style={{background:"#1DA1F2"}}>
             <i className="ti ti-brand-twitter"/>Twitter
           </a>
         </div>

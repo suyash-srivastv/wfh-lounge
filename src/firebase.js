@@ -14,7 +14,7 @@ const firebaseConfig = {
   measurementId: "G-CPZ741TQC5"
 };
 
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 
 // App Check blocks scripts and bots that call Firebase directly. It turns on
 // once a reCAPTCHA v3 site key is set in .env as VITE_RECAPTCHA_SITE_KEY.
@@ -25,7 +25,7 @@ if (recaptchaKey) {
 
 // Local testing only: `npm run dev:emulators` points the app at the Firebase
 // emulators (fake accounts, local database) instead of the real project.
-const useEmulators = import.meta.env.VITE_USE_EMULATORS === '1';
+export const useEmulators = import.meta.env.VITE_USE_EMULATORS === '1';
 
 export const auth = getAuth(app);
 // Offline cache: repeat visits read mostly from this device instead of the server.

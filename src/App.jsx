@@ -3,6 +3,7 @@ import { auth, db } from './firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc, deleteField, increment, writeBatch, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { addWithRate } from './firestoreWrites';
+import { track, trackScreen, identify } from './analytics';
 import { ROLES, REACTIONS } from './constants';
 import { useFirestoreListeners, useMemberProfile, useAuthorThreads, useMyStats } from './hooks/useFirestoreListeners';
 import { useChat } from './hooks/useChat';
@@ -139,6 +140,7 @@ function App(){
       const unverified = fbUser && !fbUser.emailVerified && fbUser.providerData.some(p => p.providerId === 'password');
       setNeedsVerify(unverified ? fbUser.email : null);
       setIsAdmin(!!fbUser && fbUser.email === ADMIN_EMAIL && fbUser.emailVerified);
+      identify(fbUser?.uid);
       if (fbUser) {
         try {
           const snap = await getDoc(doc(db, 'users', fbUser.uid));
@@ -164,6 +166,10 @@ function App(){
     return unsub;
   }, []);
 
+  // Report which screen people are on (the app has no per-tab URLs).
+  const screenName = !user ? 'signed_out' : viewingMemberId ? 'member_profile' : showAdmin ? 'admin' : showProfile ? 'my_profile' : tab;
+  useEffect(() => { if (user?.username) trackScreen(screenName); }, [screenName, !!user?.username]);
+
   // Open on the user's home city whenever they log in or finish sign-up.
   // (Picking another city in the nav still works for the rest of the session.)
   const hasProfile = !!user?.username;
@@ -184,12 +190,14 @@ function App(){
     const ev    = events.find(e => e.id === id);
     const going = !!(ev?.rsvps?.[user.uid]);
     await updateDoc(doc(db,'events',id), { [`rsvps.${user.uid}`]: going ? deleteField() : true, attendeeCount: increment(going ? -1 : 1) });
+    if (!going) track('event_rsvp', { city });
   }
   async function sendRequest(memberId) {
     await updateDoc(doc(db,'users',user.uid), { [`sentRequests.${memberId}`]: true });
     await updateDoc(doc(db,'users',memberId), {
       [`receivedRequests.${user.uid}`]: { name: user.name, photoURL: user.photoURL || null },
     });
+    track('connect_request');
   }
   async function cancelRequest(memberId) {
     await updateDoc(doc(db,'users',user.uid), { [`sentRequests.${memberId}`]: deleteField() });
@@ -248,6 +256,7 @@ function App(){
     await addWithRate(user.uid, ['threads', threadId, 'replies'],
       { body: replyText.trim(), author: user.name, authorId: user.uid, createdAt: serverTimestamp() },
       (batch, ref) => batch.update(doc(db, 'threads', threadId), { replyCount: increment(1), lastReplyId: ref.id }));
+    track('reply_posted');
     setReplyText('');
   }
   async function deleteReply(threadId, replyId) {
@@ -259,18 +268,21 @@ function App(){
   async function submitPost() {
     if (!newPost.title.trim()) return;
     await addWithRate(user.uid, ['threads'], { title:newPost.title.trim(), body:newPost.body.trim(), author:user.name, authorId:user.uid, city:city==='All cities'?'All':city, tags:['general'], replyCount:0, likeCount:0, likes:{}, createdAt:serverTimestamp() });
+    track('post_created', { city });
     setNewPost({ title:'', body:'' }); setNewPostOpen(false);
   }
   async function submitEvent() {
     if (!newEvent.title.trim() || !newEvent.location.trim()) return;
     const tags = newEvent.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10);
     await addWithRate(user.uid, ['events'], { title:newEvent.title.trim(), type:newEvent.type, city:city==='All cities'?'All':city, location:newEvent.location.trim(), date:newEvent.date||'TBD', time:newEvent.time||'TBD', tags, host:user.name, hostId:user.uid, attendeeCount:1, rsvps:{[user.uid]:true}, createdAt:serverTimestamp() });
+    track('event_hosted', { city, type: newEvent.type });
     setNewEvent({ title:'', type:'IRL', location:'', date:'', time:'', tags:'' }); setHostEventOpen(false);
   }
   async function submitIdea() {
     if (!newIdea.title.trim()) return;
     const tags = newIdea.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10);
     await addWithRate(user.uid, ['ideas'], { title:newIdea.title.trim(), desc:newIdea.desc.trim(), author:user.name, authorId:user.uid, city:city==='All cities'?'All':city, votes:0, stage:newIdea.stage, tags, looking:newIdea.looking, upvotes:{}, createdAt:serverTimestamp() });
+    track('idea_posted', { city });
     setNewIdea({ title:'', desc:'', stage:'Idea', tags:'', looking:[] }); setPostIdeaOpen(false);
   }
   async function reactIdea(ideaId, emoji) {

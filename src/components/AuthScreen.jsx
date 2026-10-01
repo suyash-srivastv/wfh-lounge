@@ -1,7 +1,8 @@
 import AuthShell from './AuthShell';
 import React, { useState, useRef, useEffect } from 'react';
 import { auth, db } from '../firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification, getAdditionalUserInfo } from 'firebase/auth';
+import { track } from '../analytics';
 import { doc, setDoc } from 'firebase/firestore';
 import { ROLES, TAGLINE, firebaseErrMsg } from '../constants';
 
@@ -42,7 +43,8 @@ function AuthScreen({ initialMode = 'login' } = {}){
   async function googleSignIn(){
     setErr("");setLoading(true);
     try{
-      await signInWithPopup(auth,new GoogleAuthProvider());
+      const cred=await signInWithPopup(auth,new GoogleAuthProvider());
+      track(getAdditionalUserInfo(cred)?.isNewUser?'sign_up':'login',{method:'google'});
     }catch(e){
       if(e.code!=="auth/popup-closed-by-user")setErr(firebaseErrMsg(e.code));
       setLoading(false);
@@ -56,10 +58,12 @@ function AuthScreen({ initialMode = 'login' } = {}){
     try{
       if(mode==="login"){
         await signInWithEmailAndPassword(auth, form.email.trim(), form.password);
+        track('login',{method:'email'});
       } else {
         if(!form.name.trim()||!form.email.trim()||!form.password.trim()){setErr("Name, email and password are required.");setLoading(false);return;}
         const cred=await createUserWithEmailAndPassword(auth, form.email.trim(), form.password);
         sendEmailVerification(cred.user).catch(()=>{});
+        track('sign_up',{method:'email'});
         const initials=form.name.trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
         await setDoc(doc(db, "users", cred.user.uid), {
           name:form.name.trim(),

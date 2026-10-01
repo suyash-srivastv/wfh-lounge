@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { track } from '../analytics';
 import { createPortal } from 'react-dom';
 import { db } from '../firebase';
 import { doc, getDoc, collection, writeBatch, serverTimestamp } from 'firebase/firestore';
@@ -174,6 +175,7 @@ function Flow({ onClose, onDone, initial }) {
       done: false,
     }));
     persist({ version: 6, plan });
+    track('clarity_plan_created', { priorities: plan.length, top: plan[0].id.startsWith('custom-') ? 'custom' : plan[0].id, has_action: !!plan[0].action });
     setStep(-1);
   }
 

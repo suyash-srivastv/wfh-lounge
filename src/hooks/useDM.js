@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { track } from '../analytics';
 import { db } from '../firebase';
 import {
   collection, doc, setDoc, deleteDoc,
@@ -81,6 +82,8 @@ export function useDM(user) {
       setDmInput(text);  // give the text back so it isn't lost
       return;
     }
+
+    track('dm_sent');
 
     // Must match the security rules exactly (fixed preview, no message content).
     const inboxFields = { lastMsg: 'New message', lastAt: now };

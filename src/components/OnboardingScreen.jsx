@@ -1,4 +1,5 @@
 import AuthShell from './AuthShell';
+import { track } from '../analytics';
 import React, { useState, useRef, useEffect } from 'react';
 import { db } from '../firebase';
 import { doc, getDoc, runTransaction, collection, query, limit, getDocs } from 'firebase/firestore';
@@ -152,6 +153,7 @@ function OnboardingScreen({ user, setUser }) {
           initials,
         }, { merge: true });
       });
+      track('profile_completed', { has_city: !!city });
       setUser(u => ({ ...u, name: displayName.trim(), username: uname, bio: bio.trim(), role, city, yearsExp: yearsExp !== '' ? Number(yearsExp) : null, initials: displayName.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() }));
     } catch (e) {
       setErr(e.message || 'Something went wrong. Try again.');
