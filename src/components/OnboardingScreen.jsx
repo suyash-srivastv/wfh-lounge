@@ -7,7 +7,7 @@ import { ROLES, TAGLINE, firebaseErrMsg } from '../constants';
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
-function CitySearch({ value, onChange }) {
+export function CitySearch({ value, onChange }) {
   const [input, setInput] = useState(value || '');
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);

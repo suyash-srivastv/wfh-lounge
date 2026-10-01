@@ -21,6 +21,8 @@ import NewPostModal      from './components/modals/NewPostModal';
 import HostEventModal    from './components/modals/HostEventModal';
 import PostIdeaModal     from './components/modals/PostIdeaModal';
 import InviteModal       from './components/modals/InviteModal';
+import EventDetailModal  from './components/modals/EventDetailModal';
+import CompleteProfileModal from './components/modals/CompleteProfileModal';
 import MemberProfilePage from './screens/MemberProfilePage';
 import EventsScreen      from './screens/EventsScreen';
 import MembersScreen     from './screens/MembersScreen';
@@ -40,6 +42,7 @@ function App(){
   const [isAdmin,       setIsAdmin]       = useState(false); // UI only — the rules enforce it
   const [showAdmin,     setShowAdmin]     = useState(false);
   const [membersView,   setMembersView]   = useState('nearby');  // 'nearby' | 'friends'
+  const [openEventId,   setOpenEventId]   = useState(null);
   // First visit on this device: show the full-screen intro before sign-in.
   const [introSeen,     setIntroSeen]     = useState(() => { try { return localStorage.getItem('stillroom-intro-seen') === '1'; } catch { return true; } });
   const [authMode,      setAuthMode]      = useState('login');
@@ -150,16 +153,11 @@ function App(){
             // Never fall back to the email: profiles are visible to other members.
             const name     = (fbUser.displayName || 'New member').slice(0, 50);
             const initials = name.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
-            const profile  = { name, city: '', role: '', initials, ...(fbUser.photoURL ? { photoURL: fbUser.photoURL } : {}) };
+            const profile  = { name, city: '', role: '', initials };
             await setDoc(doc(db, 'users', fbUser.uid), profile);
             setUser({ ...profile, uid: fbUser.uid });
           } else {
             const profile = snap.data() || {};
-            // Google sign-ins without a photo yet get their Google picture.
-            if (!profile.photoURL && fbUser.photoURL) {
-              profile.photoURL = fbUser.photoURL;
-              setDoc(doc(db, 'users', fbUser.uid), { photoURL: fbUser.photoURL }, { merge: true }).catch(() => {});
-            }
             setUser({ ...profile, uid: fbUser.uid });
           }
         } catch {
@@ -285,9 +283,9 @@ function App(){
   async function submitEvent() {
     if (!newEvent.title.trim() || !newEvent.location.trim()) return;
     const tags = newEvent.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10);
-    await addWithRate(user.uid, ['events'], { title:newEvent.title.trim(), type:newEvent.type, city:city==='All cities'?'All':city, location:newEvent.location.trim(), date:newEvent.date||'TBD', time:newEvent.time||'TBD', tags, host:user.name, hostId:user.uid, attendeeCount:1, rsvps:{[user.uid]:true}, createdAt:serverTimestamp() });
+    await addWithRate(user.uid, ['events'], { title:newEvent.title.trim(), type:newEvent.type, city:city==='All cities'?'All':city, location:newEvent.location.trim(), desc:(newEvent.desc||'').trim(), date:newEvent.date||'TBD', time:newEvent.time||'TBD', tags, host:user.name, hostId:user.uid, attendeeCount:1, rsvps:{[user.uid]:true}, createdAt:serverTimestamp() });
     track('event_hosted', { city, type: newEvent.type });
-    setNewEvent({ title:'', type:'IRL', location:'', date:'', time:'', tags:'' }); setHostEventOpen(false);
+    setNewEvent({ title:'', type:'IRL', location:'', desc:'', date:'', time:'', tags:'' }); setHostEventOpen(false);
   }
   async function submitIdea() {
     if (!newIdea.title.trim()) return;
@@ -320,6 +318,20 @@ function App(){
     setUser(updated);
     if (updated.city) changeCity(updated.city);
     setEditOpen(false);
+  }
+
+  // No city on the profile? Ask after sign-up / login. "Later" lasts this visit.
+  const laterKey = 'stillroom-cp-later-' + (user?.uid || '');
+  const [askLater, setAskLater] = useState(false);
+  useEffect(() => { try { setAskLater(sessionStorage.getItem(laterKey) === '1'); } catch { setAskLater(false); } }, [laterKey]);
+  const askCity = !!user?.username && !needsVerify && !user.city && !askLater;
+  function laterCity() { try { sessionStorage.setItem(laterKey, '1'); } catch {} setAskLater(true); track('city_prompt_later'); }
+  async function saveMissing({ city: c, role, bio }) {
+    const fields = { city: c, ...(role ? { role } : {}), ...(bio ? { bio } : {}) };
+    await setDoc(doc(db, 'users', user.uid), fields, { merge: true });
+    setUser(u => ({ ...u, ...fields }));
+    changeCity(c);
+    track('city_prompt_saved', { via_prompt: true });
   }
 
   // Derived data (city filtering now happens on the server)
@@ -364,7 +376,8 @@ function App(){
     if (showAdmin && isAdmin) return <AdminScreen onBack={() => setShowAdmin(false)}/>;
     if (showProfile)   return <ProfileScreen user={user} stats={myStats} userPosts={userPosts} openEdit={() => setEditOpen(true)} setShowProfile={setShowProfile} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} onStatusChange={async s=>{await setDoc(doc(db,'users',user.uid),{status:s},{merge:true});setUser(u=>({...u,status:s}));}}/>;
     switch (tab) {
-      case 'events':  return <EventsScreen  events={events} {...more(lists.events)} city={city} userId={user.uid} userName={user.name} rsvp={rsvp}   deleteEvent={deleteEvent} onHostEvent={() => setHostEventOpen(true)} isAdmin={isAdmin}/>;
+      case 'events':  return <EventsScreen  events={events} {...more(lists.events)} city={city} userId={user.uid} userName={user.name} rsvp={rsvp}   deleteEvent={deleteEvent} onHostEvent={() => setHostEventOpen(true)} isAdmin={isAdmin}
+        onOpenEvent={setOpenEventId} onViewProfile={uid => setViewingMemberId(uid)}/>;
       case 'members': return <MembersScreen members={fMembers} {...more(lists.members)} loading={lists.members.loading} city={city} userId={user.uid}
         userConnections={user.connections||{}} sentRequests={user.sentRequests||{}} receivedRequests={user.receivedRequests||{}}
         onSendRequest={sendRequest} onCancelRequest={cancelRequest} onAcceptRequest={acceptRequest} onDeclineRequest={declineRequest}
@@ -404,7 +417,7 @@ function App(){
         locStatus={locStatus} detectedCity={detectedCity} onDetectLocation={detectLocation}
         user={user}           showProfile={showProfile} setShowProfile={setShowProfile}
         openEdit={() => setEditOpen(true)}
-        onLogout={() => { signOut(auth); setCity('All cities'); localStorage.removeItem('wfh-city'); setShowAdmin(false); setTab('events'); }}
+        onLogout={() => { try { sessionStorage.removeItem(laterKey); } catch {} setAskLater(false); signOut(auth); setCity('All cities'); localStorage.removeItem('wfh-city'); setShowAdmin(false); setTab('events'); }}
         crown={crown}
         dmUnread={dm.totalUnread}
         onDmToggle={() => setDmPanelOpen(p => !p)}
@@ -424,6 +437,10 @@ function App(){
       <HostEventModal   open={hostEventOpen}  newEvent={newEvent}   onClose={() => setHostEventOpen(false)} setNewEvent={setNewEvent} submitEvent={submitEvent}/>
       <PostIdeaModal    open={postIdeaOpen}   newIdea={newIdea}     onClose={() => setPostIdeaOpen(false)}  setNewIdea={setNewIdea}   submitIdea={submitIdea} ROLES={ROLES}/>
       <InviteModal      open={inviteOpen} onClose={() => setInviteOpen(false)}/>
+      {askCity && <CompleteProfileModal user={user} onSave={saveMissing} onLater={laterCity}/>}
+      {openEventId && <EventDetailModal ev={events.find(e => e.id === openEventId)} userId={user.uid} isAdmin={isAdmin}
+        onClose={() => setOpenEventId(null)} rsvp={rsvp} deleteEvent={deleteEvent}
+        onViewProfile={uid => uid === user.uid ? setShowProfile(true) : setViewingMemberId(uid)}/>}
     </div>
   );
 }

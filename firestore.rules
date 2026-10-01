@@ -159,6 +159,7 @@ service cloud.firestore {
         && request.resource.data.host == myName()
         && nonEmpty(request.resource.data.title, 120)
         && nonEmpty(request.resource.data.location, 200)
+        && str(request.resource.data.get('desc', ''), 1000)
         && str(request.resource.data.get('city', ''), 80)
         && shortList(request.resource.data.get('tags', []), 10)
         && request.resource.data.attendeeCount == 1

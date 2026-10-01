@@ -20,7 +20,7 @@ try {
   ws.onmessage = e => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m.result); pending.delete(m.id); } };
   await send('Page.enable'); await send('Page.navigate', { url: 'http://localhost:5174/' });
   check('first-time visitors see the full-screen intro', await until(`!!document.querySelector('.intro') && document.body.innerText.includes('We forgot to socialise')`, 20000));
-  await ev(`window.btn = t => [...document.querySelectorAll('button')].find(b => b.textContent.trim().startsWith(t));
+  await ev(`window.btn = (t, root = document) => [...root.querySelectorAll('button')].find(b => b.textContent.trim().startsWith(t));
     window.type = (el, v) => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, v); el.dispatchEvent(new Event('input', { bubbles: true })); };`);
   if (process.env.SHOTS) for (const [w, h, n] of [[1200, 900, 'intro-desk'], [390, 844, 'intro-mob']]) {
     await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: w < 600 }); await wait(400);
@@ -44,9 +44,19 @@ try {
   await ev(`btn('Next').click()`); await wait(400);
   await ev(`btn('Finish setup').click()`);
   check('finishing setup opens the app', await until(`!!document.querySelector('.nav-tabs')`, 15000));
+  check('no city yet: asks "Where are you based?"', await until(`!!document.querySelector('.cp-modal') && document.body.innerText.includes('Where are you based?')`));
+  check('the prompt also asks for role and a line about you', !!(await ev(`!!document.querySelector('.cp-modal select') && !!document.querySelector('.cp-modal input[maxlength="160"]')`)));
+  check('Save needs a city', !!(await ev(`btn('Save', document.querySelector('.cp-modal'))?.disabled`)));
+  if (process.env.SHOTS) { const r = await send('Page.captureScreenshot', { format: 'png' }); (await import('node:fs')).writeFileSync(`${process.env.SHOTS}/city-prompt.png`, Buffer.from(r.data, 'base64')); }
+  await ev(`btn('Later').click()`);
+  check('"Later" closes it', await until(`!document.querySelector('.cp-modal')`));
   await ev(`document.querySelector('.avatar').click()`); await wait(200);
   await ev(`btn('Log out').click()`);
   check('returning visitors skip the intro', await until(`!!document.querySelector('input[type=email]') && !document.querySelector('.intro')`));
+  await ev(`document.querySelector('.auth-tab:not(.active)')?.textContent.includes('Log in') && document.querySelector('.auth-tab:not(.active)').click()`); await wait(200);
+  await ev(`type(document.querySelector('input[type=email]'), 'carol@test.dev'); type(document.querySelector('input[type=password]'), 'password123')`); await wait(150);
+  await ev(`document.querySelector('.auth-submit').click()`);
+  check('next login asks for the city again', await until(`!!document.querySelector('.cp-modal')`, 15000));
 } finally {
   const failed = results.filter(r => !r).length;
   console.log(`\n${results.length - failed}/${results.length} checks passed`); chrome.kill(); process.exit(failed ? 1 : 0);

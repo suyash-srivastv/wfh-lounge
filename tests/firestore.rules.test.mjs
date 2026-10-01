@@ -364,3 +364,11 @@ test('notifications: only you can read yours, and you can only mark them read', 
   await assertSucceeds(updateDoc(doc(verified('alice'), 'notifications/alice/items/n1'), { read: true }));
   await assertFails(updateDoc(doc(verified('alice'), 'notifications/alice/items/n1'), { fromName: 'Someone' }));
 });
+
+test('events: an optional description up to 1,000 characters', async () => {
+  const db = verified('alice');
+  const ev = desc => ({ title: 'Walk', location: 'Park', host: 'Alice', hostId: 'alice', city: 'Pune', tags: [], attendeeCount: 1, rsvps: { alice: true }, desc });
+  await assertSucceeds(withRate(db, 'alice', doc(collection(db, 'events')), ev('Bring water.')));
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'rate/alice'), { last: Timestamp.fromMillis(Date.now() - 10000) }));
+  await assertFails(withRate(db, 'alice', doc(collection(db, 'events')), ev('x'.repeat(1001))));
+});

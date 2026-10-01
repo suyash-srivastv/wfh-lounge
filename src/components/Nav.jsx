@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Clarity from './Clarity';
 import NotificationBell from './NotificationBell';
-import { TAGLINE } from '../constants';
+import { TAGLINE, realPhoto, initialsOf } from '../constants';
 
 function useDarkMode() {
   const [dark, setDark] = useState(() => localStorage.getItem('stillroom-theme') !== 'light');
@@ -151,17 +151,17 @@ function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetec
           </div>
           <div className="profile-wrap" ref={profileRef}>
             <button className="avatar" onClick={() => setProfileOpen(p => !p)} style={{padding:0,overflow:'hidden'}}>
-              {user.photoURL
-                ? <img src={user.photoURL} alt="" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/>
-                : user.initials}
+              {realPhoto(user.photoURL)
+                ? <img src={realPhoto(user.photoURL)} alt="" referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/>
+                : initialsOf(user.name)}
             </button>
             {profileOpen && (
               <div className="profile-dropdown">
                 <div className="profile-header">
                   <div className="profile-avatar-lg" style={{overflow:'hidden',padding:0}}>
-                    {user.photoURL
-                      ? <img src={user.photoURL} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-                      : user.initials}
+                    {realPhoto(user.photoURL)
+                      ? <img src={realPhoto(user.photoURL)} alt="" referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                      : initialsOf(user.name)}
                   </div>
                   <div>
                     <div className="profile-name">{user.name}</div>

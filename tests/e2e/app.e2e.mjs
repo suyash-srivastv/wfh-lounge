@@ -12,7 +12,7 @@ const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const SHOTS = process.env.SHOTS || tmpdir();
 const chrome = spawn(CHROME, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--remote-debugging-port=9360',
   `--user-data-dir=${mkdtempSync(join(tmpdir(), 'stillroom-e2e-'))}`, 'about:blank'], { stdio: 'ignore' });
-setTimeout(() => { console.log('TIMEOUT'); chrome.kill(); process.exit(1); }, 150000);
+setTimeout(() => { console.log('TIMEOUT'); chrome.kill(); process.exit(1); }, 240000);
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 let ws, id = 0; const pending = new Map(); const problems = [];
@@ -99,6 +99,7 @@ try {
   // Members: paged list, open profile, DM
   await ev(`tab('Members')`);
   check('members load (paged, by city)', await until(`$$('.grid2 .card').length >= 2`));
+  check('Google auto-filled pictures show initials instead', !!(await ev(`!document.querySelector('img[src*="googleusercontent"]') && $$('.grid2 .card').some(c => c.innerText.includes('Bob'))`)));
   await ev(`$$('.grid2 .card').find(c => c.innerText.includes('Bob')).click()`);
   check('open a member profile', await until(`!!btn('Message')`));
   await wait(2200);

@@ -1,25 +1,35 @@
+import { dateParts, niceTime } from '../eventFormat';
 import EmptyState from '../components/EmptyState';
 import MsgDelete from '../components/MsgDelete';
 import WarRoom from '../components/WarRoom';
 import HomeHero from '../components/HomeHero';
 import LoadMore from '../components/LoadMore';
+import Avatar from '../components/Avatar';
+import { useProfiles } from '../hooks/useFirestoreListeners';
 
-// "2026-10-02" → { mon: 'Oct', day: '02', wd: 'Fri' }; anything else (e.g. TBD) → null
-function dateParts(s) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
-  if (!m) return null;
-  const d = new Date(+m[1], +m[2] - 1, +m[3]);
-  return { mon: d.toLocaleString('en', { month: 'short' }), day: m[3], wd: d.toLocaleString('en', { weekday: 'short' }) };
-}
-// "15:30" → "3:30 pm"; anything else is shown as-is ("Time TBD")
-function niceTime(t) {
-  const m = /^(\d{1,2}):(\d{2})$/.exec(t || '');
-  if (!m) return t && t !== 'TBD' ? t : 'Time TBD';
-  const h = +m[1];
-  return `${((h + 11) % 12) + 1}:${m[2]} ${h < 12 ? 'am' : 'pm'}`;
+const NOT_A_PERSON = ['seed', 'stillroom-team'];
+const first = name => (name || '').trim().split(/\s+/)[0] || 'someone';
+const FACES = 4; // faces shown per card; one profile fetch covers every card
+
+// Up to FACES attendees per event, you first.
+function goingIds(ev, userId) {
+  const ids = Object.keys(ev.rsvps || {});
+  return [...ids.filter(id => id === userId), ...ids.filter(id => id !== userId).sort()].slice(0, FACES);
 }
 
-function EventsScreen({ events, hasMore, onLoadMore, city, userId, userName, rsvp, deleteEvent, onHostEvent, isAdmin }){
+function whoGoing(ev, people, userId) {
+  const total = ev.attendeeCount || Object.keys(ev.rsvps || {}).length;
+  if (!total) return 'No one yet — be the first';
+  const names = goingIds(ev, userId).map(id => id === userId ? 'You' : people[id]?.name.split(' ')[0]).filter(Boolean).slice(0, 2);
+  if (!names.length) return `${total} going`;
+  const rest = total - names.length;
+  return `${names.join(', ')}${rest > 0 ? ` +${rest}` : ''} going`;
+}
+
+function EventsScreen({ events, hasMore, onLoadMore, city, userId, userName, rsvp, deleteEvent, onHostEvent, isAdmin, onOpenEvent, onViewProfile }){
+  const ids = [...new Set(events.flatMap(ev => goingIds(ev, userId)))];
+  const loaded = useProfiles(userId ? { uid: userId } : null, ids);
+  const people = Object.fromEntries(loaded.items.map(p => [p.id, p]));
   return (
     <div>
       <HomeHero name={userName} city={city} count={events.length}/>
@@ -33,26 +43,32 @@ function EventsScreen({ events, hasMore, onLoadMore, city, userId, userName, rsv
           const going = !!(ev.rsvps?.[userId]);
           const d = dateParts(ev.date);
           return (
-            <div key={ev.id} className="card ev-card">
+            <div key={ev.id} className="card ev-card" role="button" tabIndex={0}
+              onClick={() => onOpenEvent(ev.id)} onKeyDown={e => { if (e.key === 'Enter') onOpenEvent(ev.id); }}>
               <div className="ev-top">
                 <div className={'ev-date' + (d ? '' : ' tbd')}>
                   {d ? <><span className="ev-mon">{d.mon}</span><span className="ev-day">{d.day}</span><span className="ev-wd">{d.wd}</span></> : <span className="ev-mon">TBD</span>}
                 </div>
                 <div className="ev-main">
                   <div className="ev-title">{ev.title}</div>
-                  <div className="ev-meta"><i className="ti ti-map-pin"/>{ev.location}</div>
-                  <div className="ev-meta">
-                    <i className="ti ti-clock"/>{niceTime(ev.time)}
-                    <span className="ev-dot">·</span>{ev.type === 'IRL' ? 'In person' : 'Online'}
-                  </div>
+                  <div className="ev-meta"><i className="ti ti-clock"/><span>{niceTime(ev.time)} · {ev.type === 'IRL' ? 'In person' : 'Online'}</span></div>
+                  <div className="ev-meta"><i className={'ti ' + (ev.type === 'IRL' ? 'ti-map-pin' : 'ti-video')}/><span className="wrap">{/^https?:\/\//i.test(ev.location || '') ? 'Online link' : ev.location}</span></div>
+                  {ev.host && <div className="ev-meta"><i className="ti ti-user"/><span>Hosted by{' '}
+                    {ev.hostId && !NOT_A_PERSON.includes(ev.hostId)
+                      ? <button className="ev-host-link" onClick={e => { e.stopPropagation(); ev.hostId === userId ? onOpenEvent(ev.id) : onViewProfile(ev.hostId); }}>{ev.hostId === userId ? 'you' : first(ev.host)}</button>
+                      : <b>{first(ev.host)}</b>}</span></div>}
                 </div>
                 {ev.hostId===userId&&<button className="delete-btn" title="Delete event" onClick={e=>{e.stopPropagation();deleteEvent(ev.id);}}><i className="ti ti-trash"/></button>}
-                {ev.hostId!==userId&&isAdmin&&<MsgDelete visible title="Delete event (admin)" onDelete={()=>deleteEvent(ev.id)}/>}
+                {ev.hostId!==userId&&isAdmin&&<span onClick={e=>e.stopPropagation()}><MsgDelete visible title="Delete event (admin)" onDelete={()=>deleteEvent(ev.id)}/></span>}
               </div>
-              {ev.tags?.length > 0 && <div className="ev-tags">{ev.tags.map(t=><span key={t} className="tag">{t}</span>)}</div>}
               <div className="ev-foot">
-                <div className="ev-going"><i className="ti ti-users"/>{ev.attendeeCount||0} going</div>
-                <button className={"rsvp-btn"+(going?" going":"")} onClick={()=>rsvp(ev.id)}>{going?"✓ Going":"RSVP"}</button>
+                <div className="ev-going">
+                  {goingIds(ev, userId).some(id => people[id]) && <span className="ev-faces">
+                    {goingIds(ev, userId).filter(id => people[id]).map(id => <Avatar key={id} user={people[id]} size={24} className="ev-face"/>)}
+                  </span>}
+                  <span className="ev-who">{whoGoing(ev, people, userId)}</span>
+                </div>
+                <button className={"rsvp-btn"+(going?" going":"")} onClick={e=>{e.stopPropagation();rsvp(ev.id);}}>{going?"✓ Going":"RSVP"}</button>
               </div>
             </div>
           );

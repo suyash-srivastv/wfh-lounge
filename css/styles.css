@@ -985,3 +985,69 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:2000;o
   .nav-right .wiw-nav-btn{display:none}
   .mobile-only{display:flex}
 }
+
+/* ── Event host + details ── */
+.ev-card{cursor:pointer}
+.ev-host{font-size:12px;color:var(--text-2);margin-top:2px}
+.ev-host b{color:var(--text-dim);font-weight:600}
+.ev-host-link{border:none;background:none;padding:0;font-family:inherit;font-size:12px;font-weight:600;color:var(--accent-tc);cursor:pointer}
+.ev-host-link:hover{text-decoration:underline;text-underline-offset:2px}
+.ev-more{margin-left:auto;margin-right:12px;font-size:12px;color:var(--text-3);display:inline-flex;align-items:center;gap:2px}
+.ev-card:hover .ev-more{color:var(--accent-tc)}
+.ed{position:relative;max-width:520px}
+.ed-close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text-2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+.ed-close:hover{color:var(--text-1)}
+.ed-head{display:flex;gap:14px;align-items:center;margin:4px 40px 18px 0}
+.ed-kind{font-size:12px;color:var(--text-2);margin-bottom:4px}
+.ed-title{font-family:'DM Serif Display',serif;font-weight:400;font-size:24px;line-height:1.15;color:var(--text-1);margin:0}
+.ed-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.ed-row{display:flex;gap:9px;align-items:flex-start;font-size:14px;color:var(--text-mid);line-height:1.45}
+.ed-row i{font-size:17px;color:var(--accent);margin-top:1px}
+.ed-where{word-break:break-word}
+.ed-links{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.ed-links .connect-btn{display:inline-flex;align-items:center;gap:5px;text-decoration:none}
+.ed-section{border-top:1px solid var(--border-sub);padding:14px 0 4px}
+.ed-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px}
+.ed-person{width:100%;display:flex;align-items:center;gap:11px;padding:8px 10px;border:1px solid var(--border);border-radius:12px;background:transparent;color:var(--text-1);font-family:inherit;text-align:left;cursor:pointer}
+.ed-person:hover{border-color:var(--accent-border)}
+.ed-person.static{cursor:default}
+.ed-person>span{flex:1;display:flex;flex-direction:column;gap:1px;font-size:14px}
+.ed-person>span>span{font-size:12px;color:var(--text-2)}
+.ed-person i{color:var(--text-3)}
+.ed-desc{font-size:14px;line-height:1.65;color:var(--text-mid);white-space:pre-wrap;margin:0 0 10px}
+.ed-going{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.ed-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-dim);font-family:inherit;font-size:13px;cursor:pointer}
+.ed-chip:hover:not(:disabled){border-color:var(--accent-border);color:var(--text-1)}
+.ed-chip:disabled{cursor:default}
+.ed-muted{font-size:13px;color:var(--text-3)}
+.ed-foot{display:flex;align-items:center;justify-content:flex-end;gap:10px;border-top:1px solid var(--border-sub);padding-top:14px;margin-top:4px}
+.ed-rsvp{padding:10px 26px;font-size:14px}
+/* event card text: one clean line each, no wrapping */
+.ev-card{gap:14px}
+.ev-title{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:4px}
+.ev-meta span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ev-meta i{color:var(--text-3)}
+.ev-foot{gap:10px}
+.ev-by{flex:1;min-width:0;font-size:12px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-by b{color:var(--text-dim);font-weight:600}
+.ev-by .ev-host-link{font-size:12px}
+
+/* Event card: wrapped place, host line, faces of who's going */
+.ev-card{min-height:178px}
+.ev-card .ev-foot{margin-top:auto}
+.ev-meta{align-items:flex-start}
+.ev-meta i{margin-top:2px}
+.ev-meta span.wrap{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.35}
+.ev-meta .ev-host-link,.ev-meta b{font-size:13px}
+.ev-meta b{color:var(--text-dim);font-weight:600}
+.ev-going{flex:1;min-width:0;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-2)}
+.ev-faces{display:flex;flex-shrink:0}
+.ev-face{border:2px solid var(--surface);box-sizing:content-box}
+.ev-faces .ev-face+.ev-face{margin-left:-8px}
+.ev-who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+/* "Where are you based?" prompt for profiles without a city */
+.cp-modal{max-width:420px;overflow:visible}
+.cp-modal .auth-label{display:block;margin-bottom:6px}
+.cp-modal .auth-city-drop{z-index:20}
+.cp-icon{width:44px;height:44px;border-radius:12px;background:var(--accent-bg);border:1px solid var(--accent-border);color:var(--accent-tc);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px}

@@ -16,6 +16,9 @@ function HostEventModal({ open, onClose, newEvent, setNewEvent, submitEvent }){
           <input className="modal-input" type="date" style={{flex:1}} value={newEvent.date} onChange={e=>setNewEvent(p=>({...p,date:e.target.value}))}/>
           <input className="modal-input" type="time" style={{flex:1}} value={newEvent.time} onChange={e=>setNewEvent(p=>({...p,time:e.target.value}))}/>
         </div>
+        <textarea className="modal-input" rows={3} maxLength={1000} style={{resize:"vertical"}}
+          placeholder="About this event (optional) — what to expect, who it's for, what to bring…"
+          value={newEvent.desc||''} onChange={e=>setNewEvent(p=>({...p,desc:e.target.value}))}/>
         <input className="modal-input" placeholder="Tags — cowork, casual, startup… (comma separated)" value={newEvent.tags} onChange={e=>setNewEvent(p=>({...p,tags:e.target.value}))}/>
         <div className="modal-actions">
           <button className="btn-cancel" onClick={onClose}>Cancel</button>

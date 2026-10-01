@@ -54,3 +54,16 @@ export function timeAgo(date){
   if(s<86400)return `${Math.floor(s/3600)}h ago`;
   return `${Math.floor(s/86400)}d ago`;
 }
+
+// Only photos people uploaded themselves. Google account pictures used to be
+// copied in at sign-in; for most people that's Google's generic letter image
+// (and those links often fail to load), so they're ignored.
+export function realPhoto(url){
+  if(!url) return null;
+  if(/^https:\/\/[^/]*googleusercontent\.com\//i.test(url)) return null;
+  return url;
+}
+
+export function initialsOf(name=""){
+  return name.trim().split(/\s+/).filter(Boolean).map(w=>w[0]).join("").slice(0,2).toUpperCase()||"?";
+}

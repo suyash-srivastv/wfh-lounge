@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ROLES, STATUSES, VIBES } from '../../constants';
+import { ROLES, STATUSES, VIBES, realPhoto } from '../../constants';
 
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
@@ -44,7 +44,7 @@ function EditProfileModal({ open, user, onClose, onSave }) {
         vibe:     user.vibe     || '',
       });
       setCityQ(user.city || '');
-      setPreview(user.photoURL || null);
+      setPreview(realPhoto(user.photoURL));
     }
   }, [open, user?.uid]);
 
@@ -85,7 +85,7 @@ function EditProfileModal({ open, user, onClose, onSave }) {
     } catch (err) {
       console.error('Photo processing failed:', err);
       setPhotoErr("Couldn't use that photo. Try another one.");
-      setPreview(user.photoURL || null);
+      setPreview(realPhoto(user.photoURL));
     } finally { setUploading(false); }
   }
 
