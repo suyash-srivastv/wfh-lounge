@@ -26,8 +26,8 @@ function IntroScreen({ onJoin, onLogin }) {
 
         <div className="intro-copy">
           <div className="intro-tagline">{TAGLINE}</div>
-          <h1 className="intro-title">Work started deciding everything else.</h1>
-          <p className="intro-line">We forgot to socialise.</p>
+          <h1 className="intro-title">The room where work doesn't follow you.</h1>
+          <p className="intro-line">Find your crew nearby. No networking required.</p>
           <p className="intro-line intro-line-soft">
             The Stillroom is like LinkedIn — but for actually being social. No BS.
           </p>

@@ -19,7 +19,7 @@ try {
   ws = new WebSocket(url); await new Promise(r => ws.onopen = r);
   ws.onmessage = e => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m.result); pending.delete(m.id); } };
   await send('Page.enable'); await send('Page.navigate', { url: 'http://localhost:5174/' });
-  check('first-time visitors see the full-screen intro', await until(`!!document.querySelector('.intro') && document.body.innerText.includes('We forgot to socialise')`, 20000));
+  check('first-time visitors see the full-screen intro', await until(`!!document.querySelector('.intro') && document.body.innerText.includes("The room where work doesn't follow you")`, 20000));
   await ev(`window.btn = (t, root = document) => [...root.querySelectorAll('button')].find(b => b.textContent.trim().startsWith(t));
     window.type = (el, v) => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, v); el.dispatchEvent(new Event('input', { bubbles: true })); };`);
   if (process.env.SHOTS) for (const [w, h, n] of [[1200, 900, 'intro-desk'], [390, 844, 'intro-mob']]) {
