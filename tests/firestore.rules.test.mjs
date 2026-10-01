@@ -327,3 +327,40 @@ test('photo: huge images, other links and scripts are blocked', async () => {
   await assertFails(updateDoc(doc(db, 'users/alice'), { photoURL: 'data:text/html;base64,PHNjcmlwdD4=' }));
   await assertFails(updateDoc(doc(db, 'users/alice'), { photoURL: 'http://insecure.example/x.png' }));
 });
+
+// ---- Notifications ----
+
+const notif = (type, extra = {}) => ({ type, fromUid: 'carol', fromName: 'Carol', read: false, createdAt: serverTimestamp(), ...extra });
+
+test('notifications: a real friend request can notify, a fake one cannot', async () => {
+  const db = verified('carol');
+  await assertFails(setDoc(doc(db, 'notifications/alice/items/req_carol'), notif('friend_request')));   // no request yet
+  await updateDoc(doc(db, 'users/alice'), { 'receivedRequests.carol': { name: 'Carol', photoURL: null } });
+  await assertSucceeds(setDoc(doc(db, 'notifications/alice/items/req_carol'), notif('friend_request')));
+  await assertFails(setDoc(doc(db, 'notifications/alice/items/req_carol'), notif('friend_request')));   // no repeats
+  await assertFails(setDoc(doc(db, 'notifications/alice/items/spam1'), notif('friend_request')));       // wrong id
+  await assertFails(setDoc(doc(db, 'notifications/alice/items/req_carol2'), notif('friend_request', { fromName: 'Bob' })));
+});
+
+test('notifications: a reply notifies the post author only for a real reply', async () => {
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'threads/t1/replies/rCarol'), { body: 'hi', author: 'Carol', authorId: 'carol' }));
+  const db = verified('carol');
+  await assertSucceeds(setDoc(doc(db, 'notifications/bob/items/reply_rCarol'), notif('reply', { refId: 't1', replyId: 'rCarol', title: 'Hello' })));
+  await assertFails(setDoc(doc(db, 'notifications/bob/items/reply_rBob'), notif('reply', { refId: 't1', replyId: 'rBob', title: 'Hello' })));   // not my reply
+  await assertFails(setDoc(doc(db, 'notifications/alice/items/reply_rCarol'), notif('reply', { refId: 't1', replyId: 'rCarol' })));            // not alice's post
+});
+
+test('notifications: an RSVP notifies the host only after really RSVPing', async () => {
+  const db = verified('carol');
+  await assertFails(setDoc(doc(db, 'notifications/bob/items/rsvp_e1_carol'), notif('event_rsvp', { refId: 'e1', title: 'Meetup' })));
+  await updateDoc(doc(db, 'events/e1'), { 'rsvps.carol': true, attendeeCount: increment(1) });
+  await assertSucceeds(setDoc(doc(db, 'notifications/bob/items/rsvp_e1_carol'), notif('event_rsvp', { refId: 'e1', title: 'Meetup' })));
+});
+
+test('notifications: only you can read yours, and you can only mark them read', async () => {
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'notifications/alice/items/n1'), { type: 'reply', fromUid: 'bob', fromName: 'Bob', read: false }));
+  await assertSucceeds(getDoc(doc(verified('alice'), 'notifications/alice/items/n1')));
+  await assertFails(getDoc(doc(verified('bob'), 'notifications/alice/items/n1')));
+  await assertSucceeds(updateDoc(doc(verified('alice'), 'notifications/alice/items/n1'), { read: true }));
+  await assertFails(updateDoc(doc(verified('alice'), 'notifications/alice/items/n1'), { fromName: 'Someone' }));
+});

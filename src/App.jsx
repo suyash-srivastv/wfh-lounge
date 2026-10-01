@@ -4,8 +4,9 @@ import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc, deleteField, increment, writeBatch, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { addWithRate } from './firestoreWrites';
 import { track, trackScreen, identify } from './analytics';
+import { notify } from './notify';
 import { ROLES, REACTIONS } from './constants';
-import { useFirestoreListeners, useMemberProfile, useAuthorThreads, useMyStats } from './hooks/useFirestoreListeners';
+import { useFirestoreListeners, useMemberProfile, useAuthorThreads, useMyStats, useProfiles } from './hooks/useFirestoreListeners';
 import { useChat } from './hooks/useChat';
 import { useDM }   from './hooks/useDM';
 import Confetti          from './components/Confetti';
@@ -38,6 +39,7 @@ function App(){
   const [needsVerify,   setNeedsVerify]   = useState(null);  // email to verify, or null
   const [isAdmin,       setIsAdmin]       = useState(false); // UI only — the rules enforce it
   const [showAdmin,     setShowAdmin]     = useState(false);
+  const [membersView,   setMembersView]   = useState('nearby');  // 'nearby' | 'friends'
   // First visit on this device: show the full-screen intro before sign-in.
   const [introSeen,     setIntroSeen]     = useState(() => { try { return localStorage.getItem('stillroom-intro-seen') === '1'; } catch { return true; } });
   const [authMode,      setAuthMode]      = useState('login');
@@ -195,7 +197,7 @@ function App(){
     const ev    = events.find(e => e.id === id);
     const going = !!(ev?.rsvps?.[user.uid]);
     await updateDoc(doc(db,'events',id), { [`rsvps.${user.uid}`]: going ? deleteField() : true, attendeeCount: increment(going ? -1 : 1) });
-    if (!going) track('event_rsvp', { city });
+    if (!going) { track('event_rsvp', { city }); notify(user, ev?.hostId, 'event_rsvp', { refId: id, title: ev?.title }); }
   }
   async function sendRequest(memberId) {
     await updateDoc(doc(db,'users',user.uid), { [`sentRequests.${memberId}`]: true });
@@ -203,6 +205,7 @@ function App(){
       [`receivedRequests.${user.uid}`]: { name: user.name, photoURL: user.photoURL || null },
     });
     track('connect_request');
+    notify(user, memberId, 'friend_request');
   }
   async function cancelRequest(memberId) {
     await updateDoc(doc(db,'users',user.uid), { [`sentRequests.${memberId}`]: deleteField() });
@@ -217,6 +220,7 @@ function App(){
       [`connections.${user.uid}`]: true,
       [`sentRequests.${user.uid}`]: deleteField(),
     });
+    notify(user, fromUid, 'request_accepted');
   }
   async function declineRequest(fromUid) {
     await updateDoc(doc(db,'users',user.uid), { [`receivedRequests.${fromUid}`]: deleteField() });
@@ -258,10 +262,12 @@ function App(){
   async function submitReply() {
     if (!replyText.trim() || !openThread) return;
     const threadId = openThread;
-    await addWithRate(user.uid, ['threads', threadId, 'replies'],
+    const thread   = threads.find(t => t.id === threadId);
+    const replyRef = await addWithRate(user.uid, ['threads', threadId, 'replies'],
       { body: replyText.trim(), author: user.name, authorId: user.uid, createdAt: serverTimestamp() },
       (batch, ref) => batch.update(doc(db, 'threads', threadId), { replyCount: increment(1), lastReplyId: ref.id }));
     track('reply_posted');
+    notify(user, thread?.authorId, 'reply', { refId: threadId, replyId: replyRef.id, title: thread?.title });
     setReplyText('');
   }
   async function deleteReply(threadId, replyId) {
@@ -324,6 +330,16 @@ function App(){
   const viewingMember = viewingMemberId ? (members.find(m => m.id === viewingMemberId) || fetchedMember) : null;
   const memberPosts   = useAuthorThreads(activeUser, viewingMemberId);
   const more = l => ({ hasMore: l.hasMore, onLoadMore: l.loadMore });
+  const friends = useProfiles(activeUser, Object.keys(user?.connections || {}));
+
+  // Tapping a notification takes you to the thing it's about.
+  function openNotification(n) {
+    setShowProfile(false); setShowAdmin(false); setViewingMemberId(null);
+    if (n.type === 'friend_request')   { setTab('members'); setMembersView('friends'); }
+    if (n.type === 'request_accepted') { dm.openDm(n.fromUid, n.fromName, null); setDmPanelOpen(true); }
+    if (n.type === 'reply')            { setTab('threads'); setOpenThread(n.refId); }
+    if (n.type === 'event_rsvp')       { setTab('events'); }
+  }
 
   function renderScreen() {
     const memberProfileProps = {
@@ -351,8 +367,10 @@ function App(){
       case 'events':  return <EventsScreen  events={events} {...more(lists.events)} city={city} userId={user.uid} userName={user.name} rsvp={rsvp}   deleteEvent={deleteEvent} onHostEvent={() => setHostEventOpen(true)} isAdmin={isAdmin}/>;
       case 'members': return <MembersScreen members={fMembers} {...more(lists.members)} loading={lists.members.loading} city={city} userId={user.uid}
         userConnections={user.connections||{}} sentRequests={user.sentRequests||{}} receivedRequests={user.receivedRequests||{}}
-        onSendRequest={sendRequest} onCancelRequest={cancelRequest} onAcceptRequest={acceptRequest}
-        onSelect={m => setViewingMemberId(m.id)} onInvite={() => setInviteOpen(true)}/>;
+        onSendRequest={sendRequest} onCancelRequest={cancelRequest} onAcceptRequest={acceptRequest} onDeclineRequest={declineRequest}
+        onSelect={m => setViewingMemberId(m.id)} onInvite={() => setInviteOpen(true)}
+        onMessage={m => { dm.openDm(m.id, m.name, m.photoURL); setDmPanelOpen(true); }}
+        view={membersView} setView={setMembersView} friends={friends.items} friendsLoading={friends.loading}/>;
       case 'ideas':   return <IdeasScreen   ideas={ideas} {...more(lists.ideas)} city={city} userId={user.uid} upvote={upvote} deleteIdea={deleteIdea} onPostIdea={() => setPostIdeaOpen(true)} reactIdea={reactIdea} reactions={REACTIONS} isAdmin={isAdmin}/>;
       case 'threads': return <ThreadsScreen threads={threads} {...more(lists.threads)} city={city} userId={user.uid} openThread={openThread} toggleThread={toggleThread} replyText={replyText} setReplyText={setReplyText} submitReply={submitReply} likeThread={likeThread} deleteThread={deleteThread} onNewPost={t => { if (typeof t === 'string') setNewPost({ title: t, body: '' }); setNewPostOpen(true); }} reactThread={reactThread} reactions={REACTIONS} deleteReply={deleteReply} isAdmin={isAdmin}/>;
       case 'about':   return <AboutScreen/>;
@@ -388,8 +406,9 @@ function App(){
         openEdit={() => setEditOpen(true)}
         onLogout={() => { signOut(auth); setCity('All cities'); localStorage.removeItem('wfh-city'); setShowAdmin(false); setTab('events'); }}
         crown={crown}
-        dmUnread={dm.totalUnread + Object.keys(user.receivedRequests||{}).length}
+        dmUnread={dm.totalUnread}
         onDmToggle={() => setDmPanelOpen(p => !p)}
+        onNotification={openNotification}
         onNavigate={t => { setTab(t); setShowProfile(false); setViewingMemberId(null); }}
       />
 

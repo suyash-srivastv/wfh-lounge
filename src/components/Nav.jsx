@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import Clarity from './Clarity';
+import NotificationBell from './NotificationBell';
 import { TAGLINE } from '../constants';
 
 function useDarkMode() {
@@ -20,7 +21,7 @@ const NAV = [
   { id: 'about',   icon: 'ti-info-circle',    label: 'About'   },
 ];
 
-function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetectLocation, user, showProfile, setShowProfile, openEdit, onLogout, crown, dmUnread, onDmToggle, onNavigate, isAdmin, onAdmin }) {
+function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetectLocation, user, showProfile, setShowProfile, openEdit, onLogout, crown, dmUnread, onDmToggle, onNavigate, isAdmin, onAdmin, onNotification }) {
   const [dark, setDark] = useDarkMode();
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
   const [citySearch,     setCitySearch]     = useState('');
@@ -89,6 +90,7 @@ function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetec
         </div>
         <div className="nav-right">
           <Clarity userId={user.uid}/>
+          <NotificationBell userId={user.uid} onOpen={onNotification}/>
           <button className="dm-trigger" onClick={onDmToggle} title="Messages">
             <i className="ti ti-message-circle"/>
             {dmUnread > 0 && <span className="dm-trigger-badge">{dmUnread > 99 ? '99+' : dmUnread}</span>}

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import {
   collection, query, where, orderBy, limit, startAfter,
-  onSnapshot, getDocs, getDoc, doc, getCountFromServer,
+  onSnapshot, getDocs, getDoc, doc, getCountFromServer, documentId,
 } from 'firebase/firestore';
 import { avatarColors } from '../constants';
 
@@ -58,7 +58,7 @@ function useMemberPages(user, city) {
   const gen    = useRef(0);   // ignore results from a previous city
 
   const fetchPage = useCallback(async reset => {
-    if (!user) return;
+    if (!user || !auth.currentUser) return;   // e.g. mid-logout
     const myGen = reset ? ++gen.current : gen.current;
     setLoading(true);
     try {
@@ -71,7 +71,7 @@ function useMemberPages(user, city) {
       setItems(prev => (reset ? page : [...prev, ...page]));
       setHasMore(snap.size === PAGE);
     } catch (e) {
-      console.error('Loading members failed:', e);
+      if (auth.currentUser) console.error('Loading members failed:', e);   // refusals mid-logout are expected
     } finally {
       if (myGen === gen.current) setLoading(false);
     }
@@ -137,4 +137,25 @@ export function useMyStats(user) {
       .catch(e => console.error('Loading stats failed:', e));
   }, [user?.uid]);
   return stats;
+}
+
+// Profiles for a list of ids (your friends, in any city) — 30 per query.
+export function useProfiles(user, ids) {
+  const [items, setItems]     = useState([]);
+  const [loading, setLoading] = useState(false);
+  const key = [...ids].sort().join(',');
+  useEffect(() => {
+    if (!user || !key || !auth.currentUser) { setItems([]); return; }
+    const list = key.split(',');
+    const chunks = [];
+    for (let i = 0; i < list.length; i += 30) chunks.push(list.slice(i, i + 30));
+    let alive = true;
+    setLoading(true);
+    Promise.all(chunks.map(c => getDocs(query(collection(db, 'users'), where(documentId(), 'in', c)))))
+      .then(snaps => { if (alive) setItems(snaps.flatMap(s => s.docs.map(toMember)).sort((a, b) => a.name.localeCompare(b.name))); })
+      .catch(e => { if (auth.currentUser) console.error('Loading friends failed:', e); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [user?.uid, key]);
+  return { items, loading };
 }
