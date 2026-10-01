@@ -88,7 +88,10 @@ try {
 
   // Chat: send + delete
   await wait(2200);
+  await ev(`tab('Events')`);
+  check('Watercooler sits at the bottom of Events, under the cards', await until(`(() => { const w = document.querySelector('.events-watercooler'), g = document.querySelector('.grid3'); return !!w && !!g && w.getBoundingClientRect().top > g.getBoundingClientRect().bottom && !!w.querySelector('a[href*="meet.jit.si"]'); })()`));
   await ev(`tab('Chat')`);
+  check('no Watercooler in Chat', !!(await ev(`!document.querySelector('.watercooler-card')`)));
   await until(`!!document.querySelector('.chat-main .chat-input')`);
   await ev(`type(document.querySelector('.chat-main .chat-input'), 'Hello Pune')`); await wait(150);
   await ev(`submitForm(document.querySelector('.chat-main .chat-input'))`);

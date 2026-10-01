@@ -13,6 +13,8 @@ export function dateParts(s) {
 
 // "15:30" → "3:30 pm"; anything else → "Time TBD"
 export function niceTime(t) {
+  const ampm = /^(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?$/i.exec((t || '').trim());
+  if (ampm) return `${+ampm[1]}:${ampm[2] || '00'} ${ampm[3].toLowerCase()}m`;
   const m = /^(\d{1,2}):(\d{2})$/.exec(t || '');
   if (!m) return t && t !== 'TBD' ? t : 'Time TBD';
   const h = +m[1];

@@ -24,7 +24,7 @@ function greeting(h) {
   if (h < 12) return 'Good morning';
   if (h < 17) return 'Good afternoon';
   if (h < 22) return 'Good evening';
-  return 'Late one';
+  return 'Up late';
 }
 
 function Brew({ onPoke, bump }) {
@@ -54,7 +54,7 @@ function Brew({ onPoke, bump }) {
   );
 }
 
-function HomeHero({ name, city, count }) {
+function HomeHero({ name }) {
   const [i, setI]       = useState(() => Math.floor(Math.random() * QUIPS.length));
   const [bump, setBump] = useState(false);
 
@@ -69,17 +69,12 @@ function HomeHero({ name, city, count }) {
   }
 
   const first = (name || '').trim().split(/\s+/)[0];
-  const where = city === 'All cities' ? 'everywhere' : city;
   return (
     <section className="home-hero">
       <Brew onPoke={poke} bump={bump}/>
       <div className="hh-copy">
+        <div className="hh-greet">{greeting(new Date().getHours())}{first ? `, ${first}` : ''}</div>
         <div className="hh-bubble" key={i} aria-live="polite">{QUIPS[i]}</div>
-        <div className="hh-greet">
-          {greeting(new Date().getHours())}{first ? `, ${first}` : ''} · {count > 0
-            ? <>{count} {count === 1 ? 'thing' : 'things'} on in {where}</>
-            : <>quiet week in {where}</>}
-        </div>
       </div>
     </section>
   );

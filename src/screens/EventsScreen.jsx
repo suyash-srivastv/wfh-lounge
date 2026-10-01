@@ -1,9 +1,9 @@
 import { dateParts, niceTime } from '../eventFormat';
 import EmptyState from '../components/EmptyState';
 import MsgDelete from '../components/MsgDelete';
-import WarRoom from '../components/WarRoom';
 import HomeHero from '../components/HomeHero';
 import LoadMore from '../components/LoadMore';
+import WarRoom from '../components/WarRoom';
 import Avatar from '../components/Avatar';
 import { useProfiles } from '../hooks/useFirestoreListeners';
 
@@ -32,12 +32,11 @@ function EventsScreen({ events, hasMore, onLoadMore, city, userId, userName, rsv
   const people = Object.fromEntries(loaded.items.map(p => [p.id, p]));
   return (
     <div>
-      <HomeHero name={userName} city={city} count={events.length}/>
+      <HomeHero name={userName}/>
       <div className="page-header">
         <div><div className="page-title">What's on</div><div className="page-sub">{events.length}{hasMore ? '+' : ''} {events.length === 1 && !hasMore ? 'event' : 'events'} · {city}<span className="sub-extra"> · small plans, real people</span></div></div>
         <button className="btn-primary" onClick={onHostEvent}><i className="ti ti-plus"/>Host event</button>
       </div>
-      <WarRoom city={city}/>
       <div className="grid3" style={{marginTop:16}}>
         {events.map(ev=>{
           const going = !!(ev.rsvps?.[userId]);
@@ -77,6 +76,7 @@ function EventsScreen({ events, hasMore, onLoadMore, city, userId, userName, rsv
           action={<button className="btn-primary" onClick={onHostEvent}><i className="ti ti-plus"/>Host an event</button>}/>}
       </div>
       <LoadMore hasMore={hasMore} onLoadMore={onLoadMore}/>
+      <div className="events-watercooler"><WarRoom city={city}/></div>
     </div>
   );
 }
