@@ -331,7 +331,7 @@ function App(){
     if (showAdmin && isAdmin) return <AdminScreen onBack={() => setShowAdmin(false)}/>;
     if (showProfile)   return <ProfileScreen user={user} stats={myStats} userPosts={userPosts} openEdit={() => setEditOpen(true)} setShowProfile={setShowProfile} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} onStatusChange={async s=>{await setDoc(doc(db,'users',user.uid),{status:s},{merge:true});setUser(u=>({...u,status:s}));}}/>;
     switch (tab) {
-      case 'events':  return <EventsScreen  events={events} {...more(lists.events)} city={city} userId={user.uid} rsvp={rsvp}   deleteEvent={deleteEvent} onHostEvent={() => setHostEventOpen(true)} isAdmin={isAdmin}/>;
+      case 'events':  return <EventsScreen  events={events} {...more(lists.events)} city={city} userId={user.uid} userName={user.name} rsvp={rsvp}   deleteEvent={deleteEvent} onHostEvent={() => setHostEventOpen(true)} isAdmin={isAdmin}/>;
       case 'members': return <MembersScreen members={fMembers} {...more(lists.members)} loading={lists.members.loading} city={city} userId={user.uid}
         userConnections={user.connections||{}} sentRequests={user.sentRequests||{}} receivedRequests={user.receivedRequests||{}}
         onSendRequest={sendRequest} onCancelRequest={cancelRequest} onAcceptRequest={acceptRequest}
@@ -344,7 +344,7 @@ function App(){
     }
   }
 
-  if (authLoading)    return <div className="auth-wrap"><div className="auth-loading"><i className="ti ti-loader-2" style={{ animation: 'spin 1s linear infinite' }}/>Loading…</div></div>;
+  if (authLoading)    return <div className="auth-wrap"><div className="auth-loading"><i className="ti ti-loader-2" style={{ animation: 'spin 1s linear infinite' }}/>Putting the kettle on…</div></div>;
   if (!user && !introSeen) {
     const done = mode => { try { localStorage.setItem('stillroom-intro-seen', '1'); } catch {} setAuthMode(mode); setIntroSeen(true); };
     return <IntroScreen onJoin={() => done('signup')} onLogin={() => done('login')}/>;

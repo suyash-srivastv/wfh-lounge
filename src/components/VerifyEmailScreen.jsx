@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { auth } from '../firebase';
 import { sendEmailVerification, signOut } from 'firebase/auth';
+import AuthShell from './AuthShell';
 import { TAGLINE } from '../constants';
 
 // Email/password accounts must verify their email before using the app
@@ -32,11 +33,11 @@ function VerifyEmailScreen({ email, onVerified }) {
   }[state];
 
   return (
-    <div className="auth-wrap">
+    <AuthShell line="One quick check. We keep the room real.">
       <div className="auth-card">
         <div className="auth-logo"><div className="logo-icon"><i className="ti ti-coffee"/></div>The Stillroom</div>
         <div className="brand-tagline">{TAGLINE}</div>
-        <p className="auth-tagline">Verify your email to continue.</p>
+        <p className="auth-tagline">Verify your email — we keep the room real.</p>
         <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text-dim)', margin: '0 0 18px' }}>
           We sent a link to <b>{email}</b>. Open it, then come back here. This keeps fake accounts out of the community.
         </p>
@@ -49,7 +50,7 @@ function VerifyEmailScreen({ email, onVerified }) {
         </div>
         {note && <div style={{ marginTop: 12, fontSize: 12, color: state === 'error' ? '#c0392b' : 'var(--text-2)' }}>{note}</div>}
       </div>
-    </div>
+    </AuthShell>
   );
 }
 

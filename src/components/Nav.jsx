@@ -3,10 +3,10 @@ import Clarity from './Clarity';
 import { TAGLINE } from '../constants';
 
 function useDarkMode() {
-  const [dark, setDark] = useState(() => localStorage.getItem('wfh-theme') === 'dark');
+  const [dark, setDark] = useState(() => localStorage.getItem('stillroom-theme') !== 'light');
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : '';
-    localStorage.setItem('wfh-theme', dark ? 'dark' : 'light');
+    localStorage.setItem('stillroom-theme', dark ? 'dark' : 'light');
   }, [dark]);
   return [dark, setDark];
 }
@@ -101,7 +101,7 @@ function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetec
               <i className={'ti ' + (locStatus === 'detecting' ? 'ti-loader-2' : 'ti-map-pin')}
                 style={locStatus === 'detecting' ? { animation: 'spin 1s linear infinite' } : {}}/>
               <span>{locStatus === 'detecting' ? 'Detecting…' : city}</span>
-              <i className="ti ti-chevron-down" style={{ fontSize: 10, color: '#B4B2A9' }}/>
+              <i className="ti ti-chevron-down" style={{ fontSize: 10, color: 'var(--text-3)' }}/>
             </button>
             {cityPickerOpen && (
               <div className="city-dropdown">
@@ -126,7 +126,7 @@ function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetec
                 {!citySearch && (
                   <button className={'city-drop-item' + (city === 'All cities' ? ' active' : '')} onClick={() => pickCity('All cities')}>
                     <span>All cities</span>
-                    {city === 'All cities' && <i className="ti ti-check" style={{ fontSize: 13, color: '#7F77DD' }}/>}
+                    {city === 'All cities' && <i className="ti ti-check" style={{ fontSize: 13, color: 'var(--accent)' }}/>}
                   </button>
                 )}
                 {!citySearch && detectedCity && (

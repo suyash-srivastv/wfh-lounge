@@ -4,10 +4,10 @@ import Avatar from '../components/Avatar';
 
 const STATUS_DOT = {
   'Open to work':            '#1D9E75',
-  'Building something':      '#7F77DD',
+  'Building something':      'var(--accent)',
   'Available for freelance': '#0ea5e9',
   'Looking for co-founder':  '#f59e0b',
-  'Not available':           '#D3D1C7',
+  'Not available':           'var(--scrollbar)',
 };
 
 function StatusPicker({ current, onChange }) {
@@ -27,16 +27,16 @@ function StatusPicker({ current, onChange }) {
       <button className="status-chip" onClick={() => setOpen(p => !p)}>
         {current ? (
           <>
-            <span className="status-dot" style={{ background: STATUS_DOT[current] || '#D3D1C7' }}/>
+            <span className="status-dot" style={{ background: STATUS_DOT[current] || 'var(--scrollbar)' }}/>
             <span>{current}</span>
           </>
         ) : (
           <>
-            <span className="status-dot" style={{ background: '#D3D1C7', opacity: 0.5 }}/>
-            <span style={{ color: '#B4B2A9' }}>Set a status</span>
+            <span className="status-dot" style={{ background: 'var(--scrollbar)', opacity: 0.5 }}/>
+            <span style={{ color: 'var(--text-3)' }}>Set a status</span>
           </>
         )}
-        <i className="ti ti-chevron-down" style={{ fontSize: 11, color: '#B4B2A9', marginLeft: 2 }}/>
+        <i className="ti ti-chevron-down" style={{ fontSize: 11, color: 'var(--text-3)', marginLeft: 2 }}/>
       </button>
 
       {open && (
@@ -45,14 +45,14 @@ function StatusPicker({ current, onChange }) {
             <button key={s} className={'status-drop-item' + (current === s ? ' active' : '')} onClick={() => pick(s)}>
               <span className="status-dot" style={{ background: STATUS_DOT[s] }}/>
               <span>{s}</span>
-              {current === s && <i className="ti ti-check" style={{ fontSize: 12, color: '#7F77DD', marginLeft: 'auto' }}/>}
+              {current === s && <i className="ti ti-check" style={{ fontSize: 12, color: 'var(--accent)', marginLeft: 'auto' }}/>}
             </button>
           ))}
           {current && (
             <>
               <div style={{ height: 1, background: '#F1EFE8', margin: '4px 0' }}/>
-              <button className="status-drop-item" onClick={() => pick('')} style={{ color: '#888780' }}>
-                <span className="status-dot" style={{ background: '#D3D1C7', opacity: 0.5 }}/>
+              <button className="status-drop-item" onClick={() => pick('')} style={{ color: 'var(--text-2)' }}>
+                <span className="status-dot" style={{ background: 'var(--scrollbar)', opacity: 0.5 }}/>
                 <span>Clear status</span>
               </button>
             </>
@@ -79,15 +79,15 @@ function ProfileScreen({ user, stats, userPosts, openEdit, setShowProfile, delet
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="profile-page-name">{user.name}</div>
             {user.username && (
-              <div style={{ fontSize: 13, color: '#7F77DD', marginTop: 1, marginBottom: 6 }}>@{user.username}</div>
+              <div style={{ fontSize: 13, color: 'var(--accent)', marginTop: 1, marginBottom: 6 }}>@{user.username}</div>
             )}
-            <div style={{ fontSize: 12, color: '#888780', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '3px 8px', marginBottom: 10 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-2)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '3px 8px', marginBottom: 10 }}>
               {user.role && <span>{user.role}</span>}
               {user.yearsExp != null && user.yearsExp !== '' && (
-                <><span style={{ color: '#D3D1C7' }}>·</span><span>{user.yearsExp} yrs exp</span></>
+                <><span style={{ color: 'var(--scrollbar)' }}>·</span><span>{user.yearsExp} yrs exp</span></>
               )}
               {user.city && (
-                <><span style={{ color: '#D3D1C7' }}>·</span>
+                <><span style={{ color: 'var(--scrollbar)' }}>·</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <i className="ti ti-map-pin" style={{ fontSize: 11 }}/>{user.city}
                 </span></>
@@ -105,7 +105,7 @@ function ProfileScreen({ user, stats, userPosts, openEdit, setShowProfile, delet
           {user.bio?.trim() ? (
             <p style={{ margin: 0, fontSize: 13, color: '#444441', lineHeight: 1.75 }}>{user.bio.trim()}</p>
           ) : (
-            <button onClick={openEdit} style={{ border: 'none', background: 'none', padding: 0, fontSize: 13, color: '#B4B2A9', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <button onClick={openEdit} style={{ border: 'none', background: 'none', padding: 0, fontSize: 13, color: 'var(--text-3)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 5 }}>
               <i className="ti ti-pencil" style={{ fontSize: 13 }}/>Add a bio
             </button>
           )}
@@ -129,7 +129,7 @@ function ProfileScreen({ user, stats, userPosts, openEdit, setShowProfile, delet
       {userPosts.length === 0 ? (
         <div className="empty" style={{ paddingTop: 24 }}>
           No posts yet —{' '}
-          <button onClick={onNewPost} style={{ border: 'none', background: 'none', color: '#7F77DD', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', padding: 0 }}>
+          <button onClick={onNewPost} style={{ border: 'none', background: 'none', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', padding: 0 }}>
             write your first post
           </button>
         </div>
@@ -141,8 +141,8 @@ function ProfileScreen({ user, stats, userPosts, openEdit, setShowProfile, delet
                 <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.4, flex: 1 }}>{t.title}</div>
                 <button className="delete-btn" title="Delete post" onClick={() => deleteThread(t.id)}><i className="ti ti-trash"/></button>
               </div>
-              {t.body && <div style={{ fontSize: 13, color: '#555550', lineHeight: 1.6, marginBottom: 8 }}>{t.body}</div>}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 12, color: '#888780' }}>
+              {t.body && <div style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.6, marginBottom: 8 }}>{t.body}</div>}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 12, color: 'var(--text-2)' }}>
                 <span>{timeAgo(t.createdAt?.toDate())}</span>
                 <span><i className="ti ti-message" style={{ fontSize: 12, verticalAlign: -1 }}/> {t.replyCount || 0}</span>
                 <span><i className="ti ti-heart" style={{ fontSize: 12, verticalAlign: -1 }}/> {t.likeCount || 0}</span>

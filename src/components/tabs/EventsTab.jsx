@@ -15,22 +15,22 @@ function EventsTab({ events, city, userId, rsvp, deleteEvent, onHostEvent }){
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
               <span className={"badge "+(ev.type==="IRL"?"badge-irl":"badge-virtual")}>{ev.type==="IRL"?"📍 IRL":"🌐 Virtual"}</span>
               <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <span style={{fontSize:11,color:"#888780"}}>{ev.city}</span>
+                <span style={{fontSize:11,color:"var(--text-2)"}}>{ev.city}</span>
                 {ev.hostId===userId&&<button className="delete-btn" title="Delete event" onClick={e=>{e.stopPropagation();deleteEvent(ev.id);}}><i className="ti ti-trash"/></button>}
               </div>
             </div>
             <div style={{fontWeight:600,fontSize:14,lineHeight:1.3,marginBottom:6}}>{ev.title}</div>
-            <div style={{fontSize:12,color:"#888780",display:"flex",alignItems:"center",gap:4,marginBottom:8}}>
+            <div style={{fontSize:12,color:"var(--text-2)",display:"flex",alignItems:"center",gap:4,marginBottom:8}}>
               <i className="ti ti-map-pin" style={{fontSize:13}}/>{ev.location}
             </div>
-            <div style={{display:"flex",gap:12,fontSize:12,color:"#555550",marginBottom:8}}>
+            <div style={{display:"flex",gap:12,fontSize:12,color:"var(--text-dim)",marginBottom:8}}>
               <span><i className="ti ti-calendar" style={{fontSize:12,verticalAlign:-1}}/> {ev.date}</span>
               <span><i className="ti ti-clock" style={{fontSize:12,verticalAlign:-1}}/> {ev.time}</span>
             </div>
             <div style={{marginBottom:10}}>{ev.tags.map(t=><span key={t} className="tag">{t}</span>)}</div>
             <hr className="divider"/>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div style={{fontSize:11,color:"#888780"}}><i className="ti ti-users" style={{fontSize:12,verticalAlign:-1}}/> {ev.attendeeCount||0} going</div>
+              <div style={{fontSize:11,color:"var(--text-2)"}}><i className="ti ti-users" style={{fontSize:12,verticalAlign:-1}}/> {ev.attendeeCount||0} going</div>
               <button className={"rsvp-btn"+(!!(ev.rsvps?.[userId])?" going":"")} onClick={()=>rsvp(ev.id)}>{!!(ev.rsvps?.[userId])?"✓ Going":"RSVP"}</button>
             </div>
           </div>

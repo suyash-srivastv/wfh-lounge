@@ -1,3 +1,4 @@
+import AuthShell from './AuthShell';
 import React, { useState, useRef, useEffect } from 'react';
 import { db } from '../firebase';
 import { doc, getDoc, runTransaction, collection, query, limit, getDocs } from 'firebase/firestore';
@@ -159,11 +160,11 @@ function OnboardingScreen({ user, setUser }) {
   }
 
   return (
-    <div className="auth-wrap">
+    <AuthShell line="Almost there. How should people know you?">
       <div className="auth-card" style={{ maxWidth: 460 }}>
         <div className="auth-logo"><div className="logo-icon"><i className="ti ti-coffee" /></div>The Stillroom</div>
         <div className="brand-tagline">{TAGLINE}</div>
-        <p className="auth-tagline">Almost there — set up your public profile.</p>
+        <p className="auth-tagline">Almost there — set up your public profile. Be yourself; nobody's grading.</p>
 
         <div className="onboard-steps">
           <div className={"onboard-step" + (step >= 1 ? ' done' : '')}><span>1</span>Identity</div>
@@ -178,7 +179,7 @@ function OnboardingScreen({ user, setUser }) {
                 <label className="auth-label">Display name <span style={{color:'#c0392b'}}>*</span></label>
                 <input className="auth-input" maxLength={50} placeholder="How people will see you"
                   value={displayName} onChange={e => setDisplayName(e.target.value)} />
-                <span style={{ fontSize: 11, color: '#B4B2A9', marginTop: 3 }}>This is shown on your posts and profile — not your legal name.</span>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 3 }}>This is shown on your posts and profile — not your legal name.</span>
               </div>
 
               <div className="auth-field">
@@ -192,7 +193,7 @@ function OnboardingScreen({ user, setUser }) {
                   />
                 </div>
                 {usernameHint && (
-                  <span style={{ fontSize: 11, marginTop: 3, color: usernameHint.ok === true ? '#1D9E75' : usernameHint.ok === false ? '#c0392b' : '#888780' }}>
+                  <span style={{ fontSize: 11, marginTop: 3, color: usernameHint.ok === true ? '#1D9E75' : usernameHint.ok === false ? '#c0392b' : 'var(--text-2)' }}>
                     {usernameHint.ok === true && <i className="ti ti-check" style={{ marginRight: 3 }} />}
                     {usernameHint.ok === false && <i className="ti ti-x" style={{ marginRight: 3 }} />}
                     {usernameHint.msg}
@@ -217,7 +218,7 @@ function OnboardingScreen({ user, setUser }) {
                   style={{ resize: 'vertical' }}
                   value={bio} maxLength={160}
                   onChange={e => setBio(e.target.value)} />
-                <span style={{ fontSize: 11, color: '#B4B2A9', marginTop: 3, textAlign: 'right' }}>{bio.length}/160</span>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 3, textAlign: 'right' }}>{bio.length}/160</span>
               </div>
 
               <div style={{display:'flex',gap:8}}>
@@ -248,7 +249,7 @@ function OnboardingScreen({ user, setUser }) {
                     </span>
                   </button>
                 )}
-                {city && <span style={{fontSize:11,color:'#888780',marginTop:3}}>You can search for a different city above.</span>}
+                {city && <span style={{fontSize:11,color:'var(--text-2)',marginTop:3}}>You can search for a different city above.</span>}
               </div>
 
               {err && <div className="auth-error"><i className="ti ti-alert-circle" />{err}</div>}
@@ -265,7 +266,7 @@ function OnboardingScreen({ user, setUser }) {
           )}
         </form>
       </div>
-    </div>
+    </AuthShell>
   );
 }
 

@@ -1,10 +1,11 @@
+import EmptyState from '../components/EmptyState';
 import MsgDelete from '../components/MsgDelete';
 import LoadMore from '../components/LoadMore';
 function IdeasScreen({ ideas, hasMore, onLoadMore, city, userId, upvote, deleteIdea, onPostIdea, reactIdea, reactions, isAdmin }){
   return (
     <div>
       <div className="page-header">
-        <div><div className="page-title">Startup ideas</div><div className="page-sub">Post ideas · find co-founders · validate fast</div></div>
+        <div><div className="page-title">Ideas</div><div className="page-sub">Half-baked is welcome · find co-founders · get honest feedback</div></div>
         <button className="btn-primary" onClick={onPostIdea}><i className="ti ti-plus"/>Post idea</button>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -49,7 +50,8 @@ function IdeasScreen({ ideas, hasMore, onLoadMore, city, userId, upvote, deleteI
             </div>
           </div>
         ))}
-        {ideas.length===0&&<div className="empty">No ideas in {city} yet.</div>}
+        {ideas.length===0&&<EmptyState title="No ideas here yet" line={'The best ones start with "this is probably dumb, but…"'}
+          action={<button className="btn-primary" onClick={onPostIdea}><i className="ti ti-plus"/>Post an idea</button>}/>}
       </div>
       <LoadMore hasMore={hasMore} onLoadMore={onLoadMore}/>
     </div>

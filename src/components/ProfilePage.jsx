@@ -30,8 +30,8 @@ function ProfilePage({ user, threads, events, userPosts, openEdit, setShowProfil
                 <div style={{fontWeight:600,fontSize:14,lineHeight:1.4,flex:1}}>{t.title}</div>
                 <button className="delete-btn" title="Delete post" onClick={()=>deleteThread(t.id)}><i className="ti ti-trash"/></button>
               </div>
-              {t.body&&<div style={{fontSize:13,color:"#555550",lineHeight:1.6,marginBottom:8}}>{t.body}</div>}
-              <div style={{display:"flex",alignItems:"center",gap:14,fontSize:12,color:"#888780"}}>
+              {t.body&&<div style={{fontSize:13,color:"var(--text-dim)",lineHeight:1.6,marginBottom:8}}>{t.body}</div>}
+              <div style={{display:"flex",alignItems:"center",gap:14,fontSize:12,color:"var(--text-2)"}}>
                 <span>{timeAgo(t.createdAt?.toDate())}</span>
                 <span><i className="ti ti-message" style={{fontSize:12,verticalAlign:-1}}/> {t.replyCount||0}</span>
                 <span><i className="ti ti-heart" style={{fontSize:12,verticalAlign:-1}}/> {t.likeCount||0}</span>

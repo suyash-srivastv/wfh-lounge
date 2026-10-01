@@ -19,6 +19,7 @@ await fetch(`${AUTH}/emulator/v1/projects/wfh-lounge/accounts`, { method: 'DELET
 const alice = await account('alice@test.dev', 'Alice');
 const bob   = await account('bob@test.dev', 'Bob');
 const admin = await account('suyash101997@gmail.com', 'Suyash');
+const dave  = await account('dave@test.dev', 'Dave');
 
 const env = await initializeTestEnvironment({ projectId: 'wfh-lounge', firestore: { host: '127.0.0.1', port: 8080 } });
 await env.clearFirestore();
@@ -30,6 +31,9 @@ await env.withSecurityRulesDisabled(async ctx => {
   await setDoc(doc(db, 'usernames/bob'),   { uid: bob });
   await setDoc(doc(db, 'users', admin), { name: 'Suyash', username: 'suyash', city: 'Pune', role: 'Founder', initials: 'S' });
   await setDoc(doc(db, 'usernames/suyash'), { uid: admin });
+  // A member in a city with no content yet (for empty states)
+  await setDoc(doc(db, 'users', dave), { name: 'Dave', username: 'dave', city: 'Indore', role: 'Writer', initials: 'D' });
+  await setDoc(doc(db, 'usernames/dave'), { uid: dave });
   await setDoc(doc(db, 'events/e1'),  { title: 'Coffee meetup', type: 'IRL', city: 'Pune', location: 'Café', date: 'TBD', time: 'TBD', tags: [], host: 'Bob', hostId: bob, attendeeCount: 1, rsvps: { [bob]: true }, createdAt: serverTimestamp() });
   await setDoc(doc(db, 'threads/t1'), { title: 'How do you switch off?', body: 'Asking for a friend.', city: 'Pune', tags: [], author: 'Bob', authorId: bob, replyCount: 0, likeCount: 0, likes: {}, createdAt: serverTimestamp() });
   await setDoc(doc(db, 'ideas/i1'),   { title: 'Desk-sharing app', desc: '', city: 'Pune', tags: [], looking: [], stage: 'Idea', author: 'Bob', authorId: bob, votes: 0, upvotes: {}, createdAt: serverTimestamp() });

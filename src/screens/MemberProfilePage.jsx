@@ -5,10 +5,10 @@ import ConfirmModal from '../components/modals/ConfirmModal';
 
 const STATUS_DOT = {
   'Open to work':            '#1D9E75',
-  'Building something':      '#7F77DD',
+  'Building something':      'var(--accent)',
   'Available for freelance': '#0ea5e9',
   'Looking for co-founder':  '#f59e0b',
-  'Not available':           '#D3D1C7',
+  'Not available':           'var(--scrollbar)',
 };
 
 function MemberProfilePage({ member, threads, currentUserId, userConnections, sentRequests, receivedRequests, blockedUsers, onSendRequest, onCancelRequest, onAcceptRequest, onDeclineRequest, onMessage, onUnfriend, onBlock, onUnblock, onBack }) {

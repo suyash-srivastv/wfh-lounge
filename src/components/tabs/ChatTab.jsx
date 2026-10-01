@@ -26,9 +26,9 @@ function ChatTab({ city, chatRoom, setChatRoom, mobileChatView, setMobileChatVie
             return (
               <div className="chat-header">
                 <button className="mobile-back-btn" onClick={()=>setMobileChatView("rooms")}><i className="ti ti-arrow-left"/></button>
-                <i className={"ti "+activeCh.icon} style={{fontSize:15,color:"#888780"}}/>
+                <i className={"ti "+activeCh.icon} style={{fontSize:15,color:"var(--text-2)"}}/>
                 <span>{activeCh.label}</span>
-                <span style={{fontSize:12,color:"#B4B2A9",fontWeight:400,marginLeft:"auto"}}>{chatMsgs.length} messages</span>
+                <span style={{fontSize:12,color:"var(--text-3)",fontWeight:400,marginLeft:"auto"}}>{chatMsgs.length} messages</span>
               </div>
             );
           })()}

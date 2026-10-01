@@ -113,7 +113,7 @@ function EditProfileModal({ open, user, onClose, onSave }) {
           </div>
           <div>
             <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>Profile photo</div>
-            <div style={{ fontSize: 12, color: photoErr ? '#c0392b' : '#888780' }}>{photoErr || 'JPG, PNG or WebP, max 5MB'}</div>
+            <div style={{ fontSize: 12, color: photoErr ? '#c0392b' : 'var(--text-2)' }}>{photoErr || 'JPG, PNG or WebP, max 5MB'}</div>
           </div>
           <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={handlePhotoChange}/>
         </div>
@@ -169,7 +169,7 @@ function EditProfileModal({ open, user, onClose, onSave }) {
         <div className="auth-field" style={{ marginBottom: 16, position: 'relative' }} ref={cityRef}>
           <label className="auth-label">City</label>
           <div className="auth-input-icon">
-            <i className="ti ti-map-pin" style={{ fontSize: 14, color: '#B4B2A9' }}/>
+            <i className="ti ti-map-pin" style={{ fontSize: 14, color: 'var(--text-3)' }}/>
             <input className="auth-input-inner" placeholder="Search your city…"
               value={form.city || cityQ}
               onFocus={() => { if (form.city) { setForm(p => ({ ...p, city: '' })); setCityQ(''); } setCityOpen(true); }}

@@ -20,11 +20,11 @@ function IdeasTab({ ideas, city, userId, upvote, deleteIdea, onPostIdea }){
                 <div style={{fontWeight:600,fontSize:15}}>{idea.title}</div>
                 <span className={"badge badge-"+idea.stage.toLowerCase()}>{idea.stage}</span>
               </div>
-              <div style={{fontSize:13,color:"#555550",lineHeight:1.6,marginBottom:10}}>{idea.desc}</div>
+              <div style={{fontSize:13,color:"var(--text-dim)",lineHeight:1.6,marginBottom:10}}>{idea.desc}</div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-                <div>{idea.tags.map(t=><span key={t} className="tag">{t}</span>)} <span style={{fontSize:11,color:"#888780",marginLeft:4}}>{idea.author} · {idea.city}</span></div>
+                <div>{idea.tags.map(t=><span key={t} className="tag">{t}</span>)} <span style={{fontSize:11,color:"var(--text-2)",marginLeft:4}}>{idea.author} · {idea.city}</span></div>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  {idea.looking.length>0&&<div style={{fontSize:12,color:"#7F77DD",fontWeight:500}}>Looking for: {idea.looking.join(", ")}</div>}
+                  {idea.looking.length>0&&<div style={{fontSize:12,color:"var(--accent)",fontWeight:500}}>Looking for: {idea.looking.join(", ")}</div>}
                   {idea.authorId===userId&&<button className="delete-btn" title="Delete idea" onClick={()=>deleteIdea(idea.id)}><i className="ti ti-trash"/></button>}
                 </div>
               </div>

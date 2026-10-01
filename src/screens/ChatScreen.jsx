@@ -8,8 +8,8 @@ function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChat
     <div className={mobileChatView === 'messages' ? 'chat-messages-active' : ''}>
       <div className="page-header">
         <div>
-          <div className="page-title">{city === 'All cities' ? 'Global' : city} Chat Room</div>
-          <div className="page-sub">#{activeCh.id} · real-time</div>
+          <div className="page-title">{city === 'All cities' ? 'Everyone' : city}, chatting</div>
+          <div className="page-sub">#{activeCh.id} · say hi like a human</div>
         </div>
       </div>
 
@@ -44,7 +44,7 @@ function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChat
 
           <div className="chat-msgs">
             {chatLoading && <div className="chat-loading"><i className="ti ti-loader-2" style={{animation:'spin 1s linear infinite'}}/>Loading messages…</div>}
-            {!chatLoading && chatMsgs.length === 0 && <div className="chat-empty">No messages yet — say hi! 👋</div>}
+            {!chatLoading && chatMsgs.length === 0 && <div className="chat-empty">It's quiet. Someone has to go first — might as well be you 👋</div>}
             {chatMsgs.map(msg => (
               <div key={msg.id || msg.text} className="msg">
                 {msg.userId && onViewProfile

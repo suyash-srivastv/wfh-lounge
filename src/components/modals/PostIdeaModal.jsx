@@ -14,7 +14,7 @@ function PostIdeaModal({ open, onClose, newIdea, setNewIdea, submitIdea, ROLES }
             <button key={s} className={"modal-type-btn"+(newIdea.stage===s?" active":"")} onClick={()=>setNewIdea(p=>({...p,stage:s}))}>{s}</button>
           ))}
         </div>
-        <div className="modal-label">Looking for <span style={{fontWeight:400,color:"#B4B2A9"}}>(optional)</span></div>
+        <div className="modal-label">Looking for <span style={{fontWeight:400,color:"var(--text-3)"}}>(optional)</span></div>
         <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
           {ROLES.map(r=>(
             <button key={r} type="button"

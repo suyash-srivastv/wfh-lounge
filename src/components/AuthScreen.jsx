@@ -1,3 +1,4 @@
+import AuthShell from './AuthShell';
 import React, { useState, useRef, useEffect } from 'react';
 import { auth, db } from '../firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification } from 'firebase/auth';
@@ -75,11 +76,11 @@ function AuthScreen({ initialMode = 'login' } = {}){
   }
 
   return (
-    <div className="auth-wrap">
+    <AuthShell line={mode==="login" ? "Your people are probably already here." : "Real people in your city. No BS."}>
       <div className="auth-card">
         <div className="auth-logo"><div className="logo-icon"><i className="ti ti-coffee"/></div>The Stillroom</div>
         <div className="brand-tagline">{TAGLINE}</div>
-        <p className="auth-tagline">{mode==="login"?"Welcome back.":"Meet people in your city, share ideas, and figure out what you actually want."}</p>
+        <p className="auth-tagline">{mode==="login"?"Welcome back. The kettle's still warm.":"Pull up a chair — it takes a minute."}</p>
         <div className="auth-tabs">
           <button className={"auth-tab"+(mode==="login"?" active":"")} onClick={()=>{setMode("login");setErr("");}}>Log in</button>
           <button className={"auth-tab"+(mode==="signup"?" active":"")} onClick={()=>{setMode("signup");setErr("");}}>Sign up</button>
@@ -162,7 +163,7 @@ function AuthScreen({ initialMode = 'login' } = {}){
           </button>
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }
 

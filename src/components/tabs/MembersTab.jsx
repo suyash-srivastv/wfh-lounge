@@ -14,17 +14,17 @@ function MembersTab({ members, city, userId, userConnections, connect, onSelect,
               <div style={{width:42,height:42,borderRadius:"50%",background:m.bg,color:m.tc,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,flexShrink:0}}>{m.initials||m.ini}</div>
               <div style={{flex:1}}>
                 <div style={{fontWeight:600,fontSize:14}}>{m.name}</div>
-                <div style={{fontSize:12,color:"#888780"}}>{m.role}</div>
+                <div style={{fontSize:12,color:"var(--text-2)"}}>{m.role}</div>
               </div>
               <span className={m.online?"dot-online":"dot-offline"}/>
             </div>
-            <div style={{fontSize:12,color:"#555550",display:"flex",alignItems:"center",gap:4,marginBottom:9}}>
+            <div style={{fontSize:12,color:"var(--text-dim)",display:"flex",alignItems:"center",gap:4,marginBottom:9}}>
               <i className="ti ti-map-pin" style={{fontSize:12}}/>{m.city}
             </div>
             <div style={{marginBottom:12}}>{m.skills.map(s=><span key={s} className="tag">{s}</span>)}</div>
             <hr className="divider"/>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div style={{fontSize:11,color:"#888780"}}>{m.conn} connections · {m.events} events</div>
+              <div style={{fontSize:11,color:"var(--text-2)"}}>{m.conn} connections · {m.events} events</div>
               <button className={"connect-btn"+(!!(userConnections[m.id])?" connected":"")} onClick={e=>{e.stopPropagation();connect(m.id);}}>{!!(userConnections[m.id])?"✓ Connected":"Connect"}</button>
             </div>
           </div>

@@ -17,14 +17,14 @@ function ThreadsTab({ threads, city, userId, openThread, toggleThread, replyText
             </div>
             {openThread===t.id&&(
               <div className="thread-expand" onClick={e=>e.stopPropagation()}>
-                <div style={{fontSize:13,color:"#555550",lineHeight:1.7,marginBottom:12}}>{t.body}</div>
+                <div style={{fontSize:13,color:"var(--text-dim)",lineHeight:1.7,marginBottom:12}}>{t.body}</div>
                 <form style={{display:"flex",gap:8}} onSubmit={e=>{e.preventDefault();submitReply();}}>
                   <input className="chat-input" value={replyText} onChange={e=>setReplyText(e.target.value)} placeholder="Write a reply…" enterKeyHint="send" autoComplete="off"/>
                   <button type="submit" className="send-btn">Reply</button>
                 </form>
               </div>
             )}
-            <div style={{display:"flex",alignItems:"center",gap:14,fontSize:12,color:"#888780",marginTop:8}}>
+            <div style={{display:"flex",alignItems:"center",gap:14,fontSize:12,color:"var(--text-2)",marginTop:8}}>
               <span>{t.author} · {timeAgo(t.createdAt?.toDate())}</span>
               <span><i className="ti ti-message" style={{fontSize:12,verticalAlign:-1}}/> {t.replyCount||0}</span>
               <button className={"like-btn"+(!!(t.likes?.[userId])?" liked":"")} onClick={e=>likeThread(t.id,e)}>

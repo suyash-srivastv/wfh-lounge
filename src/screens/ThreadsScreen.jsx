@@ -1,3 +1,4 @@
+import EmptyState from '../components/EmptyState';
 import { useEffect, useState } from 'react';
 import LoadMore from '../components/LoadMore';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
@@ -34,7 +35,7 @@ function ThreadsScreen({ threads, hasMore, onLoadMore, city, userId, openThread,
   return (
     <div>
       <div className="page-header">
-        <div><div className="page-title">Forums</div><div className="page-sub">Async discussions · {city}</div></div>
+        <div><div className="page-title">Forums</div><div className="page-sub">{city} · ask anything, no humblebrags</div></div>
         <button className="btn-primary" onClick={onNewPost}><i className="ti ti-plus"/>New post</button>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -79,7 +80,8 @@ function ThreadsScreen({ threads, hasMore, onLoadMore, city, userId, openThread,
             </div>
           </div>
         ))}
-        {threads.length===0&&<div className="empty">No posts yet. Start the conversation!</div>}
+        {threads.length===0&&<EmptyState title="Quiet in here" line="Ask the question everyone's thinking but nobody's posted."
+          action={<button className="btn-primary" onClick={onNewPost}><i className="ti ti-plus"/>Start a conversation</button>}/>}
       </div>
       <LoadMore hasMore={hasMore} onLoadMore={onLoadMore}/>
     </div>
