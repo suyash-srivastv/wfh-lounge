@@ -2,7 +2,8 @@
 import { spawn } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+const PHOTO = resolve('tests/e2e/fixtures/photo.png');
 
 const AUTH = 'http://127.0.0.1:9099';
 const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', ['--headless=new', '--disable-gpu', '--remote-debugging-port=9361',
@@ -42,8 +43,15 @@ try {
   await ev(`type(document.querySelector('input[placeholder="yourhandle"]'), 'carol_test')`);
   check('username shows as available', await until(`document.body.innerText.includes('@carol_test is available')`));
   await ev(`btn('Next').click()`); await wait(400);
+  check('onboarding offers an optional photo', !!(await ev(`!!document.querySelector('.ob-photo input[type=file]') && document.body.innerText.includes('Add a photo')`)));
+  const { root } = await send('DOM.getDocument', { depth: -1 });
+  const { nodeId } = await send('DOM.querySelector', { nodeId: root.nodeId, selector: '.ob-photo input[type=file]' });
+  await send('DOM.setFileInputFiles', { nodeId, files: [PHOTO] });
+  check('picking a photo shows it straight away', await until(`document.querySelector('.ob-photo img')?.src.startsWith('data:image/')`, 5000));
+  if (process.env.SHOTS) { const r = await send('Page.captureScreenshot', { format: 'png' }); (await import('node:fs')).writeFileSync(`${process.env.SHOTS}/onboarding-photo.png`, Buffer.from(r.data, 'base64')); }
   await ev(`btn('Finish setup').click()`);
   check('finishing setup opens the app', await until(`!!document.querySelector('.nav-tabs')`, 15000));
+  check('the onboarding photo is on the profile', await until(`document.querySelector('.nav .avatar img')?.src.startsWith('data:image/')`));
   check('no city yet: asks "Where are you based?"', await until(`!!document.querySelector('.cp-modal') && document.body.innerText.includes('Where are you based?')`));
   check('the prompt also asks for role and a line about you', !!(await ev(`!!document.querySelector('.cp-modal select') && !!document.querySelector('.cp-modal input[maxlength="160"]')`)));
   check('Save needs a city', !!(await ev(`btn('Save', document.querySelector('.cp-modal'))?.disabled`)));

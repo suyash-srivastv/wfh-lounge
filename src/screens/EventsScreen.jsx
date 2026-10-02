@@ -6,6 +6,7 @@ import LoadMore from '../components/LoadMore';
 import WarRoom from '../components/WarRoom';
 import Avatar from '../components/Avatar';
 import { useProfiles } from '../hooks/useFirestoreListeners';
+import { Highlight } from '../badges';
 
 const NOT_A_PERSON = ['seed', 'stillroom-team'];
 const first = name => (name || '').trim().split(/\s+/)[0] || 'someone';
@@ -42,7 +43,7 @@ function EventsScreen({ events, hasMore, onLoadMore, city, userId, userName, rsv
           const going = !!(ev.rsvps?.[userId]);
           const d = dateParts(ev.date);
           return (
-            <div key={ev.id} className="card ev-card" role="button" tabIndex={0}
+            <Highlight uid={ev.hostId} key={ev.id} className="card ev-card" role="button" tabIndex={0}
               onClick={() => onOpenEvent(ev.id)} onKeyDown={e => { if (e.key === 'Enter') onOpenEvent(ev.id); }}>
               <div className="ev-top">
                 <div className={'ev-date' + (d ? '' : ' tbd')}>
@@ -63,13 +64,13 @@ function EventsScreen({ events, hasMore, onLoadMore, city, userId, userName, rsv
               <div className="ev-foot">
                 <div className="ev-going">
                   {goingIds(ev, userId).some(id => people[id]) && <span className="ev-faces">
-                    {goingIds(ev, userId).filter(id => people[id]).map(id => <Avatar key={id} user={people[id]} size={24} className="ev-face"/>)}
+                    {goingIds(ev, userId).filter(id => people[id]).map(id => <Highlight as="span" uid={id} key={id} className="ev-face-wrap"><Avatar user={people[id]} size={24} className="ev-face"/></Highlight>)}
                   </span>}
                   <span className="ev-who">{whoGoing(ev, people, userId)}</span>
                 </div>
                 <button className={"rsvp-btn"+(going?" going":"")} onClick={e=>{e.stopPropagation();rsvp(ev.id);}}>{going?"✓ Going":"RSVP"}</button>
               </div>
-            </div>
+            </Highlight>
           );
         })}
         {events.length===0&&<EmptyState style={{gridColumn:"1/-1"}} title={`Nothing planned in ${city} yet`} line="Host the first coffee — someone's been waiting for an excuse."

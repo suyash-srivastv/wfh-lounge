@@ -6,6 +6,7 @@ import { db } from '../firebase';
 import { timeAgo } from '../constants';
 import MsgDelete from '../components/MsgDelete';
 import { STARTERS, pick } from '../components/modals/NewPostModal';
+import { Highlight } from '../badges';
 
 // Replies for the open thread only (most recent 50), loaded when it's opened.
 function Replies({ threadId, userId, deleteReply, isAdmin }) {
@@ -20,13 +21,13 @@ function Replies({ threadId, userId, deleteReply, isAdmin }) {
   return (
     <div className="reply-list">
       {replies.map(r => (
-        <div key={r.id} className="msg reply">
+        <Highlight uid={r.authorId} key={r.id} className="msg reply">
           <div className="msg-body">
             <div className="msg-name">{r.author}<span className="msg-time">{timeAgo(r.createdAt?.toDate())}</span></div>
             <div className="msg-text">{r.body}</div>
           </div>
           {(r.authorId === userId || isAdmin) && <MsgDelete onDelete={() => deleteReply(threadId, r.id)}/>}
-        </div>
+        </Highlight>
       ))}
     </div>
   );
@@ -42,7 +43,7 @@ function ThreadsScreen({ threads, hasMore, onLoadMore, city, userId, openThread,
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {threads.map(t=>(
-          <div key={t.id} className="thread-card" onClick={()=>toggleThread(t.id)}>
+          <Highlight uid={t.authorId} key={t.id} className="thread-card" onClick={()=>toggleThread(t.id)}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
               <div style={{fontWeight:600,fontSize:14,lineHeight:1.4,flex:1,paddingRight:10}}>{t.title}</div>
               {t.city!=="All"&&<span className="tag">{t.city}</span>}
@@ -80,7 +81,7 @@ function ThreadsScreen({ threads, hasMore, onLoadMore, city, userId, openThread,
               {t.authorId===userId&&<button className="delete-btn" style={{marginLeft:"auto"}} title="Delete post" onClick={e=>{e.stopPropagation();deleteThread(t.id);}}><i className="ti ti-trash"/></button>}
               {t.authorId!==userId&&isAdmin&&<span style={{marginLeft:"auto"}}><MsgDelete visible title="Delete post (admin)" onDelete={()=>deleteThread(t.id)}/></span>}
             </div>
-          </div>
+          </Highlight>
         ))}
         {threads.length===0&&<EmptyState title="No questions yet — lucky you, you go first."
           line="Ask something real. The kind of thing you'd only ask a friend over chai."

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { timeAgo, STATUSES } from '../constants';
 import Avatar from '../components/Avatar';
+import { MyBadge } from '../badges';
 
 const STATUS_DOT = {
   'Open to work':            '#1D9E75',
@@ -50,7 +51,7 @@ function StatusPicker({ current, onChange }) {
           ))}
           {current && (
             <>
-              <div style={{ height: 1, background: '#F1EFE8', margin: '4px 0' }}/>
+              <div style={{ height: 1, background: 'var(--border-sub)', margin: '4px 0' }}/>
               <button className="status-drop-item" onClick={() => pick('')} style={{ color: 'var(--text-2)' }}>
                 <span className="status-dot" style={{ background: 'var(--scrollbar)', opacity: 0.5 }}/>
                 <span>Clear status</span>
@@ -94,6 +95,7 @@ function ProfileScreen({ user, stats, userPosts, openEdit, setShowProfile, delet
               )}
             </div>
             <StatusPicker current={user.status} onChange={onStatusChange}/>
+            <MyBadge user={user}/>
           </div>
           <button className="btn-primary" style={{ flexShrink: 0 }} onClick={openEdit}>
             <i className="ti ti-edit"/>Edit
@@ -101,7 +103,7 @@ function ProfileScreen({ user, stats, userPosts, openEdit, setShowProfile, delet
         </div>
 
         {/* Bio at bottom of card */}
-        <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid #F1EFE8' }}>
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--border-sub)' }}>
           {user.bio?.trim() ? (
             <p style={{ margin: 0, fontSize: 13, color: '#444441', lineHeight: 1.75 }}>{user.bio.trim()}</p>
           ) : (

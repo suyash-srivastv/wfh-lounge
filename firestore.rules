@@ -104,14 +104,23 @@ service cloud.firestore {
         && (d.get('photoURL', null) == null || photoOk(d.photoURL));
     }
 
+    // The only stored tag is 'dictator', and only the admin can put it on
+    // their own profile. (Celestial Dragon / CP0 are worked out from activity.)
+    function badgesUnchanged() {
+      return request.resource.data.get('badges', []) == (resource == null ? [] : resource.data.get('badges', []));
+    }
+    function badgesOk() {
+      return badgesUnchanged() || (isAdmin() && request.resource.data.get('badges', []) in [[], ['dictator']]);
+    }
+
     match /users/{uid} {
       allow read: if signedIn() && (uid == me() || verified());
-      allow create: if signedIn() && uid == me() && profileFieldsOk() && usernameOk();
+      allow create: if signedIn() && uid == me() && profileFieldsOk() && usernameOk() && !('badges' in request.resource.data);
       allow delete: if signedIn() && uid == me();
 
       allow update: if signedIn() && (
-        // Your own profile: any valid change.
-        (uid == me() && profileFieldsOk() && usernameOk())
+        // Your own profile: any valid change (tags: admin only, see badgesOk).
+        (uid == me() && profileFieldsOk() && usernameOk() && badgesOk())
         // Someone else's profile: only their own entry in the friend maps.
         || (verified()
           && changed().hasOnly(['receivedRequests', 'sentRequests', 'connections'])

@@ -1043,7 +1043,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:2000;o
 .ev-going{flex:1;min-width:0;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-2)}
 .ev-faces{display:flex;flex-shrink:0}
 .ev-face{border:2px solid var(--surface);box-sizing:content-box}
-.ev-faces .ev-face+.ev-face{margin-left:-8px}
+.ev-faces>.ev-face+.ev-face{margin-left:-8px}
 .ev-who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 
 /* "Where are you based?" prompt for profiles without a city */
@@ -1066,3 +1066,71 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:2000;o
   .page-title{font-size:21px}
 }
 @keyframes quipIn{from{opacity:0;transform:translateY(3px)}}
+
+/* Onboarding step 2: optional photo */
+.ob-photo{display:flex;align-items:center;gap:14px;padding:12px;border:1px dashed var(--border-hover);border-radius:12px}
+.ob-photo-pick{position:relative;width:60px;height:60px;border-radius:50%;flex-shrink:0;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700;font-family:inherit}
+.ob-photo-pick img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.ob-photo-cam{position:absolute;right:-2px;bottom:-2px;width:24px;height:24px;border-radius:50%;background:var(--btn-bg);color:var(--btn-text);display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid var(--surface)}
+.ob-photo-title{font-size:14px;font-weight:600;color:var(--text-1)}
+.ob-photo-sub{font-size:12px;color:var(--text-2);margin-top:2px}
+.ob-photo-sub.err{color:#c0392b}
+
+/* Tags: Dictator (admin), Celestial Dragon + CP0 (earned) */
+.chip-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.badge-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.01em;white-space:nowrap;border:1px solid;cursor:default}
+.badge-dictator{background:linear-gradient(120deg,#E8C25A,#B8862B);color:#1A1306;border-color:#E8C25A}
+.badge-celestial{background:rgba(232,194,90,.12);color:var(--accent-tc);border-color:var(--accent-border)}
+.badge-cp0{background:var(--text-1);color:var(--surface);border-color:var(--text-1)}
+.my-badge{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}
+.my-badge-next{font-size:12px;color:var(--text-2)}
+
+/* Tag glows: Dictator gets a strong golden pulse; the earned tags glow softly. */
+.badge-dictator{position:relative;box-shadow:0 0 10px rgba(255,204,64,.55),0 0 22px rgba(255,190,40,.3);animation:glowDictator 2.4s ease-in-out infinite;text-shadow:0 1px 0 rgba(255,240,190,.5)}
+.badge-dictator::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);background-size:250% 100%;animation:shineDictator 3.2s ease-in-out infinite}
+@keyframes glowDictator{50%{box-shadow:0 0 16px rgba(255,210,70,.85),0 0 34px rgba(255,190,40,.45)}}
+@keyframes shineDictator{0%,55%{background-position:120% 0}100%{background-position:-120% 0}}
+.badge-celestial{box-shadow:0 0 8px rgba(232,194,90,.28);animation:glowCelestial 3.2s ease-in-out infinite}
+@keyframes glowCelestial{50%{box-shadow:0 0 14px rgba(232,194,90,.5)}}
+.badge-cp0{box-shadow:0 0 8px rgba(160,190,255,.25);animation:glowCp0 3.6s ease-in-out infinite}
+@keyframes glowCp0{50%{box-shadow:0 0 13px rgba(160,190,255,.45)}}
+:root:not([data-theme="dark"]) .badge-cp0{box-shadow:0 0 8px rgba(40,60,120,.18)}
+@media (prefers-reduced-motion:reduce){.badge-dictator,.badge-celestial,.badge-cp0,.badge-dictator::after{animation:none}}
+
+/* Highlights in chat, events and forums (no chips): glow in the tag's colour */
+.hl{--hl:232,194,90;--hl-a:.22}
+.hl-dictator{--hl:255,200,50;--hl-a:.45}
+.hl-celestial{--hl:232,194,90;--hl-a:.25}
+.hl-cp0{--hl:150,180,255;--hl-a:.22}
+.card.hl,.thread-card.hl{border-color:rgba(var(--hl),.55);box-shadow:0 0 0 1px rgba(var(--hl),.15),0 0 18px rgba(var(--hl),var(--hl-a))}
+.card.hl-dictator,.thread-card.hl-dictator{background:linear-gradient(180deg,rgba(var(--hl),.07),transparent 60%),var(--surface);animation:hlPulse 2.8s ease-in-out infinite}
+/* chat & replies: a glowing ring on the avatar + a glowing name (no bar/background) */
+.msg.hl .msg-avatar{box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px rgba(var(--hl),.85),0 0 12px rgba(var(--hl),var(--hl-a))}
+.msg.hl-dictator .msg-avatar{animation:ringPulse 2.4s ease-in-out infinite}
+@keyframes ringPulse{50%{box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px rgb(var(--hl)),0 0 20px rgba(var(--hl),.75)}}
+.hl .msg-name,.hl .msg-name-link{color:rgb(var(--hl-text,var(--hl)));font-weight:700}
+.hl-dictator .msg-name-link,.hl-dictator .msg-name{text-shadow:0 0 10px rgba(var(--hl),.45)}
+.ev-card.hl-dictator .ev-host-link{text-shadow:0 0 8px rgba(var(--hl),.5)}
+@keyframes hlPulse{50%{box-shadow:0 0 0 1px rgba(var(--hl),.25),0 0 28px rgba(var(--hl),.6)}}
+:root:not([data-theme="dark"]) .hl-cp0{--hl:60,90,170}
+:root:not([data-theme="dark"]) .hl-dictator{--hl:214,150,0}
+@media (prefers-reduced-motion:reduce){.card.hl-dictator,.thread-card.hl-dictator,.msg.hl-dictator .msg-avatar{animation:none}}
+
+/* readable name colours per theme (text needs more contrast than glows) */
+.hl-dictator{--hl-text:255,214,92}
+.hl-celestial{--hl-text:240,206,120}
+.hl-cp0{--hl-text:170,198,255}
+:root:not([data-theme="dark"]) .hl-dictator{--hl-text:150,96,0}
+:root:not([data-theme="dark"]) .hl-celestial{--hl-text:140,100,20}
+:root:not([data-theme="dark"]) .hl-cp0{--hl-text:40,70,150}
+:root:not([data-theme="dark"]) .hl-dictator .msg-name-link,:root:not([data-theme="dark"]) .hl-dictator .msg-name{text-shadow:0 0 8px rgba(255,200,50,.55)}
+
+/* event details: going chips + host card; event cards: faces */
+.ed-chip.hl,.ed-person.hl{border-color:rgba(var(--hl),.7);box-shadow:0 0 12px rgba(var(--hl),var(--hl-a));color:var(--text-1)}
+.ed-chip.hl-dictator,.ed-person.hl-dictator{background:rgba(var(--hl),.1);animation:hlPulse 2.8s ease-in-out infinite}
+.ed-chip.hl>span,.ed-person.hl b{color:rgb(var(--hl-text));font-weight:700}
+.ev-face-wrap{display:inline-flex;border-radius:50%}
+.ev-faces .ev-face-wrap+.ev-face-wrap{margin-left:-8px}
+.ev-face-wrap.hl{position:relative;z-index:1;box-shadow:0 0 0 2px rgba(var(--hl),.9),0 0 10px rgba(var(--hl),var(--hl-a))}
+@media (prefers-reduced-motion:reduce){.ed-chip.hl-dictator,.ed-person.hl-dictator{animation:none}}

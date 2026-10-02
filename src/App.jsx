@@ -158,6 +158,11 @@ function App(){
             setUser({ ...profile, uid: fbUser.uid });
           } else {
             const profile = snap.data() || {};
+            // The admin always wears 👑 Dictator.
+            if (fbUser.email === ADMIN_EMAIL && fbUser.emailVerified && !profile.badges?.includes('dictator')) {
+              profile.badges = ['dictator'];
+              setDoc(doc(db, 'users', fbUser.uid), { badges: ['dictator'] }, { merge: true }).catch(() => {});
+            }
             setUser({ ...profile, uid: fbUser.uid });
           }
         } catch {

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import Avatar from '../Avatar';
 import MsgDelete from '../MsgDelete';
 import { useProfiles } from '../../hooks/useFirestoreListeners';
+import { Highlight } from '../../badges';
 import { dateParts, niceTime, calendarLink, isLink, mapsLink } from '../../eventFormat';
 
 const NOT_A_PERSON = new Set(['seed', 'stillroom-team']);
@@ -58,10 +59,10 @@ function EventDetailModal({ ev, userId, isAdmin, onClose, rsvp, onViewProfile, d
         <div className="ed-section">
           <div className="ed-label">Hosted by</div>
           {hostIsPerson
-            ? <button className="ed-person" onClick={() => open(ev.hostId)}>
+            ? <Highlight as="button" uid={ev.hostId} className="ed-person" onClick={() => open(ev.hostId)}>
                 <Avatar user={people.items.find(p => p.id === ev.hostId) || { id: ev.hostId, name: ev.host, initials: (ev.host || '?').slice(0, 2).toUpperCase() }} size={36}/>
                 <span><b>{ev.host}</b><span>View profile</span></span><i className="ti ti-chevron-right"/>
-              </button>
+              </Highlight>
             : <div className="ed-person static"><span><b>{ev.host || 'The Stillroom'}</b></span></div>}
         </div>
 
@@ -78,9 +79,9 @@ function EventDetailModal({ ev, userId, isAdmin, onClose, rsvp, onViewProfile, d
           <div className="ed-label">Going · {ev.attendeeCount || goingIds.length}</div>
           <div className="ed-going">
             {people.items.filter(p => goingIds.includes(p.id)).map(p => (
-              <button key={p.id} className="ed-chip" onClick={() => p.id === userId ? null : open(p.id)} disabled={p.id === userId}>
+              <Highlight as="button" uid={p.id} key={p.id} className="ed-chip" onClick={() => p.id === userId ? null : open(p.id)} disabled={p.id === userId}>
                 <Avatar user={p} size={26}/><span>{p.id === userId ? 'You' : p.name.split(' ')[0]}</span>
-              </button>
+              </Highlight>
             ))}
             {people.loading && <span className="ed-muted">Loading…</span>}
             {!people.loading && goingIds.length === 0 && <span className="ed-muted">No one yet — be the first.</span>}

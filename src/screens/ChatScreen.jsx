@@ -1,5 +1,6 @@
 import { CHANNELS } from '../constants';
 import MsgDelete from '../components/MsgDelete';
+import { Highlight } from '../badges';
 
 function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChatView, chatMsgs, chatLoading, chatInput, setChatInput, sendChat, chatEnd, deleteChatMsg, onViewProfile, userId, isAdmin }) {
   const activeCh = CHANNELS.find(c => chatRoom.endsWith(`__${c.id}`)) || CHANNELS[0];
@@ -46,7 +47,7 @@ function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChat
             {chatLoading && <div className="chat-loading"><i className="ti ti-loader-2" style={{animation:'spin 1s linear infinite'}}/>Loading messages…</div>}
             {!chatLoading && chatMsgs.length === 0 && <div className="chat-empty">It's quiet. Someone has to go first — might as well be you 👋</div>}
             {chatMsgs.map(msg => (
-              <div key={msg.id || msg.text} className="msg">
+              <Highlight uid={msg.userId} key={msg.id || msg.text} className="msg">
                 {msg.userId && onViewProfile
                   ? <button type="button" className="msg-avatar msg-profile-link" style={{background:msg.bg,color:msg.tc}}
                       onClick={() => onViewProfile(msg.userId)} title={`View ${msg.user}'s profile`}>
@@ -65,7 +66,7 @@ function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChat
                   <div className="msg-text">{msg.text}</div>
                 </div>
                 {((msg.userId && msg.userId === userId) || isAdmin) && <MsgDelete onDelete={() => deleteChatMsg(msg.id)}/>}
-              </div>
+              </Highlight>
             ))}
             <div ref={chatEnd}/>
           </div>

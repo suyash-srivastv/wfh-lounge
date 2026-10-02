@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { timeAgo } from '../constants';
 import Avatar from '../components/Avatar';
 import ConfirmModal from '../components/modals/ConfirmModal';
+import { ChipRow } from '../badges';
 
 const STATUS_DOT = {
   'Open to work':            '#1D9E75',
@@ -140,7 +141,7 @@ function MemberProfilePage({ member, threads, currentUserId, userConnections, se
                 </span></>
               )}
             </div>
-            {member.vibe && <span className="vibe-chip">{member.vibe}</span>}
+            <ChipRow member={member} style={{marginTop:8}}/>
           </div>
         </div>
 

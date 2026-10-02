@@ -3,7 +3,8 @@ import { track } from '../analytics';
 import React, { useState, useRef, useEffect } from 'react';
 import { db } from '../firebase';
 import { doc, getDoc, runTransaction, collection, query, limit, getDocs } from 'firebase/firestore';
-import { ROLES, TAGLINE, firebaseErrMsg } from '../constants';
+import { ROLES, TAGLINE, firebaseErrMsg, avatarColors, initialsOf } from '../constants';
+import { photoFromFile } from '../photo';
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
@@ -76,6 +77,20 @@ function OnboardingScreen({ user, setUser }) {
   const [err, setErr]               = useState('');
   const [detectingLoc, setDetectingLoc] = useState(false);
   const [locFailed, setLocFailed]   = useState(false);
+  const [photo, setPhoto]           = useState(null);
+  const [photoBusy, setPhotoBusy]   = useState(false);
+  const [photoErr, setPhotoErr]     = useState('');
+  const fileRef = useRef(null);
+
+  async function pickPhoto(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setPhotoErr(''); setPhotoBusy(true);
+    try { setPhoto(await photoFromFile(file)); }
+    catch (err) { setPhotoErr(err.message); }
+    finally { setPhotoBusy(false); }
+  }
 
   // Real-time username availability check
   useEffect(() => {
@@ -151,10 +166,11 @@ function OnboardingScreen({ user, setUser }) {
           city,
           yearsExp: yearsExp !== '' ? Number(yearsExp) : null,
           initials,
+          ...(photo ? { photoURL: photo } : {}),
         }, { merge: true });
       });
-      track('profile_completed', { has_city: !!city });
-      setUser(u => ({ ...u, name: displayName.trim(), username: uname, bio: bio.trim(), role, city, yearsExp: yearsExp !== '' ? Number(yearsExp) : null, initials: displayName.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() }));
+      track('profile_completed', { has_city: !!city, has_photo: !!photo });
+      setUser(u => ({ ...u, ...(photo ? { photoURL: photo } : {}), name: displayName.trim(), username: uname, bio: bio.trim(), role, city, yearsExp: yearsExp !== '' ? Number(yearsExp) : null, initials: displayName.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() }));
     } catch (e) {
       setErr(e.message || 'Something went wrong. Try again.');
       setLoading(false);
@@ -213,6 +229,24 @@ function OnboardingScreen({ user, setUser }) {
 
           {step === 2 && (
             <>
+              <div className="ob-photo">
+                <button type="button" className="ob-photo-pick" onClick={() => fileRef.current?.click()} disabled={photoBusy}
+                  aria-label={photo ? 'Change photo' : 'Add a photo'}
+                  style={photo ? undefined : { background: avatarColors(user.uid).bg, color: avatarColors(user.uid).tc }}>
+                  {photo ? <img src={photo} alt=""/> : <span>{initialsOf(displayName)}</span>}
+                  <span className="ob-photo-cam">
+                    <i className={'ti ' + (photoBusy ? 'ti-loader-2' : 'ti-camera')} style={photoBusy ? { animation: 'spin 1s linear infinite' } : {}}/>
+                  </span>
+                </button>
+                <div>
+                  <div className="ob-photo-title">{photo ? 'Looking good' : <>Add a photo <span className="auth-opt">(optional)</span></>}</div>
+                  <div className={'ob-photo-sub' + (photoErr ? ' err' : '')}>
+                    {photoErr || (photo ? <button type="button" className="tn-link" onClick={() => setPhoto(null)}>Remove</button> : 'People say hi more to a face.')}
+                  </div>
+                </div>
+                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={pickPhoto}/>
+              </div>
+
               <div className="auth-field">
                 <label className="auth-label">Bio <span className="auth-opt">(optional)</span></label>
                 <textarea className="auth-input" rows={3}

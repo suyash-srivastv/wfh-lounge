@@ -1,13 +1,14 @@
 import EmptyState from '../components/EmptyState';
 import Avatar from '../components/Avatar';
 import LoadMore from '../components/LoadMore';
+import { ChipRow } from '../badges';
 
 const STATUS_COLORS = {
   'Open to work':            { bg: '#EAF3DE', tc: '#27500A' },
   'Building something':      { bg: '#EEEDFE', tc: '#3C3489' },
   'Available for freelance': { bg: '#E1F5EE', tc: '#085041' },
   'Looking for co-founder':  { bg: '#FAEEDA', tc: '#633806' },
-  'Not available':           { bg: '#F1EFE8', tc: 'var(--text-2)' },
+  'Not available':           { bg: 'var(--border-sub)', tc: 'var(--text-2)' },
 };
 
 function ConnectBtn({ id, userId, userConnections, sentRequests, receivedRequests, onSendRequest, onCancelRequest, onAcceptRequest }) {
@@ -128,7 +129,7 @@ function MembersScreen({ members, hasMore, onLoadMore, loading, city, userId, us
                 <div style={{fontSize:12,color:'var(--text-2)'}}>{m.role}{m.yearsExp ? ` · ${m.yearsExp}y exp` : ''}</div>
               </div>
             </div>
-            {m.vibe && <div style={{marginBottom:6}}><span className="vibe-chip">{m.vibe}</span></div>}
+            <ChipRow member={m} style={{marginBottom:6}}/>
             {m.status && (
               <div style={{marginBottom:8}}>
                 <span style={{fontSize:11,fontWeight:500,padding:'2px 8px',borderRadius:20,...(STATUS_COLORS[m.status]||{bg:'var(--border-sub)',tc:'var(--text-2)'})}}>

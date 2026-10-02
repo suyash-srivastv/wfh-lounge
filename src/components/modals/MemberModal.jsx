@@ -1,4 +1,5 @@
 import Avatar from '../Avatar';
+import { ChipRow } from '../../badges';
 
 function MemberModal({ member, onClose, currentUserId, userConnections, sentRequests, receivedRequests, onSendRequest, onCancelRequest, onAcceptRequest, onDeclineRequest, onMessage }) {
   if (!member) return null;
@@ -75,7 +76,7 @@ function MemberModal({ member, onClose, currentUserId, userConnections, sentRequ
           </div>
         </div>
 
-        {member.vibe && <div style={{marginBottom:10}}><span className="vibe-chip">{member.vibe}</span></div>}
+        <ChipRow member={member} style={{marginBottom:10}}/>
         {member.status && (
           <div style={{marginBottom:12}}>
             <span style={{fontSize:12,fontWeight:500,padding:'3px 10px',borderRadius:20,background:'var(--accent-bg)',color:'var(--accent-tc)'}}>

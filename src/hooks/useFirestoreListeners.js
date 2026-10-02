@@ -21,7 +21,7 @@ function toMember(d) {
     initials: data.initials || '??', ini: data.initials || '??',
     skills: data.skills || [], bio: data.bio || '',
     yearsExp: data.yearsExp ?? null, status: data.status || '',
-    vibe: data.vibe || '', photoURL: data.photoURL || null,
+    vibe: data.vibe || '', photoURL: data.photoURL || null, badges: data.badges || [],
     bg, tc, online: false,
     conn: Object.keys(data.connections || {}).length, events: 0,
   };

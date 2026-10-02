@@ -1,25 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { ROLES, STATUSES, VIBES, realPhoto } from '../../constants';
-
-const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
-const PHOTO_SIZE = 128;
-
-// Square-crop and shrink to a 128px WebP (~5–10KB) and keep it as text right on
-// the profile in Firestore — no file storage needed, so it works on the free plan.
-async function shrinkPhoto(file) {
-  const bitmap = await createImageBitmap(file);
-  const side = Math.min(bitmap.width, bitmap.height);
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = Math.min(PHOTO_SIZE, side);
-  canvas.getContext('2d').drawImage(bitmap,
-    (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, canvas.width, canvas.height);
-  bitmap.close?.();
-  let url = canvas.toDataURL('image/webp', 0.82);
-  if (!url.startsWith('data:image/webp')) url = canvas.toDataURL('image/jpeg', 0.82); // Safari can't make WebP
-  if (url.length > 60000) throw new Error('Photo too detailed after shrinking');
-  return url;
-}
+import { photoFromFile } from '../../photo';
 
 function EditProfileModal({ open, user, onClose, onSave }) {
   const [form,       setForm]       = useState({ name: '', city: '', role: '', bio: '', yearsExp: '', status: '', vibe: '' });
@@ -75,16 +56,13 @@ function EditProfileModal({ open, user, onClose, onSave }) {
     e.target.value = '';
     if (!file) return;
     setPhotoErr('');
-    if (!PHOTO_TYPES.includes(file.type)) { setPhotoErr('Use a JPG, PNG or WebP image.'); return; }
-    if (file.size > PHOTO_MAX_BYTES)      { setPhotoErr('That image is over 5MB.'); return; }
     setUploading(true);
     try {
-      const url = await shrinkPhoto(file);
+      const url = await photoFromFile(file);
       setPreview(url);
       setForm(p => ({ ...p, photoURL: url }));
     } catch (err) {
-      console.error('Photo processing failed:', err);
-      setPhotoErr("Couldn't use that photo. Try another one.");
+      setPhotoErr(err.message);
       setPreview(realPhoto(user.photoURL));
     } finally { setUploading(false); }
   }

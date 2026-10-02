@@ -372,3 +372,31 @@ test('events: an optional description up to 1,000 characters', async () => {
   await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'rate/alice'), { last: Timestamp.fromMillis(Date.now() - 10000) }));
   await assertFails(withRate(db, 'alice', doc(collection(db, 'events')), ev('x'.repeat(1001))));
 });
+
+// ---- Tags: only the admin can be Dictator; nothing else is stored ----
+test('tags: you cannot make yourself Dictator (or anything else)', async () => {
+  await assertFails(updateDoc(doc(verified('alice'), 'users/alice'), { badges: ['dictator'] }));
+  await assertFails(updateDoc(doc(verified('alice'), 'users/alice'), { badges: ['celestial'] }));
+  await assertFails(setDoc(doc(verified('dan'), 'users/dan'), { name: 'Dan', badges: ['dictator'] }));
+});
+
+test('tags: a fake admin (unverified email) cannot be Dictator', async () => {
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'users/mallory'), { name: 'Mallory', username: 'mallory' }));
+  await assertFails(updateDoc(doc(fakeAdmin(), 'users/mallory'), { badges: ['dictator'] }));
+});
+
+test("tags: even the admin can't tag other people", async () => {
+  await assertFails(updateDoc(doc(admin(), 'users/alice'), { badges: ['dictator'] }));
+});
+
+test('tags: the admin can be Dictator, and nothing made-up', async () => {
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'users/suyash'), { name: 'Suyash', username: 'suyash' }));
+  await assertSucceeds(setDoc(doc(admin(), 'users/suyash'), { badges: ['dictator'] }, { merge: true }));
+  await assertFails(updateDoc(doc(admin(), 'users/suyash'), { badges: ['dictator', 'god-mode'] }));
+});
+
+test('tags: editing your profile keeps your tag', async () => {
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'users/suyash'), { name: 'Suyash', username: 'suyash', badges: ['dictator'] }));
+  await assertSucceeds(setDoc(doc(admin(), 'users/suyash'), { name: 'Suyash S', bio: 'hi' }, { merge: true }));
+  await assertSucceeds(setDoc(doc(verified('alice'), 'users/alice'), { name: 'Alice B' }, { merge: true }));
+});
