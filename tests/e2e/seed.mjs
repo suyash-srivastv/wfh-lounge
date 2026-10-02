@@ -1,6 +1,6 @@
 // Seeds the local emulators with two verified, connected test accounts.
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 const AUTH = 'http://127.0.0.1:9099';
 async function account(email, name) {
@@ -28,14 +28,14 @@ const env = await initializeTestEnvironment({ projectId: 'wfh-lounge', firestore
 await env.clearFirestore();
 await env.withSecurityRulesDisabled(async ctx => {
   const db = ctx.firestore();
-  await setDoc(doc(db, 'users', alice), { name: 'Alice', username: 'alice', city: 'Pune', role: 'Developer', initials: 'A', connections: { [bob]: true } });
-  await setDoc(doc(db, 'users', bob),   { name: 'Bob',   username: 'bob',   city: 'Pune', role: 'Designer',  initials: 'B', photoURL: 'https://lh3.googleusercontent.com/a/default-letter-photo',  connections: { [alice]: true } });
+  await setDoc(doc(db, 'users', alice), { name: 'Alice', username: 'alice', city: 'Pune', seedCity: 'Pune', joinedAt: Timestamp.fromMillis(Date.UTC(2026, 0, 1)), role: 'Developer', initials: 'A', connections: { [bob]: true } });
+  await setDoc(doc(db, 'users', bob),   { name: 'Bob',   username: 'bob',   city: 'Pune', seedCity: 'Pune', joinedAt: Timestamp.fromMillis(Date.UTC(2026, 0, 2)), role: 'Designer',  initials: 'B', photoURL: 'https://lh3.googleusercontent.com/a/default-letter-photo',  connections: { [alice]: true } });
   await setDoc(doc(db, 'usernames/alice'), { uid: alice });
   await setDoc(doc(db, 'usernames/bob'),   { uid: bob });
-  await setDoc(doc(db, 'users', admin), { name: 'Suyash', username: 'suyash', city: 'Pune', role: 'Founder', initials: 'S' });
+  await setDoc(doc(db, 'users', admin), { name: 'Suyash', username: 'suyash', city: 'Pune', seedCity: 'Pune', joinedAt: Timestamp.fromMillis(Date.UTC(2026, 0, 3)), role: 'Founder', initials: 'S' });
   await setDoc(doc(db, 'usernames/suyash'), { uid: admin });
   // A member in a city with no content yet (for empty states)
-  await setDoc(doc(db, 'users', dave), { name: 'Dave', username: 'dave', city: 'Indore', role: 'Writer', initials: 'D' });
+  await setDoc(doc(db, 'users', dave), { name: 'Dave', username: 'dave', city: 'Indore', seedCity: 'Indore', joinedAt: Timestamp.fromMillis(Date.UTC(2026, 0, 4)), role: 'Writer', initials: 'D' });
   await setDoc(doc(db, 'usernames/dave'), { uid: dave });
   await setDoc(doc(db, 'events/e1'),  { title: 'Coffee meetup', type: 'IRL', city: 'Pune', location: 'Third Wave, Koregaon Park', date: dayFromNow(1), time: '15:30', tags: [], host: 'Bob', hostId: bob, attendeeCount: 1, rsvps: { [bob]: true }, createdAt: serverTimestamp() });
   await setDoc(doc(db, 'events/e2'),  { title: 'Sunday walk & talk', type: 'IRL', city: 'Pune', location: 'Empress Garden', date: 'TBD', time: 'TBD', tags: ['outdoors'], host: 'Bob', hostId: bob, attendeeCount: 1, rsvps: { [bob]: true }, createdAt: serverTimestamp() });

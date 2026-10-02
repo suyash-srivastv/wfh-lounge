@@ -167,10 +167,11 @@ function OnboardingScreen({ user, setUser }) {
           yearsExp: yearsExp !== '' ? Number(yearsExp) : null,
           initials,
           ...(photo ? { photoURL: photo } : {}),
+          ...(city && !user.seedCity ? { seedCity: city } : {}),
         }, { merge: true });
       });
       track('profile_completed', { has_city: !!city, has_photo: !!photo });
-      setUser(u => ({ ...u, ...(photo ? { photoURL: photo } : {}), name: displayName.trim(), username: uname, bio: bio.trim(), role, city, yearsExp: yearsExp !== '' ? Number(yearsExp) : null, initials: displayName.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() }));
+      setUser(u => ({ ...u, ...(photo ? { photoURL: photo } : {}), ...(city && !u.seedCity ? { seedCity: city } : {}), name: displayName.trim(), username: uname, bio: bio.trim(), role, city, yearsExp: yearsExp !== '' ? Number(yearsExp) : null, initials: displayName.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() }));
     } catch (e) {
       setErr(e.message || 'Something went wrong. Try again.');
       setLoading(false);

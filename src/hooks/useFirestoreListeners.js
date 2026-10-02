@@ -21,7 +21,7 @@ function toMember(d) {
     initials: data.initials || '??', ini: data.initials || '??',
     skills: data.skills || [], bio: data.bio || '',
     yearsExp: data.yearsExp ?? null, status: data.status || '',
-    vibe: data.vibe || '', photoURL: data.photoURL || null, badges: data.badges || [],
+    vibe: data.vibe || '', photoURL: data.photoURL || null, badges: data.badges || [], seedCity: data.seedCity || '',
     bg, tc, online: false,
     conn: Object.keys(data.connections || {}).length, events: 0,
   };
@@ -163,4 +163,17 @@ export function useProfiles(user, ids) {
     return () => { alive = false; };
   }, [user?.uid, key]);
   return { items, loading };
+}
+
+// The Dictator's profile, so they can be pinned first in "People nearby"
+// (the paged list is alphabetical and might not reach them). One small read.
+export function useDictator(user) {
+  const [d, setD] = useState(null);
+  useEffect(() => {
+    if (!user || !auth.currentUser) { setD(null); return; }
+    getDocs(query(collection(db, 'users'), where('badges', 'array-contains', 'dictator'), limit(1)))
+      .then(s => setD(s.docs[0] ? toMember(s.docs[0]) : null))
+      .catch(e => { if (auth.currentUser) console.error('Loading pinned member failed:', e); });
+  }, [user?.uid]);
+  return d;
 }

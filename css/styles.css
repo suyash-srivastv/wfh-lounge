@@ -1134,3 +1134,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:2000;o
 .ev-faces .ev-face-wrap+.ev-face-wrap{margin-left:-8px}
 .ev-face-wrap.hl{position:relative;z-index:1;box-shadow:0 0 0 2px rgba(var(--hl),.9),0 0 10px rgba(var(--hl),var(--hl-a))}
 @media (prefers-reduced-motion:reduce){.ed-chip.hl-dictator,.ed-person.hl-dictator{animation:none}}
+
+/* 🌱 Early Seed: plain green tag — deliberately no glow or animation */
+.badge-seed{background:rgba(110,231,160,.1);color:#6EE7A0;border-color:rgba(110,231,160,.35);box-shadow:none;animation:none}
+:root:not([data-theme="dark"]) .badge-seed{background:rgba(31,138,85,.08);color:#1F8A55;border-color:rgba(31,138,85,.3)}

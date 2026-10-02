@@ -400,3 +400,21 @@ test('tags: editing your profile keeps your tag', async () => {
   await assertSucceeds(setDoc(doc(admin(), 'users/suyash'), { name: 'Suyash S', bio: 'hi' }, { merge: true }));
   await assertSucceeds(setDoc(doc(verified('alice'), 'users/alice'), { name: 'Alice B' }, { merge: true }));
 });
+
+// ---- 🌱 Early Seed: join time + first city are set once and can't be faked ----
+test('early seed: a new profile records the real server join time', async () => {
+  await assertSucceeds(setDoc(doc(verified('dan'), 'users/dan'), { name: 'Dan', joinedAt: serverTimestamp() }));
+  await assertFails(setDoc(doc(verified('eve'), 'users/eve'), { name: 'Eve', joinedAt: Timestamp.fromMillis(0) }));
+});
+
+test("early seed: you can't backdate or change your join time", async () => {
+  await env.withSecurityRulesDisabled(ctx => updateDoc(doc(ctx.firestore(), 'users/alice'), { joinedAt: Timestamp.now() }));
+  await assertFails(updateDoc(doc(verified('alice'), 'users/alice'), { joinedAt: Timestamp.fromMillis(0) }));
+});
+
+test('early seed: your first city is set once, matching your city', async () => {
+  await assertFails(setDoc(doc(verified('alice'), 'users/alice'), { city: 'Pune', seedCity: 'Goa' }, { merge: true }));
+  await assertSucceeds(setDoc(doc(verified('alice'), 'users/alice'), { city: 'Pune', seedCity: 'Pune' }, { merge: true }));
+  await assertSucceeds(setDoc(doc(verified('alice'), 'users/alice'), { city: 'Goa' }, { merge: true }));
+  await assertFails(setDoc(doc(verified('alice'), 'users/alice'), { city: 'Goa', seedCity: 'Goa' }, { merge: true }));
+});

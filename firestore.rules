@@ -113,14 +113,29 @@ service cloud.firestore {
       return badgesUnchanged() || (isAdmin() && request.resource.data.get('badges', []) in [[], ['dictator']]);
     }
 
+    // Set once, never changed: when you joined (server time) and the first
+    // home city you picked. Used for the 🌱 Early Seed tag (first 10 per city).
+    function had(f) { return resource != null && f in resource.data; }
+    function keptIfHad(f) { return !had(f) || request.resource.data.get(f, null) == resource.data[f]; }
+    function joinedOk() {
+      return keptIfHad('joinedAt')
+        && (had('joinedAt') || !('joinedAt' in request.resource.data) || request.resource.data.joinedAt == request.time);
+    }
+    function seedCityOk() {
+      return keptIfHad('seedCity')
+        && (had('seedCity') || !('seedCity' in request.resource.data)
+            || (nonEmpty(request.resource.data.seedCity, 80) && request.resource.data.seedCity == request.resource.data.get('city', '')));
+    }
+
     match /users/{uid} {
       allow read: if signedIn() && (uid == me() || verified());
-      allow create: if signedIn() && uid == me() && profileFieldsOk() && usernameOk() && !('badges' in request.resource.data);
+      allow create: if signedIn() && uid == me() && profileFieldsOk() && usernameOk() && !('badges' in request.resource.data)
+        && joinedOk() && seedCityOk();
       allow delete: if signedIn() && uid == me();
 
       allow update: if signedIn() && (
         // Your own profile: any valid change (tags: admin only, see badgesOk).
-        (uid == me() && profileFieldsOk() && usernameOk() && badgesOk())
+        (uid == me() && profileFieldsOk() && usernameOk() && badgesOk() && joinedOk() && seedCityOk())
         // Someone else's profile: only their own entry in the friend maps.
         || (verified()
           && changed().hasOnly(['receivedRequests', 'sentRequests', 'connections'])

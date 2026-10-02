@@ -6,7 +6,7 @@ import { addWithRate } from './firestoreWrites';
 import { track, trackScreen, identify } from './analytics';
 import { notify } from './notify';
 import { ROLES, REACTIONS } from './constants';
-import { useFirestoreListeners, useMemberProfile, useAuthorThreads, useMyStats, useProfiles } from './hooks/useFirestoreListeners';
+import { useFirestoreListeners, useMemberProfile, useAuthorThreads, useMyStats, useProfiles, useDictator } from './hooks/useFirestoreListeners';
 import { useChat } from './hooks/useChat';
 import { useDM }   from './hooks/useDM';
 import Confetti          from './components/Confetti';
@@ -154,7 +154,7 @@ function App(){
             const name     = (fbUser.displayName || 'New member').slice(0, 50);
             const initials = name.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
             const profile  = { name, city: '', role: '', initials };
-            await setDoc(doc(db, 'users', fbUser.uid), profile);
+            await setDoc(doc(db, 'users', fbUser.uid), { ...profile, joinedAt: serverTimestamp() });
             setUser({ ...profile, uid: fbUser.uid });
           } else {
             const profile = snap.data() || {};
@@ -318,9 +318,10 @@ function App(){
     const initials = form.name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
     const updated  = { ...user, ...form, initials, yearsExp: form.yearsExp !== '' ? Number(form.yearsExp) : null };
     const fields   = { name: updated.name, city: updated.city, role: updated.role, bio: updated.bio || '', status: updated.status || '', vibe: updated.vibe || '', yearsExp: updated.yearsExp, initials };
+    if (!user.seedCity && updated.city) fields.seedCity = updated.city; // first home city, kept for 🌱 Early Seed
     if (form.photoURL) fields.photoURL = form.photoURL;
     await setDoc(doc(db,'users',user.uid), fields, { merge: true });
-    setUser(updated);
+    setUser({ ...updated, ...(fields.seedCity ? { seedCity: fields.seedCity } : {}) });
     if (updated.city) changeCity(updated.city);
     setEditOpen(false);
   }
@@ -332,7 +333,7 @@ function App(){
   const askCity = !!user?.username && !needsVerify && !user.city && !askLater;
   function laterCity() { try { sessionStorage.setItem(laterKey, '1'); } catch {} setAskLater(true); track('city_prompt_later'); }
   async function saveMissing({ city: c, role, bio }) {
-    const fields = { city: c, ...(role ? { role } : {}), ...(bio ? { bio } : {}) };
+    const fields = { city: c, ...(role ? { role } : {}), ...(bio ? { bio } : {}), ...(!user.seedCity ? { seedCity: c } : {}) };
     await setDoc(doc(db, 'users', user.uid), fields, { merge: true });
     setUser(u => ({ ...u, ...fields }));
     changeCity(c);
@@ -342,7 +343,10 @@ function App(){
   // Derived data (city filtering now happens on the server)
   const userPosts     = useAuthorThreads(activeUser, user?.uid);
   const myStats       = useMyStats(showProfile ? activeUser : null);
-  const fMembers      = members.filter(m => !user?.blockedUsers?.[m.id]);
+  const dictator      = useDictator(activeUser);
+  // The Dictator is pinned first in "People nearby" for their city (and All cities).
+  const pinned        = dictator && dictator.username && (city === 'All cities' || dictator.city === city) ? dictator : null;
+  const fMembers      = [...(pinned ? [pinned] : []), ...members.filter(m => m.id !== pinned?.id)].filter(m => !user?.blockedUsers?.[m.id]);
   const fetchedMember = useMemberProfile(activeUser, viewingMemberId);
   const viewingMember = viewingMemberId ? (members.find(m => m.id === viewingMemberId) || fetchedMember) : null;
   const memberPosts   = useAuthorThreads(activeUser, viewingMemberId);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { collection, doc, getCountFromServer, getDoc, query, where } from 'firebase/firestore';
+import { collection, doc, getCountFromServer, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 import { db, auth } from './firebase';
 
 // Three tags, shown next to a member's vibe:
@@ -15,6 +15,37 @@ export const BADGES = {
   celestial: { label: 'Celestial Dragon', icon: '🐉', how: 'Hosted 5 events and started 5 forum posts.' },
   cp0:       { label: 'CP0',              icon: '🕶️', how: 'Hosted 2 events or started 5 forum posts.' },
 };
+
+// 🌱 Early Seed — the first 10 members of each city (by first home city and
+// server-set join time, both set once). A plain tag: no glow, no highlight.
+export const SEED = { label: 'Early Seed', icon: '🌱', how: 'One of the first 10 members in their city.' };
+const SEED_COUNT = 10;
+const seeds = new Map();
+function firstTen(city) {
+  if (!seeds.has(city)) {
+    seeds.set(city, getDocs(query(collection(db, 'users'), where('seedCity', '==', city), orderBy('joinedAt'), limit(SEED_COUNT)))
+      .then(s => new Set(s.docs.map(d => d.id)))
+      .catch(err => { seeds.delete(city); if (auth.currentUser) console.error('Loading early members failed:', err); return new Set(); }));
+  }
+  return seeds.get(city);
+}
+
+export function useEarlySeed(member) {
+  const [yes, setYes] = useState(false);
+  const id = member?.id || member?.uid, city = member?.seedCity;
+  useEffect(() => {
+    setYes(false);
+    if (!id || !city) return;
+    let alive = true;
+    firstTen(city).then(set => { if (alive) setYes(set.has(id)); });
+    return () => { alive = false; };
+  }, [id, city]);
+  return yes;
+}
+
+export function SeedTag() {
+  return <span className="badge-chip badge-seed" title={SEED.how}>{SEED.icon} {SEED.label}</span>;
+}
 
 export function earnedBadge({ hosted, posts }) {
   if (hosted >= 5 && posts >= 5) return 'celestial';
@@ -94,10 +125,12 @@ export function Badge({ id }) {
 // Tag + vibe on one row (renders nothing if there's neither).
 export function ChipRow({ member, style }) {
   const id = useBadge(member);
-  if (!id && !member?.vibe) return null;
+  const seed = useEarlySeed(member);
+  if (!id && !seed && !member?.vibe) return null;
   return (
     <div className="chip-row" style={style}>
       {id && <Badge id={id}/>}
+      {seed && <SeedTag/>}
       {member.vibe && <span className="vibe-chip">{member.vibe}</span>}
     </div>
   );
@@ -106,6 +139,7 @@ export function ChipRow({ member, style }) {
 // Your own profile: your tag, plus how close you are to the next one.
 export function MyBadge({ user }) {
   const a = useActivity(user?.uid);
+  const seed = useEarlySeed(user);
   const id = user?.badges?.includes('dictator') ? 'dictator' : a ? earnedBadge(a) : null;
   if (!a && id !== 'dictator') return null;
   let next = null;
@@ -120,6 +154,7 @@ export function MyBadge({ user }) {
   return (
     <div className="my-badge">
       {id && <Badge id={id}/>}
+      {seed && <SeedTag/>}
       {next && <span className="my-badge-next">{next}</span>}
     </div>
   );
