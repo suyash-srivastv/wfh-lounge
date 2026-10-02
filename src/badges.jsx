@@ -3,7 +3,7 @@ import { collection, doc, getCountFromServer, getDoc, getDocs, limit, orderBy, q
 import { db, auth } from './firebase';
 
 // Three tags, shown next to a member's vibe:
-//   👑 Dictator         — the admin only (set on their own profile; rules enforce it)
+//   👑 Emperor (id 'dictator') — the admin only (set on their own profile; rules enforce it)
 //   🐉 Celestial Dragon — earned: hosted 5+ events AND started 5+ forum posts
 //   🕶️ CP0              — earned: hosted 2+ events OR started 5+ forum posts
 // Earned tags are worked out from real events/posts (which can only be created
@@ -11,20 +11,22 @@ import { db, auth } from './firebase';
 const NOT_A_PERSON = ['seed', 'stillroom-team'];
 
 export const BADGES = {
-  dictator:  { label: 'Dictator',         icon: '👑', how: 'Runs the place.' },
+  dictator:  { label: 'Emperor',          icon: '👑', how: 'Rules the room.' },
   celestial: { label: 'Celestial Dragon', icon: '🐉', how: 'Hosted 5 events and started 5 forum posts.' },
   cp0:       { label: 'CP0',              icon: '🕶️', how: 'Hosted 2 events or started 5 forum posts.' },
 };
 
 // 🌱 Early Seed — the first 10 members of each city (by first home city and
 // server-set join time, both set once). A plain tag: no glow, no highlight.
+// The Emperor never gets it (and doesn't use up one of the 10).
 export const SEED = { label: 'Early Seed', icon: '🌱', how: 'One of the first 10 members in their city.' };
 const SEED_COUNT = 10;
 const seeds = new Map();
 function firstTen(city) {
   if (!seeds.has(city)) {
-    seeds.set(city, getDocs(query(collection(db, 'users'), where('seedCity', '==', city), orderBy('joinedAt'), limit(SEED_COUNT)))
-      .then(s => new Set(s.docs.map(d => d.id)))
+    // One extra, because the Emperor doesn't take a spot.
+    seeds.set(city, getDocs(query(collection(db, 'users'), where('seedCity', '==', city), orderBy('joinedAt'), limit(SEED_COUNT + 1)))
+      .then(s => new Set(s.docs.filter(d => !d.data().badges?.includes('dictator')).slice(0, SEED_COUNT).map(d => d.id)))
       .catch(err => { seeds.delete(city); if (auth.currentUser) console.error('Loading early members failed:', err); return new Set(); }));
   }
   return seeds.get(city);

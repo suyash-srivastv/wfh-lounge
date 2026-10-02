@@ -158,7 +158,7 @@ function App(){
             setUser({ ...profile, uid: fbUser.uid });
           } else {
             const profile = snap.data() || {};
-            // The admin always wears 👑 Dictator.
+            // The admin always wears 👑 Emperor (stored as 'dictator').
             if (fbUser.email === ADMIN_EMAIL && fbUser.emailVerified && !profile.badges?.includes('dictator')) {
               profile.badges = ['dictator'];
               setDoc(doc(db, 'users', fbUser.uid), { badges: ['dictator'] }, { merge: true }).catch(() => {});
