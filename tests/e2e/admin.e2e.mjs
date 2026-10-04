@@ -103,12 +103,15 @@ try {
   check('🌱 Early Seed shows on the first members of the city', await until(`$$('.grid2 .card').filter(c => !!c.querySelector('.badge-seed')).length === 2`));
   check('the Emperor does not get Early Seed', !!(await ev(`!$$('.grid2 .card').find(c => c.innerText.includes('Suyash')).querySelector('.badge-seed')`)));
   check('Early Seed is a plain tag (no glow)', !!(await ev(`(() => { const t = getComputedStyle(document.querySelector('.badge-seed')); return t.boxShadow === 'none' && t.animationName === 'none'; })()`)));
-  check('the Dictator is pinned first in People nearby', !!(await ev(`$$('.grid2 .card')[0]?.innerText.includes('Suyash')`)));
+  check('the Emperor is pinned first in People nearby', !!(await ev(`$$('.grid2 .card')[0]?.innerText.includes('Suyash')`)));
   await shot('member-tags');
   await ev(`document.querySelector('.nav .avatar').click()`); await wait(200); await ev(`btn('View profile').click()`);
   check('your profile shows how to earn CP0', await until(`document.querySelector('.my-badge-next')?.innerText.includes('to become 🕶️ CP0')`));
   await shot('my-tag');
   await ev(`tab('Events')`); await wait(300);
+  await logout(); await login('dave@test.dev');
+  await ev(`tab('Members')`);
+  check('the Emperor is pinned first in another city too (Indore)', await until(`$$('.grid2 .card')[0]?.innerText.includes('Suyash')`));
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true }); await wait(600); await shot('mobile');
   check('no permission errors', problems.length === 0, problems.slice(0, 3).join(' | '));
 } finally {

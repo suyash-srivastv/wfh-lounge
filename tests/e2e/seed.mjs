@@ -20,6 +20,7 @@ const alice = await account('alice@test.dev', 'Alice');
 const bob   = await account('bob@test.dev', 'Bob');
 const admin = await account('suyash101997@gmail.com', 'Suyash');
 const dave  = await account('dave@test.dev', 'Dave');
+const erin  = await account('erin@test.dev', 'Erin');
 
 // Dates relative to today, so the "What's on" tests never go stale.
 const dayFromNow = n => { const d = new Date(Date.now() + n * 864e5); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
@@ -37,6 +38,9 @@ await env.withSecurityRulesDisabled(async ctx => {
   // A member in a city with no content yet (for empty states)
   await setDoc(doc(db, 'users', dave), { name: 'Dave', username: 'dave', city: 'Indore', seedCity: 'Indore', joinedAt: Timestamp.fromMillis(Date.UTC(2026, 0, 4)), role: 'Writer', initials: 'D' });
   await setDoc(doc(db, 'usernames/dave'), { uid: dave });
+  // An older member who never set a city or role (gets the "Where are you based?" prompt)
+  await setDoc(doc(db, 'users', erin), { name: 'Erin', username: 'erin', city: '', role: '', initials: 'E' });
+  await setDoc(doc(db, 'usernames/erin'), { uid: erin });
   await setDoc(doc(db, 'events/e1'),  { title: 'Coffee meetup', type: 'IRL', city: 'Pune', location: 'Third Wave, Koregaon Park', date: dayFromNow(1), time: '15:30', tags: [], host: 'Bob', hostId: bob, attendeeCount: 1, rsvps: { [bob]: true }, createdAt: serverTimestamp() });
   await setDoc(doc(db, 'events/e2'),  { title: 'Sunday walk & talk', type: 'IRL', city: 'Pune', location: 'Empress Garden', date: 'TBD', time: 'TBD', tags: ['outdoors'], host: 'Bob', hostId: bob, attendeeCount: 1, rsvps: { [bob]: true }, createdAt: serverTimestamp() });
   await setDoc(doc(db, 'events/old'), { title: 'Last month\'s mixer', type: 'IRL', city: 'Pune', location: 'Somewhere', date: dayFromNow(-30), time: '19:00', tags: [], host: 'Bob', hostId: bob, attendeeCount: 3, rsvps: { [bob]: true }, createdAt: serverTimestamp() });

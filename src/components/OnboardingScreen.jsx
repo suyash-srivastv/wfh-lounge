@@ -8,6 +8,9 @@ import { photoFromFile } from '../photo';
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
+// "new delhi" → "New Delhi", so typed cities match picked ones.
+export const titleCase = s => s.trim().replace(/\s+/g, ' ').toLowerCase().replace(/(^|\s|-)\S/g, c => c.toUpperCase());
+
 export function CitySearch({ value, onChange }) {
   const [input, setInput] = useState(value || '');
   const [results, setResults] = useState([]);
@@ -46,6 +49,7 @@ export function CitySearch({ value, onChange }) {
           value={value || input}
           onFocus={() => { if (value) { onChange(''); setInput(''); } setOpen(true); }}
           onChange={e => { setInput(e.target.value); onChange(''); setOpen(true); }}
+          onBlur={() => setTimeout(() => { if (input.trim().length >= 2) onChange(v => v || titleCase(input)); }, 200)}
         />
       </div>
       {open && results.length > 0 && (
@@ -149,6 +153,9 @@ function OnboardingScreen({ user, setUser }) {
     if (!displayName.trim()) { setErr('Display name is required.'); return; }
     const uname = username.trim().toLowerCase();
     if (!uname || unameStatus !== 'available') { setErr('Choose an available username.'); return; }
+    if (!role) { setErr('Pick your role.'); return; }
+    if (yearsExp === '' || Number(yearsExp) < 0 || Number(yearsExp) > 60) { setErr('Add your years of experience (0 is fine).'); return; }
+    if (!city) { setErr('Add your city — it decides who you see nearby.'); return; }
 
     setLoading(true);
     try {
@@ -260,21 +267,21 @@ function OnboardingScreen({ user, setUser }) {
 
               <div style={{display:'flex',gap:8}}>
                 <div className="auth-field" style={{flex:1}}>
-                  <label className="auth-label">Role <span className="auth-opt">(optional)</span></label>
+                  <label className="auth-label">Role <span style={{color:'#c0392b'}}>*</span></label>
                   <select className="auth-input auth-select" value={role} onChange={e => setRole(e.target.value)}>
                     <option value="">Select role…</option>
                     {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
                 <div className="auth-field" style={{width:90}}>
-                  <label className="auth-label">Years exp.</label>
+                  <label className="auth-label">Years exp. <span style={{color:'#c0392b'}}>*</span></label>
                   <input className="auth-input" type="number" min={0} max={60} placeholder="0"
                     value={yearsExp} onChange={e => setYearsExp(e.target.value)}/>
                 </div>
               </div>
 
               <div className="auth-field">
-                <label className="auth-label">Your city <span className="auth-opt">(optional)</span></label>
+                <label className="auth-label">Your city <span style={{color:'#c0392b'}}>*</span></label>
                 <CitySearch value={city} onChange={setCity} />
                 {!city && (
                   <button type="button" className="loc-ask" onClick={detectLocation} disabled={detectingLoc}>
@@ -293,7 +300,7 @@ function OnboardingScreen({ user, setUser }) {
 
               <div style={{ display: 'flex', gap: 8 }}>
                 <button type="button" className="btn-cancel" onClick={() => setStep(1)} style={{ flex: 1 }}>← Back</button>
-                <button type="submit" className="auth-submit" disabled={loading} style={{ flex: 2 }}>
+                <button type="submit" className="auth-submit" disabled={loading || !role || yearsExp === '' || !city} style={{ flex: 2 }}>
                   {loading
                     ? <><i className="ti ti-loader-2" style={{ animation: 'spin 1s linear infinite', marginRight: 6 }} />Saving…</>
                     : 'Finish setup →'}

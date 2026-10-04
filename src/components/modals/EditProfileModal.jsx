@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ROLES, STATUSES, VIBES, realPhoto } from '../../constants';
 import { photoFromFile } from '../../photo';
+import { titleCase } from '../OnboardingScreen';
 
 function EditProfileModal({ open, user, onClose, onSave }) {
   const [form,       setForm]       = useState({ name: '', city: '', role: '', bio: '', yearsExp: '', status: '', vibe: '' });
@@ -106,7 +107,7 @@ function EditProfileModal({ open, user, onClose, onSave }) {
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
           <div className="auth-field" style={{ flex: 1 }}>
-            <label className="auth-label">Role</label>
+            <label className="auth-label">Role <span style={{color:'#c0392b'}}>*</span></label>
             <select className="modal-input auth-select" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))}>
               <option value="">Select role…</option>
               {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
@@ -143,13 +144,14 @@ function EditProfileModal({ open, user, onClose, onSave }) {
         </div>
 
         <div className="auth-field" style={{ marginBottom: 16, position: 'relative' }} ref={cityRef}>
-          <label className="auth-label">City</label>
+          <label className="auth-label">City <span style={{color:'#c0392b'}}>*</span></label>
           <div className="auth-input-icon">
             <i className="ti ti-map-pin" style={{ fontSize: 14, color: 'var(--text-3)' }}/>
             <input className="auth-input-inner" placeholder="Search your city…"
               value={form.city || cityQ}
               onFocus={() => { if (form.city) { setForm(p => ({ ...p, city: '' })); setCityQ(''); } setCityOpen(true); }}
               onChange={e => { setCityQ(e.target.value); setForm(p => ({ ...p, city: '' })); setCityOpen(true); }}
+              onBlur={() => setTimeout(() => setForm(p => p.city ? p : { ...p, city: cityQ.trim().length >= 2 ? titleCase(cityQ) : (user.city || '') }), 200)}
             />
           </div>
           {cityOpen && cityR.length > 0 && (
@@ -167,7 +169,8 @@ function EditProfileModal({ open, user, onClose, onSave }) {
 
         <div className="modal-actions">
           <button className="btn-cancel" onClick={onClose}>Cancel</button>
-          <button className="btn-primary" onClick={() => onSave(form)} disabled={uploading}>
+          {(!form.role || !form.city) && <span className="ep-need">{!form.role ? 'Pick your role' : 'Pick your city'} to save</span>}
+          <button className="btn-primary" onClick={() => onSave(form)} disabled={uploading || !form.role || !form.city}>
             {uploading ? 'Uploading…' : 'Save'}
           </button>
         </div>

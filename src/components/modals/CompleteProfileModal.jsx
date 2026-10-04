@@ -54,7 +54,7 @@ function CompleteProfileModal({ user, onSave, onLater }) {
         )}
 
         {askRole && <>
-          <label className="auth-label" style={{ marginTop: 14 }}>What do you do? <span className="auth-opt">(optional)</span></label>
+          <label className="auth-label" style={{ marginTop: 14 }}>What do you do?</label>
           <select className="auth-input auth-select" value={role} onChange={e => setRole(e.target.value)}>
             <option value="">Select role…</option>
             {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
@@ -71,7 +71,7 @@ function CompleteProfileModal({ user, onSave, onLater }) {
 
         <div className="modal-actions">
           <button className="btn-cancel" onClick={onLater}>Later</button>
-          <button className="btn-primary" onClick={save} disabled={!city || saving}>{saving ? 'Saving…' : 'Save'}</button>
+          <button className="btn-primary" onClick={save} disabled={!city || (askRole && !role) || saving}>{saving ? 'Saving…' : 'Save'}</button>
         </div>
       </div>
     </div>

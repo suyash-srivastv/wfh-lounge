@@ -49,22 +49,41 @@ try {
   await send('DOM.setFileInputFiles', { nodeId, files: [PHOTO] });
   check('picking a photo shows it straight away', await until(`document.querySelector('.ob-photo img')?.src.startsWith('data:image/')`, 5000));
   if (process.env.SHOTS) { const r = await send('Page.captureScreenshot', { format: 'png' }); (await import('node:fs')).writeFileSync(`${process.env.SHOTS}/onboarding-photo.png`, Buffer.from(r.data, 'base64')); }
+  check('Finish setup needs a role, years of experience and a city', !!(await ev(`btn('Finish setup').disabled && !document.body.innerText.includes('(optional)', document.body.innerText.indexOf('Role'))`)));
+  await ev(`(() => { const sel = document.querySelector('select.auth-select'); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(sel, 'Developer'); sel.dispatchEvent(new Event('change', { bubbles: true })); })()`);
+  check('still locked with only a role', !!(await ev(`btn('Finish setup').disabled`)));
+  await ev(`type(document.querySelector('input[type=number]'), '4')`);
+  await ev(`(() => { const i = document.querySelector('input[placeholder="Search your city…"]'); i.focus(); type(i, 'pune'); })()`); await wait(150);
+  await ev(`document.querySelector('input[placeholder="Search your city…"]').dispatchEvent(new FocusEvent('focusout', { bubbles: true }))`);
+  check('a typed city is accepted (and tidied to "Pune")', await until(`document.querySelector('input[placeholder="Search your city…"]').value === 'Pune' && !btn('Finish setup').disabled`));
   await ev(`btn('Finish setup').click()`);
   check('finishing setup opens the app', await until(`!!document.querySelector('.nav-tabs')`, 15000));
   check('the onboarding photo is on the profile', await until(`document.querySelector('.nav .avatar img')?.src.startsWith('data:image/')`));
-  check('no city yet: asks "Where are you based?"', await until(`!!document.querySelector('.cp-modal') && document.body.innerText.includes('Where are you based?')`));
+  check('with a city set, no "Where are you based?" prompt', !(await ev(`!!document.querySelector('.cp-modal')`)));
+  await ev(`document.querySelector('.avatar').click()`); await wait(200);
+  await ev(`btn('Log out').click()`);
+  check('returning visitors skip the intro', await until(`!!document.querySelector('input[type=email]') && !document.querySelector('.intro')`));
+
+  // An older member with no city or role gets asked on login
+  const loginAs = async email => {
+    await ev(`document.querySelector('.auth-tab:not(.active)')?.textContent.includes('Log in') && document.querySelector('.auth-tab:not(.active)').click()`); await wait(200);
+    await ev(`type(document.querySelector('input[type=email]'), '${email}'); type(document.querySelector('input[type=password]'), 'password123')`); await wait(150);
+    await ev(`document.querySelector('.auth-submit').click()`);
+  };
+  await loginAs('erin@test.dev');
+  check('no city yet: asks "Where are you based?"', await until(`!!document.querySelector('.cp-modal') && document.body.innerText.includes('Where are you based?')`, 15000));
   check('the prompt also asks for role and a line about you', !!(await ev(`!!document.querySelector('.cp-modal select') && !!document.querySelector('.cp-modal input[maxlength="160"]')`)));
   check('Save needs a city', !!(await ev(`btn('Save', document.querySelector('.cp-modal'))?.disabled`)));
   if (process.env.SHOTS) { const r = await send('Page.captureScreenshot', { format: 'png' }); (await import('node:fs')).writeFileSync(`${process.env.SHOTS}/city-prompt.png`, Buffer.from(r.data, 'base64')); }
   await ev(`btn('Later').click()`);
   check('"Later" closes it', await until(`!document.querySelector('.cp-modal')`));
   await ev(`document.querySelector('.avatar').click()`); await wait(200);
-  await ev(`btn('Log out').click()`);
-  check('returning visitors skip the intro', await until(`!!document.querySelector('input[type=email]') && !document.querySelector('.intro')`));
-  await ev(`document.querySelector('.auth-tab:not(.active)')?.textContent.includes('Log in') && document.querySelector('.auth-tab:not(.active)').click()`); await wait(200);
-  await ev(`type(document.querySelector('input[type=email]'), 'carol@test.dev'); type(document.querySelector('input[type=password]'), 'password123')`); await wait(150);
-  await ev(`document.querySelector('.auth-submit').click()`);
+  await ev(`btn('Log out').click()`); await until(`!!document.querySelector('input[type=email]')`);
+  await loginAs('erin@test.dev');
   check('next login asks for the city again', await until(`!!document.querySelector('.cp-modal')`, 15000));
+  await ev(`(() => { const i = document.querySelector('.cp-modal input[placeholder="Search your city…"]'); i.focus(); type(i, 'Pune'); })()`); await wait(150);
+  await ev(`document.querySelector('.cp-modal input[placeholder="Search your city…"]').dispatchEvent(new FocusEvent('focusout', { bubbles: true }))`); await wait(400);
+  check('Save also needs a role when it is missing', !!(await ev(`btn('Save', document.querySelector('.cp-modal'))?.disabled`)));
 } finally {
   const failed = results.filter(r => !r).length;
   console.log(`\n${results.length - failed}/${results.length} checks passed`); chrome.kill(); process.exit(failed ? 1 : 0);

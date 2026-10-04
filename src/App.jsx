@@ -344,8 +344,8 @@ function App(){
   const userPosts     = useAuthorThreads(activeUser, user?.uid);
   const myStats       = useMyStats(showProfile ? activeUser : null);
   const dictator      = useDictator(activeUser);
-  // The Dictator is pinned first in "People nearby" for their city (and All cities).
-  const pinned        = dictator && dictator.username && (city === 'All cities' || dictator.city === city) ? dictator : null;
+  // The Emperor (stored as 'dictator') is pinned first in "People nearby" in every city.
+  const pinned        = dictator && dictator.username ? dictator : null;
   const fMembers      = [...(pinned ? [pinned] : []), ...members.filter(m => m.id !== pinned?.id)].filter(m => !user?.blockedUsers?.[m.id]);
   const fetchedMember = useMemberProfile(activeUser, viewingMemberId);
   const viewingMember = viewingMemberId ? (members.find(m => m.id === viewingMemberId) || fetchedMember) : null;
