@@ -37,7 +37,7 @@ function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChat
               <i className="ti ti-arrow-left"/>
             </button>
             <i className={'ti ' + activeCh.icon} style={{fontSize:15,color:'var(--text-2)'}}/>
-            <span>{activeCh.label}</span>
+            <span className="chat-title">{activeCh.label}<span className="chat-title-city"> · {city === 'All cities' ? 'Everyone' : city}</span></span>
             <span style={{fontSize:12,color:'var(--text-3)',fontWeight:400,marginLeft:'auto'}}>
               {chatMsgs.length} messages
             </span>
@@ -73,7 +73,7 @@ function ChatScreen({ city, chatRoom, setChatRoom, mobileChatView, setMobileChat
 
           <form className="chat-input-row" onSubmit={e => { e.preventDefault(); sendChat(); }}>
             <input className="chat-input" maxLength={1000} value={chatInput} onChange={e => setChatInput(e.target.value)}
-              placeholder={`Message #${activeCh.label}…`} enterKeyHint="send" autoComplete="off"/>
+              placeholder={`Message #${activeCh.label}${city === 'All cities' ? '' : ' in ' + city}…`} enterKeyHint="send" autoComplete="off"/>
             <button type="submit" className="send-btn"><i className="ti ti-send" style={{fontSize:15}}/></button>
           </form>
         </div>

@@ -1138,3 +1138,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:2000;o
 /* 🌱 Early Seed: plain green tag — deliberately no glow or animation */
 .badge-seed{background:rgba(110,231,160,.1);color:#6EE7A0;border-color:rgba(110,231,160,.35);box-shadow:none;animation:none}
 :root:not([data-theme="dark"]) .badge-seed{background:rgba(31,138,85,.08);color:#1F8A55;border-color:rgba(31,138,85,.3)}
+
+/* Chat header: "General · Prayagraj" */
+.chat-title{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-title-city{color:var(--text-2);font-weight:500}

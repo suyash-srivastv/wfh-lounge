@@ -21,6 +21,9 @@ const NAV = [
   { id: 'about',   icon: 'ti-info-circle',    label: 'About'   },
 ];
 
+// Phones: Events, Members, (Clarity), Chat, Forums, Ideas.
+const MOBILE_ORDER = ['events', 'members', 'chat', 'threads', 'ideas'];
+
 function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetectLocation, user, showProfile, setShowProfile, openEdit, onLogout, crown, dmUnread, onDmToggle, onNavigate, isAdmin, onAdmin, onNotification }) {
   const [dark, setDark] = useDarkMode();
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
@@ -184,7 +187,7 @@ function Nav({ tab, onTabChange, city, setCity, locStatus, detectedCity, onDetec
 
       {/* Phones: Clarity sits in the middle of the bottom bar; About lives in the profile menu. */}
       <nav className="mobile-nav">
-        {NAV.filter(n => n.id !== 'about').flatMap((n, i) => [
+        {MOBILE_ORDER.map(id => NAV.find(n => n.id === id)).flatMap((n, i) => [
           i === 2 && <Clarity key="clarity" userId={user.uid} variant="tab"/>,
           <button key={n.id} className={'mobile-nav-btn' + (tab === n.id && !showProfile ? ' active' : '')}
             onClick={() => onTabChange(n.id)}>
