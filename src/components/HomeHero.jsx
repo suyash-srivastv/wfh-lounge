@@ -19,6 +19,21 @@ const QUIPS = [
   "Your calendar called. I didn't pick up.",
 ];
 
+// After 11 pm and before 5 am, Brew switches to late-night lines.
+const NIGHT_QUIPS = [
+  "It's 1 am. The bug will survive till morning.",
+  "Everyone's asleep. Except you and that one Slack notification.",
+  "Your 'quick fix' has entered its third hour.",
+  'Running on code and questionable decisions.',
+  'Even the street dogs have gone to bed.',
+  'Is it a late night or an early morning? Yes.',
+  '3 am you writes code. 10 am you deletes it.',
+  'Tomorrow-you is begging you to log off.',
+  'Night owls in your city are up too. Say hi.',
+  "Go to bed. I'll keep the room warm.",
+];
+const isNight = h => h >= 23 || h < 5;
+
 function greeting(h) {
   if (h < 5)  return 'Still up';
   if (h < 12) return 'Good morning';
@@ -55,16 +70,17 @@ function Brew({ onPoke, bump }) {
 }
 
 function HomeHero({ name }) {
-  const [i, setI]       = useState(() => Math.floor(Math.random() * QUIPS.length));
+  const lines = isNight(new Date().getHours()) ? NIGHT_QUIPS : QUIPS;
+  const [i, setI]       = useState(() => Math.floor(Math.random() * lines.length));
   const [bump, setBump] = useState(false);
 
   useEffect(() => {
-    const t = setInterval(() => setI(n => (n + 1) % QUIPS.length), 7000);
+    const t = setInterval(() => setI(n => (n + 1) % lines.length), 7000);
     return () => clearInterval(t);
   }, []);
 
   function poke() {
-    setI(n => (n + 1 + Math.floor(Math.random() * (QUIPS.length - 1))) % QUIPS.length);
+    setI(n => (n + 1 + Math.floor(Math.random() * (lines.length - 1))) % lines.length);
     setBump(true); setTimeout(() => setBump(false), 450);
   }
 
@@ -74,7 +90,7 @@ function HomeHero({ name }) {
       <Brew onPoke={poke} bump={bump}/>
       <div className="hh-copy">
         <div className="hh-greet">{greeting(new Date().getHours())}{first ? `, ${first}` : ''}</div>
-        <div className="hh-bubble" key={i} aria-live="polite">{QUIPS[i]}</div>
+        <div className="hh-bubble" key={i} aria-live="polite">{lines[i % lines.length]}</div>
       </div>
     </section>
   );
