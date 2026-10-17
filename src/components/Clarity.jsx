@@ -209,9 +209,9 @@ function Flow({ onClose, onDone, initial }) {
         {screen === 'intro' && (
           <div key="intro" className="wiw-body fade tn-intro">
             <div className="wiw-count">Clarity</div>
-            <h2 className="wiw-q">Take a moment.</h2>
+            <h2 className="wiw-q">What do you want in life?</h2>
             <p className="wiw-intro">
-              Decide what you want, what comes first, and one thing to do about it. No right answers — only you will see it.
+              Take a minute to be honest with yourself. Pick it, prioritise it, and leave with one next step.
             </p>
             <button className="wiw-primary" onClick={() => setStep(1)}>Begin</button>
           </div>
