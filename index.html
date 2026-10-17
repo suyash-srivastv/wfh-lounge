@@ -1,21 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
-  <title>The Stillroom — a community for working professionals</title>
+  <title>The Stillroom — Social network for working professionals &amp; remote workers</title>
+  <meta name="description" content="The Stillroom is a social network for working professionals and work-from-home people. Meet people in your city, join small real-life events, chat, and make friends outside work. No networking, no BS." />
+  <link rel="canonical" href="https://thestillroom.site/" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <meta name="theme-color" content="#0C0C0D" />
-  <meta name="description" content="The Stillroom is a community for working professionals: meet people in your city, join events, share ideas, and figure out what you actually want." />
-  <meta property="og:title" content="The Stillroom" />
-  <meta property="og:description" content="A community for working professionals." />
+
+  <!-- Link previews (WhatsApp, LinkedIn, X, Slack) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="The Stillroom" />
+  <meta property="og:url" content="https://thestillroom.site/" />
+  <meta property="og:title" content="The Stillroom — Social network for working professionals" />
+  <meta property="og:description" content="The room where work doesn't follow you. Find your crew nearby — people, small events and chat for working professionals and WFH folks." />
+  <meta property="og:image" content="https://thestillroom.site/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="The Stillroom — Social network for working professionals" />
+  <meta name="twitter:description" content="The room where work doesn't follow you. Find your crew nearby." />
+  <meta name="twitter:image" content="https://thestillroom.site/og-image.png" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "The Stillroom",
+    "url": "https://thestillroom.site/",
+    "applicationCategory": "SocialNetworkingApplication",
+    "operatingSystem": "Web",
+    "description": "A social network for working professionals and work-from-home people: meet people in your city, join small real-life events, chat and make friends outside work.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" }
+  }
+  </script>
+
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <!-- What search engines (and anyone without JavaScript) read; the app replaces it on load. -->
+    <main style="max-width:640px;margin:0 auto;padding:48px 20px;font-family:system-ui,sans-serif;color:#EFE8DA;background:#0C0C0D">
+      <h1>The Stillroom — a social network for working professionals</h1>
+      <p>The room where work doesn't follow you. Find your crew nearby. No networking required.</p>
+      <p>LinkedIn is for your career. The Stillroom is for the rest of your life: a community for working professionals and remote, work-from-home people who want to meet others in their city and make real friends outside work.</p>
+      <h2>What you can do</h2>
+      <ul>
+        <li>Find working professionals in your city (People nearby) and become friends</li>
+        <li>Join or host small real-life events: coffee, walks, co-working, board games</li>
+        <li>Chat with your city, or one-on-one with friends</li>
+        <li>Ask questions in the forums: switching off after work, layoffs, career changes</li>
+        <li>Clarity: a one-minute exercise to work out what you want in life</li>
+      </ul>
+      <p><a href="/" style="color:#E3B954">Join The Stillroom — it's free</a></p>
+    </main>
+  </div>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
