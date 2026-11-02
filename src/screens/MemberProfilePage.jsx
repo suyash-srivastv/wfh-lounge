@@ -3,6 +3,7 @@ import { timeAgo } from '../constants';
 import Avatar from '../components/Avatar';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import { ChipRow } from '../badges';
+import { PresenceAvatar, LastSeen } from '../presence';
 
 const STATUS_DOT = {
   'Open to work':            '#1D9E75',
@@ -123,11 +124,11 @@ function MemberProfilePage({ member, threads, currentUserId, userConnections, se
       {/* Profile card */}
       <div className="profile-page-header">
         <div style={{display:'flex',alignItems:'flex-start',gap:16}}>
-          <Avatar user={member} size={68} style={{flexShrink:0,marginTop:2}}/>
+          <PresenceAvatar user={member} size={68} style={{flexShrink:0,marginTop:2}}/>
           <div style={{flex:1,minWidth:0}}>
             <div className="profile-page-name">{member.name}</div>
             {member.username && (
-              <div style={{fontSize:13,color:'var(--accent)',marginTop:1,marginBottom:6}}>@{member.username}</div>
+              <div style={{fontSize:13,color:'var(--accent)',marginTop:1,marginBottom:6}}>@{member.username} <LastSeen member={member} style={{marginLeft:6}}/></div>
             )}
             <div style={{fontSize:12,color:'var(--text-2)',display:'flex',flexWrap:'wrap',alignItems:'center',gap:'3px 8px',marginBottom:10}}>
               {member.role && <span>{member.role}</span>}

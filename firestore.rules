@@ -121,6 +121,12 @@ service cloud.firestore {
       return keptIfHad('joinedAt')
         && (had('joinedAt') || !('joinedAt' in request.resource.data) || request.resource.data.joinedAt == request.time);
     }
+    // lastActive (for "Online now") can only be set to the real server time.
+    function lastActiveOk() {
+      return !('lastActive' in request.resource.data)
+        || (had('lastActive') && request.resource.data.lastActive == resource.data.lastActive)
+        || request.resource.data.lastActive == request.time;
+    }
     function seedCityOk() {
       return keptIfHad('seedCity')
         && (had('seedCity') || !('seedCity' in request.resource.data)
@@ -135,7 +141,7 @@ service cloud.firestore {
 
       allow update: if signedIn() && (
         // Your own profile: any valid change (tags: admin only, see badgesOk).
-        (uid == me() && profileFieldsOk() && usernameOk() && badgesOk() && joinedOk() && seedCityOk())
+        (uid == me() && profileFieldsOk() && usernameOk() && badgesOk() && joinedOk() && seedCityOk() && lastActiveOk())
         // Someone else's profile: only their own entry in the friend maps.
         || (verified()
           && changed().hasOnly(['receivedRequests', 'sentRequests', 'connections'])

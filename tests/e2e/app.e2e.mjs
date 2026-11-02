@@ -102,6 +102,8 @@ try {
   // Members: paged list, open profile, DM
   await ev(`tab('Members')`);
   check('members load (paged, by city)', await until(`$$('.grid2 .card').length >= 2`));
+  check('online members show a green dot and "Online now"', !!(await ev(`(() => { const c = $$('.grid2 .card').find(c => c.innerText.includes('Bob')); return !!c?.querySelector('.pa-dot') && c.innerText.includes('Online now'); })()`)));
+  check('others show when they were last active', !!(await ev(`(() => { const c = $$('.grid2 .card').find(c => c.innerText.includes('Suyash')); return !c?.querySelector('.pa-dot') && c.innerText.includes('Active 3h ago'); })()`)));
   check('Google auto-filled pictures show initials instead', !!(await ev(`!document.querySelector('img[src*="googleusercontent"]') && $$('.grid2 .card').some(c => c.innerText.includes('Bob'))`)));
   await ev(`$$('.grid2 .card').find(c => c.innerText.includes('Bob')).click()`);
   check('open a member profile', await until(`!!btn('Message')`));

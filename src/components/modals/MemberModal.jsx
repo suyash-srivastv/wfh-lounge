@@ -1,5 +1,6 @@
 import Avatar from '../Avatar';
 import { ChipRow } from '../../badges';
+import { PresenceAvatar, LastSeen } from '../../presence';
 
 function MemberModal({ member, onClose, currentUserId, userConnections, sentRequests, receivedRequests, onSendRequest, onCancelRequest, onAcceptRequest, onDeclineRequest, onMessage }) {
   if (!member) return null;
@@ -64,10 +65,11 @@ function MemberModal({ member, onClose, currentUserId, userConnections, sentRequ
       <div className="modal member-modal" onClick={e => e.stopPropagation()}>
         <button className="member-modal-close" onClick={onClose}><i className="ti ti-x"/></button>
         <div className="member-modal-header">
-          <Avatar user={member} size={56}/>
+          <PresenceAvatar user={member} size={56}/>
           <div>
             <div className="member-modal-name">{member.name}</div>
             {member.username && <div className="member-modal-handle">@{member.username}</div>}
+            <LastSeen member={member}/>
             <div className="member-modal-meta">
               {member.role && <span>{member.role}</span>}
               {member.yearsExp != null && member.yearsExp !== '' && <><span style={{color:'var(--scrollbar)'}}>·</span><span>{member.yearsExp} yrs</span></>}

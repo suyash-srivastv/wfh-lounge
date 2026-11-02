@@ -21,7 +21,7 @@ function toMember(d) {
     initials: data.initials || '??', ini: data.initials || '??',
     skills: data.skills || [], bio: data.bio || '',
     yearsExp: data.yearsExp ?? null, status: data.status || '',
-    vibe: data.vibe || '', photoURL: data.photoURL || null, badges: data.badges || [], seedCity: data.seedCity || '',
+    vibe: data.vibe || '', photoURL: data.photoURL || null, badges: data.badges || [], seedCity: data.seedCity || '', lastActive: data.lastActive?.toDate?.() || null,
     bg, tc, online: false,
     conn: Object.keys(data.connections || {}).length, events: 0,
   };

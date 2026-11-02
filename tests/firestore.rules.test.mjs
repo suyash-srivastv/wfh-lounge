@@ -418,3 +418,17 @@ test('early seed: your first city is set once, matching your city', async () => 
   await assertSucceeds(setDoc(doc(verified('alice'), 'users/alice'), { city: 'Goa' }, { merge: true }));
   await assertFails(setDoc(doc(verified('alice'), 'users/alice'), { city: 'Goa', seedCity: 'Goa' }, { merge: true }));
 });
+
+// ---- Online now: lastActive is real server time only ----
+test('online: you can stamp yourself as active (server time)', async () => {
+  await assertSucceeds(setDoc(doc(verified('alice'), 'users/alice'), { lastActive: serverTimestamp() }, { merge: true }));
+});
+
+test("online: you can't fake being online (or last seen)", async () => {
+  await assertFails(setDoc(doc(verified('alice'), 'users/alice'), { lastActive: Timestamp.fromMillis(Date.now() + 86400000) }, { merge: true }));
+  await assertFails(setDoc(doc(verified('alice'), 'users/alice'), { lastActive: Timestamp.fromMillis(0) }, { merge: true }));
+});
+
+test("online: you can't mark someone else as online", async () => {
+  await assertFails(setDoc(doc(verified('bob'), 'users/alice'), { lastActive: serverTimestamp() }, { merge: true }));
+});

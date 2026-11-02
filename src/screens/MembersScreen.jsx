@@ -2,6 +2,7 @@ import EmptyState from '../components/EmptyState';
 import Avatar from '../components/Avatar';
 import LoadMore from '../components/LoadMore';
 import { ChipRow } from '../badges';
+import { PresenceAvatar, LastSeen } from '../presence';
 
 const STATUS_COLORS = {
   'Open to work':            { bg: '#EAF3DE', tc: '#27500A' },
@@ -62,10 +63,11 @@ function FriendsView({ friends, loading, receivedRequests, onAcceptRequest, onDe
             {friends.map(m => (
               <div key={m.id} className="card" style={{cursor:'pointer'}} onClick={() => onSelect(m)}>
                 <div style={{display:'flex',alignItems:'center',gap:11,marginBottom:10}}>
-                  <Avatar user={m} size={44}/>
+                  <PresenceAvatar user={m} size={44}/>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontWeight:600,fontSize:14}}>{m.name}</div>
                     <div style={{fontSize:12,color:'var(--text-2)'}}>{m.role}{m.yearsExp ? ` · ${m.yearsExp}y exp` : ''}</div>
+                <LastSeen member={m}/>
                   </div>
                 </div>
                 {m.status && <div style={{marginBottom:8}}><span className="vibe-chip">{m.status}</span></div>}
@@ -123,10 +125,11 @@ function MembersScreen({ members, hasMore, onLoadMore, loading, city, userId, us
         {members.map(m => (
           <div key={m.id} className="card" style={{cursor:'pointer'}} onClick={() => onSelect(m)}>
             <div style={{display:'flex',alignItems:'center',gap:11,marginBottom:10}}>
-              <Avatar user={m} size={44}/>
+              <PresenceAvatar user={m} size={44}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:600,fontSize:14}}>{m.name}</div>
                 <div style={{fontSize:12,color:'var(--text-2)'}}>{m.role}{m.yearsExp ? ` · ${m.yearsExp}y exp` : ''}</div>
+                <LastSeen member={m}/>
               </div>
             </div>
             <ChipRow member={m} style={{marginBottom:6}}/>

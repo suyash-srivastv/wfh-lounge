@@ -23,6 +23,7 @@ import PostIdeaModal     from './components/modals/PostIdeaModal';
 import InviteModal       from './components/modals/InviteModal';
 import EventDetailModal  from './components/modals/EventDetailModal';
 import CompleteProfileModal from './components/modals/CompleteProfileModal';
+import { HEARTBEAT_MS } from './presence';
 import MemberProfilePage from './screens/MemberProfilePage';
 import EventsScreen      from './screens/EventsScreen';
 import MembersScreen     from './screens/MembersScreen';
@@ -75,6 +76,17 @@ function App(){
   const threads = lists.threads.items;
   const members = lists.members.items;
   const dm = useDM(activeUser);
+
+  // "Online now": stamp lastActive while the app is open and visible.
+  useEffect(() => {
+    if (!user?.username || needsVerify) return;
+    const beat = () => { if (document.visibilityState === 'visible' && auth.currentUser)
+      setDoc(doc(db, 'users', user.uid), { lastActive: serverTimestamp() }, { merge: true }).catch(() => {}); };
+    beat();
+    const t = setInterval(beat, HEARTBEAT_MS);
+    document.addEventListener('visibilitychange', beat);
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', beat); };
+  }, [user?.uid, !!user?.username, !!needsVerify]);
 
   // Keep connections + requests in sync with Firestore in real-time
   useEffect(() => {
