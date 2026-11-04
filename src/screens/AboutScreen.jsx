@@ -60,6 +60,17 @@ function AboutScreen({ onBack }) {
         <h1 className="about-title">{about.title}</h1>
       </div>
 
+      <a className="about-discord" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
+        <i className="ti ti-brand-discord about-discord-icon"/>
+        <span className="about-discord-text">
+          <span className="about-discord-title">Join us on Discord</span>
+          <span className="about-discord-sub">Hang out, share ideas, and help shape The Stillroom.</span>
+        </span>
+        <span className="about-discord-cta">Join<i className="ti ti-arrow-right"/></span>
+      </a>
+
+      <p className="about-support">Need help? Email <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></p>
+
       <div className="about-body"><AboutBody body={about.body}/></div>
 
       <h2 className="about-faq-title">Questions</h2>
@@ -74,16 +85,6 @@ function AboutScreen({ onBack }) {
         ))}
       </div>
 
-      <a className="about-discord" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
-        <i className="ti ti-brand-discord about-discord-icon"/>
-        <span className="about-discord-text">
-          <span className="about-discord-title">Join us on Discord</span>
-          <span className="about-discord-sub">Hang out, share ideas, and help shape The Stillroom.</span>
-        </span>
-        <span className="about-discord-cta">Join<i className="ti ti-arrow-right"/></span>
-      </a>
-
-      <p className="about-support">Need help? Email <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></p>
     </div>
   );
 }

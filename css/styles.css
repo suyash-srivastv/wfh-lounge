@@ -718,14 +718,14 @@ input,textarea,select{font-family:inherit;color:var(--text-1)}
 .about-list{margin:0 0 18px;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .about-faq-title{font-family:'DM Serif Display',serif;font-weight:400;font-size:24px;margin:40px 0 12px;color:var(--text-1)}
 .about-faq{border-top:1px solid var(--border)}
-.about-discord{display:flex;align-items:center;gap:14px;margin-top:40px;padding:18px 20px;border-radius:16px;background:linear-gradient(135deg,#5865F2,#7983F5);color:#fff;text-decoration:none;box-shadow:0 8px 24px rgba(88,101,242,.25);transition:transform .15s,box-shadow .15s}
+.about-discord{display:flex;align-items:center;gap:14px;margin:4px 0 0;padding:18px 20px;border-radius:16px;background:linear-gradient(135deg,#5865F2,#7983F5);color:#fff;text-decoration:none;box-shadow:0 8px 24px rgba(88,101,242,.25);transition:transform .15s,box-shadow .15s}
 .about-discord:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(88,101,242,.35)}
 .about-discord-icon{font-size:34px;flex-shrink:0}
 .about-discord-text{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
 .about-discord-title{font-size:17px;font-weight:600}
 .about-discord-sub{font-size:13px;opacity:.85}
 .about-discord-cta{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:#fff;color:#5865F2;font-size:14px;font-weight:600;flex-shrink:0}
-.about-support{margin:18px 0 0;font-size:13px;color:var(--text-2);text-align:center}
+.about-support{margin:12px 0 32px;font-size:13px;color:var(--text-2);text-align:center}
 .about-support a{color:var(--text-1);text-decoration:underline;text-underline-offset:2px}
 @media (max-width:480px){.about-discord-cta{display:none}}
 .faq-item{border-bottom:1px solid var(--border)}
