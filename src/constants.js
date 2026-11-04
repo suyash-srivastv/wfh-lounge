@@ -67,3 +67,6 @@ export function realPhoto(url){
 export function initialsOf(name=""){
   return name.trim().split(/\s+/).filter(Boolean).map(w=>w[0]).join("").slice(0,2).toUpperCase()||"?";
 }
+
+export const DISCORD_URL = 'https://discord.gg/GJfCMXymBr';
+export const SUPPORT_EMAIL = 'support@thestillroom.site';

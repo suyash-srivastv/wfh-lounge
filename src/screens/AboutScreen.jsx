@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { collection, doc, getDoc, getDocs, orderBy, query } from 'firebase/firestore';
 import { db } from '../firebase';
 import { DEFAULT_ABOUT, DEFAULT_FAQS } from '../aboutContent';
+import { DISCORD_URL, SUPPORT_EMAIL } from '../constants';
 
 // Loads the admin-edited About text and FAQ, falling back to the defaults.
 export function useAboutContent() {
@@ -72,6 +73,17 @@ function AboutScreen({ onBack }) {
           </div>
         ))}
       </div>
+
+      <a className="about-discord" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
+        <i className="ti ti-brand-discord about-discord-icon"/>
+        <span className="about-discord-text">
+          <span className="about-discord-title">Join us on Discord</span>
+          <span className="about-discord-sub">Hang out, share ideas, and help shape The Stillroom.</span>
+        </span>
+        <span className="about-discord-cta">Join<i className="ti ti-arrow-right"/></span>
+      </a>
+
+      <p className="about-support">Need help? Email <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></p>
     </div>
   );
 }
