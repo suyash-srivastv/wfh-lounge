@@ -725,7 +725,7 @@ input,textarea,select{font-family:inherit;color:var(--text-1)}
 .about-discord-title{font-size:17px;font-weight:600}
 .about-discord-sub{font-size:13px;opacity:.85}
 .about-discord-cta{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:#fff;color:#5865F2;font-size:14px;font-weight:600;flex-shrink:0}
-.about-support{margin:12px 0 32px;font-size:13px;color:var(--text-2);text-align:center}
+.about-support{margin:12px 0 28px;font-size:13px;color:var(--text-2);text-align:center}
 .about-support a{color:var(--text-1);text-decoration:underline;text-underline-offset:2px}
 @media (max-width:480px){.about-discord-cta{display:none}}
 .faq-item{border-bottom:1px solid var(--border)}

@@ -55,11 +55,6 @@ function AboutScreen({ onBack }) {
     <div className="about">
       {onBack && <button className="about-back" onClick={onBack}><i className="ti ti-arrow-left"/>Back</button>}
 
-      <div className="about-hero">
-        <div className="about-kicker">About The Stillroom</div>
-        <h1 className="about-title">{about.title}</h1>
-      </div>
-
       <a className="about-discord" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
         <i className="ti ti-brand-discord about-discord-icon"/>
         <span className="about-discord-text">
@@ -70,6 +65,12 @@ function AboutScreen({ onBack }) {
       </a>
 
       <p className="about-support">Need help? Email <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></p>
+
+      <div className="about-hero">
+        <div className="about-kicker">About The Stillroom</div>
+        <h1 className="about-title">{about.title}</h1>
+      </div>
+
 
       <div className="about-body"><AboutBody body={about.body}/></div>
 
