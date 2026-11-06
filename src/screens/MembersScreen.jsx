@@ -158,7 +158,7 @@ function MembersScreen({ members, hasMore, onLoadMore, loading, city, userId, us
           : <EmptyState style={{gridColumn:'1/-1'}} title={`Nobody from ${city} yet`} line="Invite a friend who needs to get out more."
               action={<button className="btn-primary" onClick={onInvite}><i className="ti ti-user-plus"/>Invite someone</button>}/>)}
       </div>
-      <LoadMore hasMore={hasMore} onLoadMore={onLoadMore} loading={loading}/>
+      <LoadMore hasMore={hasMore} onLoadMore={onLoadMore} loading={loading} auto/>
     </div>
   );
 }
