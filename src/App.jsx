@@ -59,7 +59,7 @@ function App(){
   const [newPostOpen,   setNewPostOpen]   = useState(false);
   const [newPost,       setNewPost]       = useState({ title: '', body: '' });
   const [hostEventOpen, setHostEventOpen] = useState(false);
-  const [newEvent,      setNewEvent]      = useState({ title: '', type: 'IRL', location: '', date: '', time: '', tags: '' });
+  const [newEvent,      setNewEvent]      = useState({ title: '', type: 'IRL', location: '', date: '', time: '', tags: '', public: false });
   const [postIdeaOpen,  setPostIdeaOpen]  = useState(false);
   const [newIdea,       setNewIdea]       = useState({ title: '', desc: '', stage: 'Idea', tags: '', looking: [] });
   const [inviteOpen,      setInviteOpen]      = useState(false);
@@ -71,7 +71,11 @@ function App(){
   // Nothing loads until the account is verified (the rules would refuse it).
   const activeUser = user && !needsVerify ? user : null;
   const lists   = useFirestoreListeners(activeUser, city);
-  const events  = lists.events.items;
+  const loadedEvents = lists.events.items;
+  // An event opened from a shared /e/{id} link may not be in the loaded list
+  // (another city, or further down), so it's watched on its own.
+  const [linkedEvent, setLinkedEvent] = useState(null);
+  const events  = linkedEvent && !loadedEvents.some(e => e.id === linkedEvent.id) ? [...loadedEvents, linkedEvent] : loadedEvents;
   const ideas   = lists.ideas.items;
   const threads = lists.threads.items;
   const members = lists.members.items;
@@ -207,6 +211,28 @@ function App(){
     localStorage.setItem('wfh-city', c);
   }
 
+  // Shared event links land on /?event={id}. Remember the id through sign-up,
+  // then open that event once the user is fully in.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('event');
+    if (!id) return;
+    try { localStorage.setItem('stillroom-open-event', id); } catch {}
+    const u = new URL(window.location.href); u.searchParams.delete('event');
+    window.history.replaceState(null, '', u);
+  }, []);
+  useEffect(() => {
+    if (!activeUser || !hasProfile) return;
+    let id = null;
+    try { id = localStorage.getItem('stillroom-open-event'); localStorage.removeItem('stillroom-open-event'); } catch {}
+    if (id) { setTab('events'); setOpenEventId(id); }
+  }, [activeUser?.uid, hasProfile]);
+  useEffect(() => {
+    if (!activeUser || !openEventId || loadedEvents.some(e => e.id === openEventId)) return;
+    return onSnapshot(doc(db, 'events', openEventId),
+      snap => setLinkedEvent(snap.exists() ? { id: snap.id, ...snap.data() } : null),
+      () => setLinkedEvent(null));
+  }, [activeUser?.uid, openEventId, loadedEvents.some(e => e.id === openEventId)]);
+
   // --- Action functions ---
   async function rsvp(id) {
     const ev    = events.find(e => e.id === id);
@@ -300,9 +326,9 @@ function App(){
   async function submitEvent() {
     if (!newEvent.title.trim() || !newEvent.location.trim()) return;
     const tags = newEvent.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10);
-    await addWithRate(user.uid, ['events'], { title:newEvent.title.trim(), type:newEvent.type, city:city==='All cities'?'All':city, location:newEvent.location.trim(), desc:(newEvent.desc||'').trim(), date:newEvent.date||'TBD', time:newEvent.time||'TBD', tags, host:user.name, hostId:user.uid, attendeeCount:1, rsvps:{[user.uid]:true}, createdAt:serverTimestamp() });
+    await addWithRate(user.uid, ['events'], { title:newEvent.title.trim(), type:newEvent.type, city:city==='All cities'?'All':city, location:newEvent.location.trim(), desc:(newEvent.desc||'').trim(), date:newEvent.date||'TBD', time:newEvent.time||'TBD', tags, public:!!newEvent.public, host:user.name, hostId:user.uid, attendeeCount:1, rsvps:{[user.uid]:true}, createdAt:serverTimestamp() });
     track('event_hosted', { city, type: newEvent.type });
-    setNewEvent({ title:'', type:'IRL', location:'', desc:'', date:'', time:'', tags:'' }); setHostEventOpen(false);
+    setNewEvent({ title:'', type:'IRL', location:'', desc:'', date:'', time:'', tags:'', public:false }); setHostEventOpen(false);
   }
   async function submitIdea() {
     if (!newIdea.title.trim()) return;

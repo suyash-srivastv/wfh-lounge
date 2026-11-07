@@ -192,6 +192,8 @@ service cloud.firestore {
         && str(request.resource.data.get('desc', ''), 1000)
         && str(request.resource.data.get('city', ''), 80)
         && shortList(request.resource.data.get('tags', []), 10)
+        // Public events get a page at /e/{id} that anyone can see (served by api/event.js).
+        && request.resource.data.get('public', false) is bool
         && request.resource.data.attendeeCount == 1
         && request.resource.data.rsvps.keys().hasOnly([me()])
         && request.resource.data.rsvps[me()] == true;

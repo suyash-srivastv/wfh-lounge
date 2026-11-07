@@ -71,6 +71,14 @@ test("forum/event: posting as someone else's name is blocked", async () => {
     { title: 'x', location: 'y', host: 'Bob', hostId: 'alice', city: 'All', tags: [], attendeeCount: 1, rsvps: { alice: true } }));
 });
 
+test('event: public must be true or false', async () => {
+  const db = verified('alice');
+  const ev = { title: 'x', location: 'y', host: 'Alice', hostId: 'alice', city: 'All', tags: [], attendeeCount: 1, rsvps: { alice: true } };
+  await assertSucceeds(withRate(db, 'alice', doc(collection(db, 'events')), { ...ev, public: true }));
+  await new Promise(r => setTimeout(r, 2100)); // slow mode
+  await assertFails(withRate(db, 'alice', doc(collection(db, 'events')), { ...ev, public: 'yes' }));
+});
+
 // ---- 2/3. Username spoofing and squatting ----
 
 test("username: setting your profile to someone else's handle is blocked", async () => {

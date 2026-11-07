@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Avatar from '../Avatar';
 import MsgDelete from '../MsgDelete';
 import { useProfiles } from '../../hooks/useFirestoreListeners';
 import { Highlight } from '../../badges';
 import { dateParts, niceTime, calendarLink, isLink, mapsLink } from '../../eventFormat';
+import { track } from '../../analytics';
 
 const NOT_A_PERSON = new Set(['seed', 'stillroom-team']);
 
@@ -12,6 +13,7 @@ const NOT_A_PERSON = new Set(['seed', 'stillroom-team']);
 function EventDetailModal({ ev, userId, isAdmin, onClose, rsvp, onViewProfile, deleteEvent }) {
   const goingIds = Object.keys(ev?.rsvps || {});
   const people = useProfiles(ev ? { uid: userId } : null, goingIds);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const onKey = e => { if (e.key === 'Escape') onClose(); };
@@ -26,6 +28,12 @@ function EventDetailModal({ ev, userId, isAdmin, onClose, rsvp, onViewProfile, d
   const online = ev.type !== 'IRL';
   const hostIsPerson = ev.hostId && !NOT_A_PERSON.has(ev.hostId);
   const open = uid => { onClose(); onViewProfile(uid); };
+  const shareUrl = `${window.location.origin}/e/${ev.id}`;
+  const copyLink = () => {
+    navigator.clipboard.writeText(shareUrl);
+    track('share', { method: 'link', content_type: 'event' });
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="overlay" onClick={onClose}>
@@ -37,7 +45,7 @@ function EventDetailModal({ ev, userId, isAdmin, onClose, rsvp, onViewProfile, d
             {d ? <><span className="ev-mon">{d.mon}</span><span className="ev-day">{d.day}</span><span className="ev-wd">{d.wd}</span></> : <span className="ev-mon">TBD</span>}
           </div>
           <div>
-            <div className="ed-kind">{online ? '🌐 Online' : '📍 In person'}{ev.city && ev.city !== 'All' ? ` · ${ev.city}` : ''}</div>
+            <div className="ed-kind">{online ? '🌐 Online' : '📍 In person'}{ev.city && ev.city !== 'All' ? ` · ${ev.city}` : ''}{ev.public ? ' · Public' : ''}</div>
             <h2 className="ed-title">{ev.title}</h2>
           </div>
         </div>
@@ -54,6 +62,11 @@ function EventDetailModal({ ev, userId, isAdmin, onClose, rsvp, onViewProfile, d
             ? <a className="connect-btn" href={ev.location} target="_blank" rel="noopener noreferrer"><i className="ti ti-external-link"/> Join online</a>
             : !online && <a className="connect-btn" href={mapsLink(ev)} target="_blank" rel="noopener noreferrer"><i className="ti ti-map-2"/> Open in Google Maps</a>}
           {cal && <a className="connect-btn" href={cal} target="_blank" rel="noopener noreferrer"><i className="ti ti-calendar-plus"/> Add to Google Calendar</a>}
+          {ev.public && <>
+            <button className="connect-btn" onClick={copyLink}><i className={'ti ' + (copied ? 'ti-check' : 'ti-link')}/> {copied ? 'Link copied' : 'Copy link'}</button>
+            <a className="connect-btn" href={`https://wa.me/?text=${encodeURIComponent(`${ev.title} — join me on The Stillroom: ${shareUrl}`)}`}
+              onClick={() => track('share', { method: 'whatsapp', content_type: 'event' })} target="_blank" rel="noopener noreferrer"><i className="ti ti-brand-whatsapp"/> Share on WhatsApp</a>
+          </>}
         </div>
 
         <div className="ed-section">

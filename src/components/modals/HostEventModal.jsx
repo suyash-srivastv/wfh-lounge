@@ -20,6 +20,10 @@ function HostEventModal({ open, onClose, newEvent, setNewEvent, submitEvent }){
           placeholder="About this event (optional) — what to expect, who it's for, what to bring…"
           value={newEvent.desc||''} onChange={e=>setNewEvent(p=>({...p,desc:e.target.value}))}/>
         <input className="modal-input" placeholder="Tags — cowork, casual, startup… (comma separated)" value={newEvent.tags} onChange={e=>setNewEvent(p=>({...p,tags:e.target.value}))}/>
+        <label className="modal-public">
+          <input type="checkbox" checked={!!newEvent.public} onChange={e=>setNewEvent(p=>({...p,public:e.target.checked}))}/>
+          <span><b>Make this event public</b><br/>Anyone with the link — and Google — can see the title, details, date, place, your first name and how many are going. Good for inviting friends who aren't on The Stillroom yet.</span>
+        </label>
         <div className="modal-actions">
           <button className="btn-cancel" onClick={onClose}>Cancel</button>
           <button className="btn-primary" onClick={submitEvent} disabled={!newEvent.title.trim()||!newEvent.location.trim()}>Create event</button>

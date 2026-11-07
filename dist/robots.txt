@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://thestillroom.site/sitemap.xml
+Sitemap: https://thestillroom.site/sitemap-events.xml

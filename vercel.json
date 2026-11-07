@@ -1,0 +1,7 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/e/:id", "destination": "/api/event?id=:id" },
+    { "source": "/sitemap-events.xml", "destination": "/api/sitemap-events" }
+  ]
+}
