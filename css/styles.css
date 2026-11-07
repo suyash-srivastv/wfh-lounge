@@ -762,7 +762,9 @@ input,textarea,select{font-family:inherit;color:var(--text-1)}
 @media(max-width:768px){.admin-stats{grid-template-columns:repeat(2,1fr)}}
 /* First-visit intro: dark, one screen, the words are the point */
 .intro{--i-bg:#0F1013;--i-text:#F1EEE6;--i-soft:#A9A59B;--i-faint:#6E6B64;--i-accent:#D9B45A;
-  color-scheme:dark;height:100dvh;overflow:hidden;background:radial-gradient(1200px 700px at 75% 45%,#1A1A24 0%,var(--i-bg) 60%);color:var(--i-text);
+  color-scheme:dark;height:100dvh;overflow-y:auto;background:var(--i-bg);color:var(--i-text)}
+/* first screen: fits the viewport; the explainer scrolls in below it */
+.intro-hero{height:100dvh;background:radial-gradient(1200px 700px at 75% 45%,#1A1A24 0%,var(--i-bg) 60%);
   display:flex;flex-direction:column;box-sizing:border-box;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
 .intro-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px clamp(20px,4vw,48px);flex-shrink:0}
 .intro-brand{display:flex;align-items:center;gap:10px;font-family:'DM Serif Display',serif;font-size:19px;color:var(--i-text)}
@@ -1168,3 +1170,41 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:2000;o
 .modal-public{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;color:var(--text-dim);margin:4px 0 14px;cursor:pointer}
 .modal-public input{margin-top:3px;accent-color:var(--accent);flex-shrink:0}
 .modal-public b{color:var(--text-mid);font-weight:600}
+
+/* Intro: the explainer below the first screen */
+.intro-more{max-width:760px;margin:0 auto;padding:clamp(40px,8vh,88px) clamp(20px,4vw,48px) 0;box-sizing:border-box;font-size:17px;line-height:1.7;color:var(--i-soft)}
+.intro-more section{margin-bottom:clamp(48px,8vh,80px)}
+.intro-more h2{font-family:'DM Serif Display',serif;font-weight:400;font-size:clamp(26px,3.6vw,36px);line-height:1.15;letter-spacing:-0.015em;color:var(--i-text);margin:0 0 18px}
+.intro-more h3{font-size:17px;font-weight:600;color:var(--i-text);margin:0 0 2px}
+.intro-more p{margin:0 0 14px}
+.intro-more strong{color:var(--i-text);font-weight:600}
+.intro-more a{color:var(--i-accent)}
+.intro-steps{list-style:none;padding:0;margin:0 0 22px;display:grid;grid-template-columns:1fr 1fr;gap:22px 28px}
+.intro-steps li{display:flex;gap:14px;align-items:flex-start}
+.intro-steps p{margin:0;font-size:15px}
+.intro-step-n{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(217,180,90,.14);color:var(--i-accent);font-weight:600;font-size:14px}
+.intro-vs{border:1px solid rgba(241,238,230,.12);border-radius:14px;overflow:hidden}
+.intro-vs-row{display:grid;grid-template-columns:1fr 1fr}
+.intro-vs-row span{padding:12px 18px;font-size:15px}
+.intro-vs-row+.intro-vs-row{border-top:1px solid rgba(241,238,230,.08)}
+.intro-vs-row span+span{border-left:1px solid rgba(241,238,230,.08);color:var(--i-text)}
+.intro-vs-head span{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--i-faint)}
+.intro-vs-head span+span{color:var(--i-accent)}
+.intro-faq details{border-bottom:1px solid rgba(241,238,230,.1);padding:14px 0}
+.intro-faq summary{cursor:pointer;color:var(--i-text);font-weight:500}
+.intro-faq details p{margin:8px 0 0;font-size:15px}
+.intro-end{text-align:center}
+.intro-end p{font-family:'DM Serif Display',serif;font-size:clamp(22px,3vw,28px);color:var(--i-text);margin-bottom:22px}
+.intro-foot{border-top:1px solid rgba(241,238,230,.1);padding:24px 0 calc(32px + env(safe-area-inset-bottom,0px));font-size:14px;color:var(--i-faint);text-align:center}
+.intro-foot nav{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 20px;margin-bottom:10px}
+.intro-foot a{color:var(--i-soft);text-decoration:none}
+.intro-foot a:hover{color:var(--i-text)}
+@media(max-width:600px){
+  .intro-more{font-size:16px}
+  .intro-steps{grid-template-columns:1fr}
+  .intro-vs-row span{padding:10px 12px;font-size:14px}
+}
+.intro-scroll{align-self:center;margin:-8px 0 calc(10px + env(safe-area-inset-bottom,0px));color:var(--i-faint);font-size:22px;line-height:1;text-decoration:none;animation:introNudge 2.4s ease-in-out infinite}
+.intro-scroll:hover{color:var(--i-text)}
+@keyframes introNudge{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+@media(prefers-reduced-motion:reduce){.intro-scroll{animation:none}}
