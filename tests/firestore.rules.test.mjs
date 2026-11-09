@@ -37,8 +37,9 @@ beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async ctx => {
     const db = ctx.firestore();
-    await setDoc(doc(db, 'users/alice'), { name: 'Alice', username: 'alice', connections: { bob: true } });
-    await setDoc(doc(db, 'users/bob'),   { name: 'Bob',   username: 'bob',   connections: { alice: true } });
+    // Alice has Premium (for hosting tests); Bob's ran out; Carol never had it.
+    await setDoc(doc(db, 'users/alice'), { name: 'Alice', username: 'alice', connections: { bob: true }, premiumUntil: Timestamp.fromMillis(Date.now() + 86400e3) });
+    await setDoc(doc(db, 'users/bob'),   { name: 'Bob',   username: 'bob',   connections: { alice: true }, premiumUntil: Timestamp.fromMillis(Date.now() - 86400e3) });
     await setDoc(doc(db, 'users/carol'), { name: 'Carol', username: 'carol' });
     await setDoc(doc(db, 'usernames/alice'), { uid: 'alice' });
     await setDoc(doc(db, 'usernames/bob'),   { uid: 'bob' });
@@ -77,6 +78,38 @@ test('event: public must be true or false', async () => {
   await assertSucceeds(withRate(db, 'alice', doc(collection(db, 'events')), { ...ev, public: true }));
   await new Promise(r => setTimeout(r, 2100)); // slow mode
   await assertFails(withRate(db, 'alice', doc(collection(db, 'events')), { ...ev, public: 'yes' }));
+});
+
+// ---- Premium ----
+
+const newEvent = (uid, name) => ({ title: 'x', location: 'y', host: name, hostId: uid, city: 'All', tags: [], attendeeCount: 1, rsvps: { [uid]: true } });
+
+test('premium: only Premium members (or the admin) can host', async () => {
+  const host = (db, uid, name) => withRate(db, uid, doc(collection(db, 'events')), newEvent(uid, name));
+  await assertSucceeds(host(verified('alice'), 'alice', 'Alice'));
+  await assertFails(host(verified('bob'), 'bob', 'Bob'));        // Premium expired
+  await assertFails(host(verified('carol'), 'carol', 'Carol'));  // never paid
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'users/suyash'), { name: 'Suyash', username: 'suyash' }));
+  await assertSucceeds(host(admin(), 'suyash', 'Suyash'));
+});
+
+test("premium: you can't give yourself Premium or extend it", async () => {
+  const later = Timestamp.fromMillis(Date.now() + 365 * 86400e3);
+  await assertFails(updateDoc(doc(verified('carol'), 'users/carol'), { premiumUntil: later }));
+  await assertFails(updateDoc(doc(verified('alice'), 'users/alice'), { premiumUntil: later }));
+  await assertFails(updateDoc(doc(verified('alice'), 'users/alice'), { premiumUntil: deleteField() }));
+  await assertSucceeds(updateDoc(doc(verified('alice'), 'users/alice'), { bio: 'still allowed' }));
+});
+
+test('profile views: you record your own visit; only a Premium owner can read them', async () => {
+  await assertSucceeds(setDoc(doc(verified('carol'), 'users/alice/views/carol'), { at: serverTimestamp() }));
+  await assertFails(setDoc(doc(verified('carol'), 'users/alice/views/bob'), { at: serverTimestamp() }));          // as someone else
+  await assertFails(setDoc(doc(verified('carol'), 'users/alice/views/carol'), { at: serverTimestamp(), x: 1 }));  // extra fields
+  await assertFails(setDoc(doc(verified('alice'), 'users/alice/views/alice'), { at: serverTimestamp() }));        // your own profile
+  await assertSucceeds(getDoc(doc(verified('alice'), 'users/alice/views/carol')));  // Premium owner
+  await assertFails(getDoc(doc(verified('carol'), 'users/alice/views/carol')));     // not the owner
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'users/bob/views/carol'), { at: Timestamp.now() }));
+  await assertFails(getDoc(doc(verified('bob'), 'users/bob/views/carol')));         // owner, but Premium expired
 });
 
 // ---- 2/3. Username spoofing and squatting ----

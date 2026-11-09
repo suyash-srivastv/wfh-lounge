@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { collection, doc, getCountFromServer, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 import { db, auth } from './firebase';
 
-// Three tags, shown next to a member's vibe:
+// Tags, shown next to a member's vibe (only the highest one shows):
 //   👑 Emperor (id 'dictator') — the admin only (set on their own profile; rules enforce it)
+//   ✨ Premium                 — paid; premiumUntil is set by the server only
 //   🐉 Celestial Dragon — earned: hosted 5+ events AND started 5+ forum posts
 //   🕶️ CP0              — earned: hosted 2+ events OR started 5+ forum posts
 // Earned tags are worked out from real events/posts (which can only be created
@@ -12,6 +13,7 @@ const NOT_A_PERSON = ['seed', 'stillroom-team'];
 
 export const BADGES = {
   dictator:  { label: 'Emperor',          icon: '👑', how: 'Rules the room.' },
+  premium:   { label: 'Premium',          icon: '✨', how: 'Supports The Stillroom and hosts events.' },
   celestial: { label: 'Celestial Dragon', icon: '🐉', how: 'Hosted 5 events and started 5 forum posts.' },
   cp0:       { label: 'CP0',              icon: '🕶️', how: 'Hosted 2 events or started 5 forum posts.' },
 };
@@ -80,15 +82,18 @@ export function useActivity(uid) {
   return a;
 }
 
-// Whether a uid is the Dictator (one profile read per person, cached).
-const dictators = new Map();
-function isDictator(uid) {
-  if (!dictators.has(uid)) {
-    dictators.set(uid, getDoc(doc(db, 'users', uid))
-      .then(s => !!s.data()?.badges?.includes('dictator'))
-      .catch(() => { dictators.delete(uid); return false; }));
+const premiumNow = d => (d?.premiumUntil?.toMillis?.() || 0) > Date.now();
+
+// The tag stored on a profile — 'dictator', 'premium' or null
+// (one profile read per person, cached for the session).
+const stored = new Map();
+function storedTag(uid) {
+  if (!stored.has(uid)) {
+    stored.set(uid, getDoc(doc(db, 'users', uid))
+      .then(s => s.data()?.badges?.includes('dictator') ? 'dictator' : premiumNow(s.data()) ? 'premium' : null)
+      .catch(() => { stored.delete(uid); return null; }));
   }
-  return dictators.get(uid);
+  return stored.get(uid);
 }
 
 
@@ -99,7 +104,7 @@ export function useTagFor(uid) {
     setId(null);
     if (!uid || NOT_A_PERSON.includes(uid)) return;
     let alive = true;
-    isDictator(uid).then(d => d ? 'dictator' : activity(uid).then(earnedBadge)).then(v => { if (alive) setId(v); });
+    storedTag(uid).then(t => t || activity(uid).then(earnedBadge)).then(v => { if (alive) setId(v); });
     return () => { alive = false; };
   }, [uid]);
   return id;
@@ -115,6 +120,7 @@ export function Highlight({ uid, as: Tag = 'div', className = '', children, ...r
 export function useBadge(member) {
   const a = useActivity(member?.id || member?.uid);
   if (member?.badges?.includes('dictator')) return 'dictator';
+  if (premiumNow(member)) return 'premium';
   return a ? earnedBadge(a) : null;
 }
 
@@ -142,10 +148,10 @@ export function ChipRow({ member, style }) {
 export function MyBadge({ user }) {
   const a = useActivity(user?.uid);
   const seed = useEarlySeed(user);
-  const id = user?.badges?.includes('dictator') ? 'dictator' : a ? earnedBadge(a) : null;
-  if (!a && id !== 'dictator') return null;
+  const id = user?.badges?.includes('dictator') ? 'dictator' : premiumNow(user) ? 'premium' : a ? earnedBadge(a) : null;
+  if (!a && id !== 'dictator' && id !== 'premium') return null;
   let next = null;
-  if (id === null) {
+  if (id === null && a) {
     next = a.hosted >= 1 ? `Host ${2 - a.hosted} more event to become 🕶️ CP0`
       : `Host 2 events or start ${Math.max(5 - a.posts, 1)} more forum post${5 - a.posts === 1 ? '' : 's'} to become 🕶️ CP0`;
   } else if (id === 'cp0') {

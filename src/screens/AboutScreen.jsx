@@ -86,7 +86,7 @@ function AboutScreen({ onBack }) {
         ))}
       </div>
 
-      <p className="about-support"><a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Use</a></p>
+      <p className="about-support"><a href="/premium">Premium</a> · <a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Use</a> · <a href="/refunds">Refunds</a> · <a href="/contact">Contact</a></p>
     </div>
   );
 }

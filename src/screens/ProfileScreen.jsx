@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { timeAgo, STATUSES } from '../constants';
 import Avatar from '../components/Avatar';
 import { MyBadge } from '../badges';
+import ProfileViews from '../components/ProfileViews';
+import { isPremium, premiumEnds } from '../premium';
 
 const STATUS_DOT = {
   'Open to work':            '#1D9E75',
@@ -64,7 +66,7 @@ function StatusPicker({ current, onChange }) {
   );
 }
 
-function ProfileScreen({ user, stats, userPosts, openEdit, setShowProfile, deleteThread, onNewPost, onStatusChange }){
+function ProfileScreen({ user, stats, userPosts, openEdit, setShowProfile, deleteThread, onNewPost, onStatusChange, onUpgrade, onViewProfile }){
   return (
     <div className="profile-page">
       <button className="profile-back" onClick={() => setShowProfile(false)}>
@@ -121,6 +123,9 @@ function ProfileScreen({ user, stats, userPosts, openEdit, setShowProfile, delet
         <div className="profile-stat"><div className="profile-stat-val">{stats.going}</div><div className="profile-stat-label">RSVPs</div></div>
         <div className="profile-stat"><div className="profile-stat-val">{Object.keys(user.connections || {}).length}</div><div className="profile-stat-label">Connected</div></div>
       </div>
+
+      {isPremium(user) && <p className="premium-status">✨ Premium until {premiumEnds(user).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })} · <button onClick={onUpgrade}>Add 30 days</button></p>}
+      <ProfileViews user={user} onViewProfile={onViewProfile} onUpgrade={onUpgrade}/>
 
       {/* My posts */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>

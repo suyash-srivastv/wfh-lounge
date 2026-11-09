@@ -1,9 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import { timeAgo } from '../constants';
 import Avatar from '../components/Avatar';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import { ChipRow } from '../badges';
 import { PresenceAvatar, LastSeen } from '../presence';
+
+// "Who viewed you" (a Premium perk): note this visit once per session.
+const noted = new Set();
+function noteView(memberId, me) {
+  if (!me || memberId === me || noted.has(memberId)) return;
+  noted.add(memberId);
+  setDoc(doc(db, 'users', memberId, 'views', me), { at: serverTimestamp() }).catch(() => noted.delete(memberId));
+}
 
 const STATUS_DOT = {
   'Open to work':            '#1D9E75',
@@ -15,6 +25,7 @@ const STATUS_DOT = {
 
 function MemberProfilePage({ member, threads, currentUserId, userConnections, sentRequests, receivedRequests, blockedUsers, onSendRequest, onCancelRequest, onAcceptRequest, onDeclineRequest, onMessage, onUnfriend, onBlock, onUnblock, onBack }) {
   const [pending, setPending] = useState(null); // { action, onConfirm, title, message }
+  useEffect(() => { noteView(member.id, currentUserId); }, [member.id, currentUserId]);
 
   const memberPosts = threads.filter(t => t.authorId === member.id);
   const connected   = !!(userConnections[member.id]);

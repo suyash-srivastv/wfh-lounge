@@ -28,7 +28,7 @@ export const DEFAULT_FAQS = [
   { q: 'What is The Stillroom?',
     a: 'A community for working professionals: meet people in your city, talk honestly about work and life, join small events, and figure out what you actually want.' },
   { q: 'Is it free?',
-    a: 'Yes.' },
+    a: 'Joining is free, and so are meeting people, chat, forums and going to events. Hosting events is part of Premium (₹500 for 30 days, no auto-renew).' },
   { q: 'How do I meet people near me?',
     a: 'Set your home city in Edit profile. Then browse Members and Events for your city, or say hello in the city Chat.' },
   { q: 'Can I message anyone?',

@@ -40,7 +40,7 @@ ${schema ? `<script type="application/ld+json">${JSON.stringify(schema).replace(
 ${body}
 </main>
 <footer>
-  <nav><a href="/">Home</a><a href="/about">About</a><a href="/faq">FAQ</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/cities">Cities</a></nav>
+  <nav><a href="/">Home</a><a href="/about">About</a><a href="/faq">FAQ</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/cities">Cities</a><a href="/premium">Premium</a><a href="/contact">Contact</a></nav>
   <p>&copy; 2026 The Stillroom</p>
 </footer>
 </div>

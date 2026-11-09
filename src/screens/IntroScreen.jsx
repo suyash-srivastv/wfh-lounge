@@ -11,7 +11,7 @@ const FEATURES = [
 const STEPS = [
   { n: '1', title: 'Set your city',        line: 'Bangalore, Prayagraj, Pune, anywhere. That’s where your people are.' },
   { n: '2', title: 'Meet people nearby',   line: 'Working professionals and WFH folks who live close. Connect, then chat.' },
-  { n: '3', title: 'Join small events',    line: 'Coffee, walks, co-working, board games. Or host one yourself.' },
+  { n: '3', title: 'Join small events',    line: 'Coffee, walks, co-working, board games. Premium members can host their own.' },
   { n: '4', title: 'Talk honestly',        line: 'Forums for the stuff work leaves behind: switching off, layoffs, career changes.' },
 ];
 
@@ -23,7 +23,7 @@ const VS = [
 ];
 
 const FAQS = [
-  ['Is it free?', 'Yes. Joining and using The Stillroom is free.'],
+  ['Is it free?', 'Joining is free, and so are meeting people, chat, forums and going to events. Hosting events is part of Premium (₹500 for 30 days).'],
   ['Is it a dating app?', 'No. It’s for friendships and community with people who also work — not dating, and not networking.'],
   ['Who is it for?', 'Anyone who works — in an office, from home, remotely, freelancing or between jobs — who wants friends outside work. You need to be 18 or older.'],
   ['Is it in my city?', 'It works in every city in India. Set your home city and you’ll see members, events and the city chat for where you live.'],
@@ -103,7 +103,7 @@ function IntroScreen({ onJoin, onLogin }) {
         </section>
 
         <footer className="intro-foot">
-          <nav><a href="/about">About</a><a href="/faq">FAQ</a><a href="/cities">Cities</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></nav>
+          <nav><a href="/about">About</a><a href="/faq">FAQ</a><a href="/cities">Cities</a><a href="/premium">Premium</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/refunds">Refunds</a><a href="/contact">Contact</a></nav>
           <p>© 2026 The Stillroom</p>
         </footer>
       </div>

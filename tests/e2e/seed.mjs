@@ -29,7 +29,7 @@ const env = await initializeTestEnvironment({ projectId: 'wfh-lounge', firestore
 await env.clearFirestore();
 await env.withSecurityRulesDisabled(async ctx => {
   const db = ctx.firestore();
-  await setDoc(doc(db, 'users', alice), { name: 'Alice', username: 'alice', city: 'Pune', seedCity: 'Pune', joinedAt: Timestamp.fromMillis(Date.UTC(2026, 0, 1)), role: 'Developer', initials: 'A', connections: { [bob]: true } });
+  await setDoc(doc(db, 'users', alice), { name: 'Alice', username: 'alice', city: 'Pune', seedCity: 'Pune', joinedAt: Timestamp.fromMillis(Date.UTC(2026, 0, 1)), role: 'Developer', initials: 'A', connections: { [bob]: true }, premiumUntil: Timestamp.fromMillis(Date.now() + 30 * 86400e3) }); // Premium, so she can host
   await setDoc(doc(db, 'users', bob),   { name: 'Bob',   username: 'bob',   city: 'Pune', seedCity: 'Pune', joinedAt: Timestamp.fromMillis(Date.UTC(2026, 0, 2)), role: 'Designer',  initials: 'B', photoURL: 'https://lh3.googleusercontent.com/a/default-letter-photo',  connections: { [alice]: true }, lastActive: Timestamp.now() });
   await setDoc(doc(db, 'usernames/alice'), { uid: alice });
   await setDoc(doc(db, 'usernames/bob'),   { uid: bob });

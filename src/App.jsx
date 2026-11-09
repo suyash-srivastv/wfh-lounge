@@ -6,6 +6,7 @@ import { addWithRate } from './firestoreWrites';
 import { track, trackScreen, identify } from './analytics';
 import { notify } from './notify';
 import { ROLES, REACTIONS } from './constants';
+import { isPremium } from './premium';
 import { useFirestoreListeners, useMemberProfile, useAuthorThreads, useMyStats, useProfiles, useDictator } from './hooks/useFirestoreListeners';
 import { useChat } from './hooks/useChat';
 import { useDM }   from './hooks/useDM';
@@ -20,6 +21,7 @@ import EditProfileModal  from './components/modals/EditProfileModal';
 import NewPostModal      from './components/modals/NewPostModal';
 import HostEventModal    from './components/modals/HostEventModal';
 import PostIdeaModal     from './components/modals/PostIdeaModal';
+import PremiumModal      from './components/modals/PremiumModal';
 import InviteModal       from './components/modals/InviteModal';
 import EventDetailModal  from './components/modals/EventDetailModal';
 import CompleteProfileModal from './components/modals/CompleteProfileModal';
@@ -67,6 +69,7 @@ function App(){
   const [crown,         setCrown]         = useState(false);
   const [confetti,      setConfetti]      = useState(false);
   const [dmPanelOpen,   setDmPanelOpen]   = useState(false);
+  const [premiumAsk,    setPremiumAsk]    = useState(null);  // null = closed, else the headline to show
 
   // Nothing loads until the account is verified (the rules would refuse it).
   const activeUser = user && !needsVerify ? user : null;
@@ -104,6 +107,7 @@ function App(){
           sentRequests:     d.sentRequests     || {},
           receivedRequests: d.receivedRequests || {},
           blockedUsers:     d.blockedUsers     || {},
+          premiumUntil:     d.premiumUntil     || null,
         }));
       }
     });
@@ -234,6 +238,10 @@ function App(){
   }, [activeUser?.uid, openEventId, loadedEvents.some(e => e.id === openEventId)]);
 
   // --- Action functions ---
+  function hostEvent() {
+    if (isPremium(user) || isAdmin) setHostEventOpen(true);
+    else setPremiumAsk('Host events with Premium');
+  }
   async function rsvp(id) {
     const ev    = events.find(e => e.id === id);
     const going = !!(ev?.rsvps?.[user.uid]);
@@ -421,9 +429,10 @@ function App(){
     if (viewingMember) return <MemberProfilePage member={viewingMember} {...memberProfileProps}/>;
     if (viewingMemberId) return <div className="empty">Loading profile…</div>;
     if (showAdmin && isAdmin) return <AdminScreen onBack={() => setShowAdmin(false)}/>;
-    if (showProfile)   return <ProfileScreen user={user} stats={myStats} userPosts={userPosts} openEdit={() => setEditOpen(true)} setShowProfile={setShowProfile} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} onStatusChange={async s=>{await setDoc(doc(db,'users',user.uid),{status:s},{merge:true});setUser(u=>({...u,status:s}));}}/>;
+    if (showProfile)   return <ProfileScreen user={user} stats={myStats} userPosts={userPosts} openEdit={() => setEditOpen(true)} setShowProfile={setShowProfile} deleteThread={deleteThread} onNewPost={() => setNewPostOpen(true)} onStatusChange={async s=>{await setDoc(doc(db,'users',user.uid),{status:s},{merge:true});setUser(u=>({...u,status:s}));}}
+      onUpgrade={() => setPremiumAsk('See who viewed you')} onViewProfile={uid => { setShowProfile(false); setViewingMemberId(uid); }}/>;
     switch (tab) {
-      case 'events':  return <EventsScreen  events={events} {...more(lists.events)} city={city} userId={user.uid} userName={user.name} rsvp={rsvp}   deleteEvent={deleteEvent} onHostEvent={() => setHostEventOpen(true)} isAdmin={isAdmin}
+      case 'events':  return <EventsScreen  events={events} {...more(lists.events)} city={city} userId={user.uid} userName={user.name} rsvp={rsvp}   deleteEvent={deleteEvent} onHostEvent={hostEvent} isAdmin={isAdmin}
         onOpenEvent={setOpenEventId} onViewProfile={uid => setViewingMemberId(uid)}/>;
       case 'members': return <MembersScreen members={fMembers} {...more(lists.members)} loading={lists.members.loading} city={city} userId={user.uid}
         userConnections={user.connections||{}} sentRequests={user.sentRequests||{}} receivedRequests={user.receivedRequests||{}}
@@ -484,6 +493,8 @@ function App(){
       <HostEventModal   open={hostEventOpen}  newEvent={newEvent}   onClose={() => setHostEventOpen(false)} setNewEvent={setNewEvent} submitEvent={submitEvent}/>
       <PostIdeaModal    open={postIdeaOpen}   newIdea={newIdea}     onClose={() => setPostIdeaOpen(false)}  setNewIdea={setNewIdea}   submitIdea={submitIdea} ROLES={ROLES}/>
       <InviteModal      open={inviteOpen} onClose={() => setInviteOpen(false)}/>
+      <PremiumModal     open={premiumAsk !== null} user={user} reason={premiumAsk} onClose={() => setPremiumAsk(null)}
+        onPaid={until => { setUser(u => ({ ...u, premiumUntil: until })); setPremiumAsk(null); setConfetti(true); setTimeout(() => setConfetti(false), 3000); track('premium_activated'); }}/>
       {askCity && <CompleteProfileModal user={user} onSave={saveMissing} onLater={laterCity}/>}
       {openEventId && <EventDetailModal ev={events.find(e => e.id === openEventId)} userId={user.uid} isAdmin={isAdmin}
         onClose={() => setOpenEventId(null)} rsvp={rsvp} deleteEvent={deleteEvent}

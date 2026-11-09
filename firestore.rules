@@ -21,6 +21,8 @@ service cloud.firestore {
     function myProfile() { return get(userPath(me())).data; }
     function myName() { return myProfile().get('name', ''); }
     function myPhoto() { return myProfile().get('photoURL', null); }
+    // Premium is paid for: only the server (api/_lib/premium.js) sets premiumUntil.
+    function isPremium() { return myProfile().get('premiumUntil', timestamp.value(0)) > request.time; }
 
     function str(v, max) { return v is string && v.size() <= max; }
     function nonEmpty(v, max) { return str(v, max) && v.size() > 0; }
@@ -127,6 +129,10 @@ service cloud.firestore {
         || (had('lastActive') && request.resource.data.lastActive == resource.data.lastActive)
         || request.resource.data.lastActive == request.time;
     }
+    // Nobody can give themselves Premium from the browser.
+    function premiumUnchanged() {
+      return request.resource.data.get('premiumUntil', null) == (resource == null ? null : resource.data.get('premiumUntil', null));
+    }
     function seedCityOk() {
       return keptIfHad('seedCity')
         && (had('seedCity') || !('seedCity' in request.resource.data)
@@ -136,12 +142,12 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if signedIn() && (uid == me() || verified());
       allow create: if signedIn() && uid == me() && profileFieldsOk() && usernameOk() && !('badges' in request.resource.data)
-        && joinedOk() && seedCityOk();
+        && joinedOk() && seedCityOk() && premiumUnchanged();
       allow delete: if signedIn() && uid == me();
 
       allow update: if signedIn() && (
         // Your own profile: any valid change (tags: admin only, see badgesOk).
-        (uid == me() && profileFieldsOk() && usernameOk() && badgesOk() && joinedOk() && seedCityOk() && lastActiveOk())
+        (uid == me() && profileFieldsOk() && usernameOk() && badgesOk() && joinedOk() && seedCityOk() && lastActiveOk() && premiumUnchanged())
         // Someone else's profile: only their own entry in the friend maps.
         || (verified()
           && changed().hasOnly(['receivedRequests', 'sentRequests', 'connections'])
@@ -156,6 +162,15 @@ service cloud.firestore {
           // I can only add a connection to someone who sent me a request.
           && (!hasMine('connections') || hadMine('connections') || hadMine('sentRequests')))
       );
+
+      // Who viewed your profile: each viewer writes one doc (id = their uid)
+      // with the server time. Only the profile owner can read them, and only
+      // while they have Premium.
+      match /views/{viewer} {
+        allow read: if verified() && uid == me() && isPremium();
+        allow create, update: if verified() && viewer == me() && uid != me()
+          && request.resource.data.keys().hasOnly(['at']) && request.resource.data.at == request.time;
+      }
     }
 
     // ---------- Usernames (one per account) ----------
@@ -184,7 +199,8 @@ service cloud.firestore {
 
     match /events/{id} {
       allow read: if verified();
-      allow create: if verified() && slowMode()
+      // Hosting is a Premium perk (the admin can always host).
+      allow create: if verified() && slowMode() && (isPremium() || isAdmin())
         && request.resource.data.hostId == me()
         && request.resource.data.host == myName()
         && nonEmpty(request.resource.data.title, 120)
